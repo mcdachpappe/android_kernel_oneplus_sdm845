@@ -543,6 +543,7 @@ struct synaptics_ts_data {
 	int project_version;
 
 	struct pm_qos_request pm_qos_req;
+	struct work_struct pm_work;
 };
 
 static struct device_attribute attrs_oem[] = {
@@ -6069,6 +6070,26 @@ static int synaptics_dsx_pinctrl_init(struct synaptics_ts_data *ts)
 	return retval;
 }
 
+static void synaptics_suspend_resume(struct work_struct *work)
+{
+	struct synaptics_ts_data *ts =
+		container_of(work, typeof(*ts), pm_work);
+
+	if (ts->is_suspended) {
+		atomic_set(&ts->is_stop, 1);
+		cancel_delayed_work_sync(&ts->base_work);
+		flush_workqueue(get_base_report);
+		if (!(ts->gesture_enable))
+			touch_disable(ts);
+		synaptics_ts_suspend(&ts->client->dev);
+	} else {
+		queue_delayed_work(get_base_report,
+				&ts->base_work,
+				msecs_to_jiffies(10));
+		synaptics_ts_resume(&ts->client->dev);
+	}
+}
+
 #ifdef SUPPORT_VIRTUAL_KEY
 #define VK_KEY_X    180
 #define VK_CENTER_Y 2020	//2260
@@ -6312,6 +6333,9 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	if (ret < 0) {
 		TPD_ERR("synaptics_input_init failed!\n");
 	}
+
+	INIT_WORK(&ts->pm_work, synaptics_suspend_resume);
+
 #if defined(CONFIG_FB)
 	ts->fb_notif.notifier_call = fb_notifier_callback;
 	ret = fb_register_client(&ts->fb_notif);
@@ -6766,34 +6790,19 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 		return 0;
 	if ((evdata) && (evdata->data) && (ts) && (ts->client)) {
 		blank = evdata->data;
-		TPD_ERR("%s blank[%d],event[0x%lx],evdata->id[%d]\n",
-			__func__, *blank, event, evdata->id);
 
 		if ((*blank == MSM_DRM_BLANK_UNBLANK_CUST)
 		    && (event == MSM_DRM_EARLY_EVENT_BLANK)) {
-			if (ts->is_suspended == 1) {
-				TPD_DEBUG("%s TP resume start\n", __func__);
+			if (ts->is_suspended) {
 				ts->is_suspended = 0;
-				queue_delayed_work(get_base_report,
-						   &ts->base_work,
-						   msecs_to_jiffies(10));
-				synaptics_ts_resume(&ts->client->dev);
-				//atomic_set(&ts->is_stop,0);
-				TPD_DEBUG("%sTP resume end\n", __func__);
+				queue_work(system_highpri_wq, &ts->pm_work);
 			}
 		} else if (((*blank == MSM_DRM_BLANK_POWERDOWN_CUST)
 			    && (event == MSM_DRM_EARLY_EVENT_BLANK))
 			   || (*blank == MSM_DRM_BLANK_NORMAL)) {
-			if (ts->is_suspended == 0) {
-				TPD_DEBUG("%s:TP suspend start\n", __func__);
+			if (!ts->is_suspended) {
 				ts->is_suspended = 1;
-				atomic_set(&ts->is_stop, 1);
-				cancel_delayed_work_sync(&ts->base_work);
-				flush_workqueue(get_base_report);
-				if (!(ts->gesture_enable))
-					touch_disable(ts);
-				synaptics_ts_suspend(&ts->client->dev);
-				TPD_DEBUG("%s:TP suspend end\n", __func__);
+				queue_work(system_highpri_wq, &ts->pm_work);
 			}
 		}
 		if (ts->project_version == 0x03)
