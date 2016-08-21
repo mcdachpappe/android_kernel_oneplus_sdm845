@@ -47,7 +47,6 @@
 		qcom,mdss-dsi-panel-status-value = <0x9c>;
 		qcom,mdss-dsi-panel-status-read-length = <1>;
 		qcom,mdss-dsi-te-using-te-pin;
-		qcom,mdss-dsi-lp11-init;
 	  qcom,mdss-dsi-high-brightness-panel;
 		qcom,mdss-dsi-acl-cmd-index = <0>;
 		qcom,mdss-dsi-acl-mode-index = <1>;
@@ -58,6 +57,7 @@
 		qcom,mdss-dsi-panel-seria-num-hour-index = <14>;
 		qcom,mdss-dsi-panel-seria-num-min-index = <15>;
 		qcom,ulps-enabled;
+		qcom,panel-allow-phy-poweroff;
 		qcom,mdss-dsi-display-timings {
 			timing@0{
 				qcom,mdss-dsi-panel-framerate = <60>;

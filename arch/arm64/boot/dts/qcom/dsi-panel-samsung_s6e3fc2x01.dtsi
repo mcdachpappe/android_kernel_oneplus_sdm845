@@ -47,7 +47,6 @@
 		qcom,mdss-dsi-panel-status-value = <0x9F>;
 		qcom,mdss-dsi-panel-status-read-length = <1>;
 		qcom,mdss-dsi-te-using-te-pin;
-		qcom,mdss-dsi-lp11-init;
          	qcom,mdss-dsi-high-brightness-panel;
 		qcom,mdss-dsi-acl-cmd-index = <0>;
 		qcom,mdss-dsi-acl-mode-index = <1>;
@@ -59,6 +58,7 @@
 		qcom,mdss-dsi-panel-seria-num-hour-index = <14>;
 		qcom,mdss-dsi-panel-seria-num-min-index = <15>;
 		qcom,ulps-enabled;
+		qcom,panel-allow-phy-poweroff;
 		/* HDR Setting */
 		qcom,mdss-dsi-panel-hdr-enabled;
 		qcom,mdss-dsi-panel-hdr-color-primaries = <15635 16450 34000 16000 13250 34500 7500 3000>;
