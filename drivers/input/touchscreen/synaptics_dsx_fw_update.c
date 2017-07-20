@@ -58,15 +58,11 @@
 #endif
 
 /*********************for Debug LOG switch*******************/
+// #define DEBUG
 #define TPD_DEVICE "synaptics,s3320_firmware"
 #define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
 #define TPDTM_DMESG(a, arg...)  printk(TPD_DEVICE ": " a, ##arg)
-
-#define TPD_DEBUG(a, arg...)\
-	do {\
-		if (tp_debug) \
-		pr_err(TPD_DEVICE ": " a, ##arg);\
-	} while (0)
+#define TPD_DEBUG(a,arg...)  pr_debug(TPD_DEVICE ": " a,##arg)
 
 #define MAX_WRITE_SIZE 4096
 
