@@ -192,20 +192,15 @@ static int gesture_switch = 0;
 #endif
 
 /*********************for Debug LOG switch*******************/
+// #define DEBUG
 #define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
 #define TPDTM_DMESG(a, arg...)  printk(TPD_DEVICE ": " a, ##arg)
-
-#define TPD_DEBUG(a,arg...)\
-	do{\
-		if(tp_debug)\
-		pr_err(TPD_DEVICE ": " a,##arg);\
-	}while(0)
+#define TPD_DEBUG(a,arg...)  pr_debug(TPD_DEVICE ": " a,##arg)
 
 /*---------------------------------------------Global Variable----------------------------------------------*/
 static int baseline_ret = 0;
 static long int TP_FW;
 static int tp_dev = 6;
-unsigned int tp_debug;
 static int button_map[3];
 static int tx_rx_num[2];
 static int16_t Rxdata[33][33];	/*s3706 tx rx 16 33 s3508 tx rx 15 30 */
@@ -2435,13 +2430,6 @@ static ssize_t tp_show(struct device_driver *ddri, char *buf)
 static ssize_t store_tp(struct device_driver *ddri, const char *buf,
 			size_t count)
 {
-	int tmp = 0;
-	if (1 == sscanf(buf, "%d", &tmp)) {
-		tp_debug = tmp;
-	} else {
-		TPDTM_DMESG("invalid content: '%s', length = %zd\n", buf,
-			    count);
-	}
 	return count;
 }
 
@@ -4307,55 +4295,12 @@ static DRIVER_ATTR(tp_baseline_image, 0664, tp_baseline_show, tp_delta_store);
 static DRIVER_ATTR(tp_baseline_image_with_cbc, 0664, tp_baseline_show_with_cbc,
 		   tp_test_store);
 static DRIVER_ATTR(tp_delta_image, 0664, tp_rawdata_show, NULL);
-static DRIVER_ATTR(tp_debug_log, 0664, tp_show, store_tp);
 static DEVICE_ATTR(tp_fw_update, 0664, synaptics_update_fw_show,
 		   synaptics_update_fw_store);
 static DEVICE_ATTR(tp_doze_time, 0664, tp_doze_time_show, tp_doze_time_store);
 static DEVICE_ATTR(tp_gesture_touch_hold, 0664,
 		   tp_gesture_touch_hold_show, tp_gesture_touch_hold_store);
 static int synaptics_dsx_pinctrl_init(struct synaptics_ts_data *ts);
-
-static ssize_t tp_debug_log_write_func(struct file *file, const char *buffer,
-				       size_t count, loff_t * ppos)
-{
-	int ret, tmp = 0;
-	char buf[4] = { 0 };
-
-	if (count > 4)
-		return count;
-	if (copy_from_user(buf, buffer, count)) {
-		TPD_ERR(KERN_INFO "%s: read proc input error.\n", __func__);
-		return count;
-	}
-
-	ret = kstrtoint(buf, 10, &tmp);
-	if (ret >= 0) {
-		tp_debug = tmp;
-	} else {
-		TPDTM_DMESG("invalid content: '%s', length = %zd\n",
-			    buf, count);
-	}
-	return count;
-}
-
-static ssize_t tp_debug_log_read_func(struct file *file, char __user * user_buf,
-				      size_t count, loff_t * ppos)
-{
-	int ret = 0;
-	char page[4];
-
-	ret = snprintf(page, 4, "%d\n", tp_debug);
-	ret = simple_read_from_buffer(user_buf, count,
-				      ppos, page, strlen(page));
-	return ret;
-}
-
-static const struct file_operations tp_debug_log_proc_fops = {
-	.write = tp_debug_log_write_func,
-	.read = tp_debug_log_read_func,
-	.open = simple_open,
-	.owner = THIS_MODULE,
-};
 
 static ssize_t synaptics_main_reg_read_func(struct file *file,
 					    char __user * user_buf,
@@ -5156,14 +5101,6 @@ static int init_synaptics_proc(void)
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
 		TPD_ERR("Couldn't create tp_main_reg\n");
-	}
-
-	/*morgan.gu add for logkit to open more log */
-	prEntry_tmp = proc_create("tp_debug_log", 0664,
-				  prEntry_tp, &tp_debug_log_proc_fops);
-	if (prEntry_tmp == NULL) {
-		ret = -ENOMEM;
-		TPD_ERR("Couldn't create tp_debug_log_proc_fops\n");
 	}
 
 	return ret;
@@ -6432,11 +6369,6 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	}
 	if (device_create_file(&client->dev, &dev_attr_tp_doze_time)) {
 		TPDTM_DMESG("device_create_file failt\n");
-		goto exit_init_failed;
-	}
-	if (driver_create_file
-	    (&tpd_i2c_driver.driver, &driver_attr_tp_debug_log)) {
-		TPDTM_DMESG("driver_create_file failt\n");
 		goto exit_init_failed;
 	}
 	if (driver_create_file
