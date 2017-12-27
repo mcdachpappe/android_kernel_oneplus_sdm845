@@ -1648,7 +1648,7 @@ bool key_home_pressed = 0;
 extern bool virtual_key_enable;
 #endif
 
-void int_touch(void)
+static inline void __int_touch(void)
 {
 	int ret = -1, i = 0;
 	uint8_t buf[90];
@@ -1896,6 +1896,11 @@ void int_touch(void)
 	mutex_unlock(&ts->mutexreport);
 }
 
+void int_touch(void)
+{
+	__int_touch();
+}
+
 static char log_count = 0;
 #ifdef SUPPORT_TP_TOUCHKEY
 #define OEM_KEY_BACK (key_switch?KEY_APPSELECT:KEY_BACK)
@@ -1904,7 +1909,7 @@ static char log_count = 0;
 #define OEM_KEY_BACK KEY_BACK
 #define OEM_KEY_APPSELECT KEY_APPSELECT
 #endif
-static void int_key_report_s3508(struct synaptics_ts_data *ts)
+static inline void int_key_report_s3508(struct synaptics_ts_data *ts)
 {
 	int ret = 0;
 	int F1A_0D_DATA00 = 0x00;
@@ -2037,8 +2042,7 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 	}
 
 	if (inte & 0x04) {
-
-		int_touch();
+		__int_touch();
 	}
 	if (inte & 0x10) {
 		int_key_report_s3508(ts);
