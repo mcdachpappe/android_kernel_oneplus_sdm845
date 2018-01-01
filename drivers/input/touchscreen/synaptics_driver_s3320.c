@@ -169,24 +169,24 @@ struct fp_underscreen_info {
 #define BIT6 (0x1 << 6)
 #define BIT7 (0x1 << 7)
 
-int LeftVee_gesture = 0;	//">"
-int RightVee_gesture = 0;	//"<"
-int DouSwip_gesture = 0;	// "||"
-int Circle_gesture = 0;		// "O"
-int UpVee_gesture = 0;		//"V"
-int DownVee_gesture = 0;	//"^"
-int DouTap_gesture = 0;		//"double tap"
+static int LeftVee_gesture = 0;	//">"
+static int RightVee_gesture = 0;	//"<"
+static int DouSwip_gesture = 0;	// "||"
+static int Circle_gesture = 0;		// "O"
+static int UpVee_gesture = 0;		//"V"
+static int DownVee_gesture = 0;	//"^"
+static int DouTap_gesture = 0;		//"double tap"
 
-int Left2RightSwip_gesture = 0;	//"(-->)"
-int Right2LeftSwip_gesture = 0;	//"(<--)"
-int Up2DownSwip_gesture = 0;	//"up to down |"
-int Down2UpSwip_gesture = 0;	//"down to up |"
+static int Left2RightSwip_gesture = 0;	//"(-->)"
+static int Right2LeftSwip_gesture = 0;	//"(<--)"
+static int Up2DownSwip_gesture = 0;	//"up to down |"
+static int Down2UpSwip_gesture = 0;	//"down to up |"
 
-int Wgestrue_gesture = 0;	//"(W)"
-int Mgestrue_gesture = 0;	//"(M)"
-int Sgestrue_gesture = 0;	//"(S)"
-int Single_gesture = 0;		//"(SingleTap)"
-int Enable_gesture = 0;
+static int Wgestrue_gesture = 0;	//"(W)"
+static int Mgestrue_gesture = 0;	//"(M)"
+static int Sgestrue_gesture = 0;	//"(S)"
+static int Single_gesture = 0;		//"(SingleTap)"
+static int Enable_gesture = 0;
 static int gesture_switch = 0;
 #endif
 
@@ -1644,9 +1644,9 @@ static unsigned char pres_value = 1;
 #endif
 #ifdef SUPPORT_VIRTUAL_KEY	//WayneChang, 2015/12/02, add for key to abs, simulate key in abs through virtual key system
 //extern struct completion key_cm;
-bool key_back_pressed = 0;
-bool key_appselect_pressed = 0;
-bool key_home_pressed = 0;
+static bool key_back_pressed = 0;
+static bool key_appselect_pressed = 0;
+static bool key_home_pressed = 0;
 extern bool virtual_key_enable;
 #endif
 
