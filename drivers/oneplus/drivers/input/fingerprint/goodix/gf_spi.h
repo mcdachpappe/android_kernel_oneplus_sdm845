@@ -156,6 +156,7 @@ struct gf_dev {
 	struct fasync_struct *async;
 #endif
 #if defined(CONFIG_FB)
+	struct work_struct fb_work;
 	struct notifier_block notifier;
 #elif defined(CONFIG_MSM_RDM_NOTIFY)
 	struct notifier_block msm_drm_notif;
