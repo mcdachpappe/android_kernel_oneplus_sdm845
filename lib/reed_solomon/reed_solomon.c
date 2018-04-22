@@ -60,8 +60,7 @@ static struct rs_control *rs_init(int symsize, int gfpoly, int (*gffunc)(int),
 	struct rs_control *rs;
 	int i, j, sr, root, iprim;
 
-	/* Allocate the control structure */
-	rs = kmalloc(sizeof(*rs), gfp);
+	rs = kzalloc(sizeof(*rs), gfp);
 	if (!rs)
 		return NULL;
 
@@ -78,16 +77,16 @@ static struct rs_control *rs_init(int symsize, int gfpoly, int (*gffunc)(int),
 	/* Allocate the arrays */
 	rs->alpha_to = kmalloc(rs->nn + 1, sizeof(uint16_t), gfp);
 	if (rs->alpha_to == NULL)
-		goto errrs;
+		goto err;
 
 	rs->index_of = kmalloc(rs->nn + 1, sizeof(uint16_t), gfp);
 	if (rs->index_of == NULL)
-		goto erralp;
+		goto err;
 
 	rs->genpoly = kmalloc(rs->nroots + 1, sizeof(uint16_t),
 				    gfp);
 	if(rs->genpoly == NULL)
-		goto erridx;
+		goto err;
 
 	/* Generate Galois field lookup tables */
 	rs->index_of[0] = rs->nn;	/* log(zero) = -inf */
@@ -112,7 +111,7 @@ static struct rs_control *rs_init(int symsize, int gfpoly, int (*gffunc)(int),
 	}
 	/* If it's not primitive, exit */
 	if(sr != rs->alpha_to[0])
-		goto errpol;
+		goto err;
 
 	/* Find prim-th root of 1, used in decoding */
 	for(iprim = 1; (iprim % prim) != 0; iprim += rs->nn);
@@ -142,14 +141,10 @@ static struct rs_control *rs_init(int symsize, int gfpoly, int (*gffunc)(int),
 		rs->genpoly[i] = rs->index_of[rs->genpoly[i]];
 	return rs;
 
-	/* Error exit */
-errpol:
+err:
 	kfree(rs->genpoly);
-erridx:
 	kfree(rs->index_of);
-erralp:
 	kfree(rs->alpha_to);
-errrs:
 	kfree(rs);
 	return NULL;
 }
