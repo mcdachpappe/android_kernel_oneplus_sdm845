@@ -59,6 +59,7 @@
 #endif
 
 #include <linux/input/mt.h>
+#include <linux/moduleparam.h>
 
 /*------------------------------------------------Global Define--------------------------------------------*/
 
@@ -276,6 +277,11 @@ static int Single_gesture __read_mostly;		//"(SingleTap)"
 static int Enable_gesture __read_mostly;
 static int gesture_switch __read_mostly;
 #endif
+
+bool haptic_feedback_disable = false;
+module_param(haptic_feedback_disable, bool, 0644);
+
+void qpnp_hap_ignore_next_request(void);
 
 /*********************for Debug LOG switch*******************/
 // #define DEBUG
@@ -1541,6 +1547,10 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		input_sync(ts->input_dev);
 		input_report_key(ts->input_dev, keyCode, 0);
 		input_sync(ts->input_dev);
+		
+		if (haptic_feedback_disable)
+			qpnp_hap_ignore_next_request();
+
 	} else {
 		ret =
 		    i2c_smbus_read_i2c_block_data(ts->client, F12_2D_CTRL20, 3,
