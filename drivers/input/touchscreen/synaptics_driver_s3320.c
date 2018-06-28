@@ -24,6 +24,7 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/hrtimer.h>
+#include <linux/pm_qos.h>
 #include <linux/proc_fs.h>
 #include <linux/interrupt.h>
 #include <linux/regulator/consumer.h>
@@ -543,6 +544,8 @@ struct synaptics_ts_data {
 	unsigned int fp_aod_cnt;
 	unsigned int unlock_succes;
 	int project_version;
+
+	struct pm_qos_request pm_qos_req;
 };
 
 static struct device_attribute attrs_oem[] = {
@@ -1972,6 +1975,9 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 	if (unlikely(ts->enable_remote))
 		goto END;
 
+	/* prevent CPU from entering deep sleep */
+	pm_qos_update_request(&ts->pm_qos_req, 100);
+
 	synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x00);
 	ret = synaptics_rmi4_i2c_read_word(ts->client, F01_RMI_DATA_BASE);
 
@@ -2026,6 +2032,8 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 	}
 
  END:
+	pm_qos_update_request(&ts->pm_qos_req, PM_QOS_DEFAULT_VALUE);
+
 	return IRQ_HANDLED;
 }
 
@@ -6450,6 +6458,10 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	}
 #endif
 	init_synaptics_proc();
+
+	pm_qos_add_request(&ts->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
+
 	TPDTM_DMESG("synaptics_ts_probe 3203: normal end\n");
 
 	return 0;
@@ -6512,6 +6524,9 @@ static int synaptics_ts_remove(struct i2c_client *client)
 	input_free_device(ts->input_dev);
 	kfree(ts);
 	tpd_power(ts, 0);
+
+	pm_qos_remove_request(&ts->pm_qos_req);
+
 	return 0;
 }
 
