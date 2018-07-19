@@ -175,6 +175,13 @@ struct dsi_panel_exd_config {
 	int selab;
 };
 
+enum dsi_panel_display_mode {
+	DISPLAY_MODE_DEFAULT,
+	DISPLAY_MODE_SRGB,
+	DISPLAY_MODE_DCI_P3,
+	DISPLAY_MODE_WIDE_COLOR
+};
+
 struct dsi_panel {
 	const char *name;
 	enum dsi_panel_type type;
@@ -237,6 +244,9 @@ struct dsi_panel {
 	bool is_hbm_enabled;
 	int op_force_screenfp;
 	bool dim_status;
+
+	enum dsi_panel_display_mode display_mode;
+
 	bool lp11_init;
 	bool ulps_enabled;
 	bool ulps_suspend_enabled;
@@ -332,6 +342,8 @@ int dsi_panel_disable(struct dsi_panel *panel);
 int dsi_panel_unprepare(struct dsi_panel *panel);
 
 int dsi_panel_post_unprepare(struct dsi_panel *panel);
+
+int dsi_panel_apply_display_mode(struct dsi_panel *panel);
 
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl);
 
