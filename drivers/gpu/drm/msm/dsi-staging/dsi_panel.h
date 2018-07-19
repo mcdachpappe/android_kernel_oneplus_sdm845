@@ -164,6 +164,13 @@ enum dsi_panel_type {
 	DSI_PANEL_TYPE_MAX,
 };
 
+enum dsi_panel_display_mode {
+	DISPLAY_MODE_DEFAULT,
+	DISPLAY_MODE_SRGB,
+	DISPLAY_MODE_DCI_P3,
+	DISPLAY_MODE_WIDE_COLOR,
+};
+
 /* Extended Panel config for panels with additional gpios */
 struct dsi_panel_exd_config {
 	int display_1p8_en;
@@ -178,6 +185,7 @@ struct dsi_panel_exd_config {
 struct dsi_panel {
 	const char *name;
 	enum dsi_panel_type type;
+	enum dsi_panel_display_mode display_mode;
 	struct device_node *panel_of_node;
 	struct mipi_dsi_device mipi_device;
 
@@ -332,6 +340,8 @@ int dsi_panel_disable(struct dsi_panel *panel);
 int dsi_panel_unprepare(struct dsi_panel *panel);
 
 int dsi_panel_post_unprepare(struct dsi_panel *panel);
+
+int dsi_panel_apply_display_mode(struct dsi_panel *panel);
 
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl);
 
