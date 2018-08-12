@@ -45,7 +45,6 @@ struct dev_data {
 	int cur_ab;
 	int cur_ib;
 	long gov_ab;
-	unsigned int ab_percent;
 	struct devfreq *df;
 	struct devfreq_dev_profile dp;
 };
@@ -79,11 +78,6 @@ static int set_bw(struct device *dev, int new_ib, int new_ab)
 	return ret;
 }
 
-static unsigned int find_ab(struct dev_data *d, unsigned long *freq)
-{
-	return (d->ab_percent * (*freq)) / 100;
-}
-
 static void find_freq(struct devfreq_dev_profile *p, unsigned long *freq,
 			u32 flags)
 {
@@ -106,52 +100,12 @@ static void find_freq(struct devfreq_dev_profile *p, unsigned long *freq,
 		*freq = atleast;
 }
 
-static void find_freq_cpubw(struct devfreq_dev_profile *p, unsigned long *freq,
-                        u32 flags)
-{
-        int i;
-        unsigned long atmost, atleast, f;
-        int min_index, max_index;
-
-        atmost = p->freq_table[min_index];
-        atleast = p->freq_table[max_index-1];
-
-        for (i = min_index; i < max_index; i++) {
-                f = p->freq_table[i];
-                if (f <= *freq)
-                        atmost = max(f, atmost);
-                if (f >= *freq)
-                        atleast = min(f, atleast);
-        }
-
-        if (flags & DEVFREQ_FLAG_LEAST_UPPER_BOUND)
-                *freq = atmost;
-        else
-                *freq = atleast;
-}
-
-static int devbw_target_cpubw(struct device *dev, unsigned long *freq, u32 flags)
-{
-	struct dev_data *d = dev_get_drvdata(dev);
-
-	find_freq_cpubw(&d->dp, freq, flags);
-
-	if (!d->gov_ab)
-		return set_bw(dev, *freq, find_ab(d, freq));
-	else
-		return set_bw(dev, *freq, d->gov_ab);
-}
-
 static int devbw_target(struct device *dev, unsigned long *freq, u32 flags)
 {
 	struct dev_data *d = dev_get_drvdata(dev);
 
 	find_freq(&d->dp, freq, flags);
-
-	if (!d->gov_ab)
-		return set_bw(dev, *freq, find_ab(d, freq));
-	else
-		return set_bw(dev, *freq, d->gov_ab);
+	return set_bw(dev, *freq, d->gov_ab);
 }
 
 static int devbw_get_dev_status(struct device *dev,
@@ -165,7 +119,6 @@ static int devbw_get_dev_status(struct device *dev,
 
 #define PROP_PORTS "qcom,src-dst-ports"
 #define PROP_TBL "qcom,bw-tbl"
-#define PROP_AB_PER "qcom,ab-percent"
 #define PROP_ACTIVE "qcom,active-only"
 
 int devfreq_add_devbw(struct device *dev)
@@ -243,15 +196,6 @@ int devfreq_add_devbw(struct device *dev)
 		p->max_state = len;
 	}
 
-	if (of_find_property(dev->of_node, PROP_AB_PER, &len)) {
-		ret = of_property_read_u32(dev->of_node, PROP_AB_PER,
-							&d->ab_percent);
-		if (ret)
-			return ret;
-
-		dev_dbg(dev, "ab-percent used %u\n", d->ab_percent);
-	}
-
 	d->bus_client = msm_bus_scale_register_client(&d->bw_data);
 	if (!d->bus_client) {
 		dev_err(dev, "Unable to register bus client\n");
@@ -318,7 +262,7 @@ static struct platform_driver devbw_driver = {
 		.owner = THIS_MODULE,
 	},
 };
-module_platform_driver(devbw_driver);
 
+module_platform_driver(devbw_driver);
 MODULE_DESCRIPTION("Device DDR bandwidth voting driver MSM SoCs");
 MODULE_LICENSE("GPL v2");
