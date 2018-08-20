@@ -1533,6 +1533,7 @@ struct ravg {
 	u32 pred_demand;
 	u8 busy_buckets[NUM_BUSY_BUCKETS];
 	u16 demand_scaled;
+	u16 pred_demand_scaled;
 };
 
 struct sched_entity {
