@@ -41,6 +41,7 @@ int cam_context_shutdown(struct cam_context *ctx)
 {
 	int rc = 0;
 
+	mutex_lock(&ctx->ctx_mutex);
 	if (ctx->state_machine[ctx->state].ioctl_ops.stop_dev) {
 		rc = ctx->state_machine[ctx->state].ioctl_ops.stop_dev(
 			ctx, NULL);
@@ -53,6 +54,7 @@ int cam_context_shutdown(struct cam_context *ctx)
 		if (rc < 0)
 			CAM_ERR(CAM_CORE, "Error while dev release %d", rc);
 	}
+	mutex_unlock(&ctx->ctx_mutex);
 
 	return rc;
 }
