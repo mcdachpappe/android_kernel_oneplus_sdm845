@@ -143,6 +143,8 @@ static int cam_isp_dev_probe(struct platform_device *pdev)
 		goto unregister;
 	}
 
+	mutex_init(&g_isp_dev.isp_mutex);
+
 	CAM_INFO(CAM_ISP, "Camera ISP probe complete");
 
 	return 0;
