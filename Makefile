@@ -401,7 +401,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -std=gnu89
 
 # Optimization for sdm845
-KBUILD_CFLAGS	+= -mcpu=cortex-a75.cortex-a55+crc+crypto -Wno-attribute-alias -fno-store-merging
+KBUILD_CFLAGS	+= -mcpu=cortex-a75.cortex-a55+crc+crypto -Wno-attribute-alias
 
 # This doesn't need 835769/843419 erratum fixes.
 # Some toolchains enable those fixes automatically, so opt-out.
