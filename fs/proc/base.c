@@ -2591,6 +2591,27 @@ static const struct file_operations proc_pid_set_timerslack_ns_operations = {
 	.release	= single_release,
 };
 
+static ssize_t page_hot_count_read(struct file *file, char __user *buf,
+				size_t count, loff_t *ppos)
+{
+	char buffer[PROC_NUMBUF];
+	size_t len;
+
+	len = snprintf(buffer, sizeof(buffer), "%d\n", 0);
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
+}
+
+static ssize_t page_hot_count_write(struct file *file, const char __user *buf,
+				size_t count, loff_t *ppos)
+{
+	return count;
+}
+
+static const struct file_operations proc_page_hot_count_operations = {
+	.read		= page_hot_count_read,
+	.write		= page_hot_count_write,
+};
+
 static int proc_pident_instantiate(struct inode *dir,
 	struct dentry *dentry, struct task_struct *task, const void *ptr)
 {
@@ -3226,6 +3247,7 @@ static const struct pid_entry tgid_base_stuff[] = {
 	REG("timers",	  S_IRUGO, proc_timers_operations),
 #endif
 	REG("timerslack_ns", S_IRUGO|S_IWUGO, proc_pid_set_timerslack_ns_operations),
+	REG("page_hot_count", 0666, proc_page_hot_count_operations),
 #ifdef CONFIG_CPU_FREQ_TIMES
 	ONE("time_in_state", 0444, proc_time_in_state_show),
 #endif

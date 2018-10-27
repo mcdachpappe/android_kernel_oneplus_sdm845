@@ -2712,6 +2712,43 @@ static struct uart_driver msm_geni_serial_hs_driver = {
 	.nr =  GENI_UART_NR_PORTS,
 };
 
+static int msm_serial_pinctrl_probe(struct platform_device *pdev)
+{
+	struct pinctrl *pinctrl = NULL;
+	struct pinctrl_state *set_state = NULL;
+	struct device *dev = &pdev->dev;
+
+	pinctrl = devm_pinctrl_get(dev);
+	if (pinctrl != NULL) {
+		set_state = pinctrl_lookup_state(
+				pinctrl, "uart_pinctrl_deactive");
+		if (set_state != NULL)
+			pinctrl_select_state(pinctrl, set_state);
+		devm_pinctrl_put(pinctrl);
+	}
+
+	return 0;
+}
+
+static int msm_serial_pinctrl_remove(struct platform_device *pdev)
+{
+	return 0;
+}
+
+static const struct of_device_id oem_serial_pinctrl_of_match[] = {
+	{ .compatible = "oem,oem_serial_pinctrl" },
+	{}
+};
+
+static struct platform_driver msm_platform_serial_pinctrl_driver = {
+	.remove = msm_serial_pinctrl_remove,
+	.probe = msm_serial_pinctrl_probe,
+	.driver = {
+		.name = "oem_serial_pinctrl",
+		.of_match_table = oem_serial_pinctrl_of_match,
+	},
+};
+
 static int __init msm_geni_serial_init(void)
 {
 	int ret = 0;
@@ -2731,10 +2768,6 @@ static int __init msm_geni_serial_init(void)
 		msm_geni_console_port.uport.line = i;
 	}
 
-	ret = console_register(&msm_geni_console_driver);
-	if (ret)
-		return ret;
-
 	ret = uart_register_driver(&msm_geni_serial_hs_driver);
 	if (ret) {
 		uart_unregister_driver(&msm_geni_console_driver);
@@ -2747,6 +2780,8 @@ static int __init msm_geni_serial_init(void)
 		uart_unregister_driver(&msm_geni_serial_hs_driver);
 		return ret;
 	}
+
+	ret = platform_driver_register(&msm_platform_serial_pinctrl_driver);
 
 	pr_info("%s: Driver initialized", __func__);
 	return ret;

@@ -65,11 +65,11 @@ extern unsigned int sysctl_sched_migration_cost;
 extern unsigned int sysctl_sched_nr_migrate;
 extern unsigned int sysctl_sched_time_avg;
 extern unsigned int sysctl_sched_shares_window;
+#endif
 
-int sched_proc_update_handler(struct ctl_table *table, int write,
+extern int sched_proc_update_handler(struct ctl_table *table, int write,
 		void __user *buffer, size_t *length,
 		loff_t *ppos);
-#endif
 
 extern int sched_migrate_notify_proc_handler(struct ctl_table *table,
 		int write, void __user *buffer, size_t *lenp, loff_t *ppos);

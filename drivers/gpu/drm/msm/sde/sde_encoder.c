@@ -2815,6 +2815,7 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
+	struct drm_connector *drm_conn = NULL;
 	enum sde_intf_mode intf_mode;
 	int i = 0;
 
@@ -2842,6 +2843,10 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	intf_mode = sde_encoder_get_intf_mode(drm_enc);
 
 	SDE_EVT32(DRMID(drm_enc));
+	/* Disable ESD thread */
+	drm_conn = sde_enc->cur_master->connector;
+	sde_connector_schedule_status_work(drm_conn, false);
+
 
 	if (sde_enc->input_handler && sde_enc->input_handler_registered) {
 		input_unregister_handler(sde_enc->input_handler);
@@ -3304,8 +3309,8 @@ void sde_encoder_helper_hw_reset(struct sde_encoder_phys *phys_enc)
 			if (rc) {
 				SDE_ERROR_ENC(sde_enc,
 						"connector soft reset failure\n");
-				SDE_DBG_DUMP("all", "dbg_bus", "vbif_dbg_bus",
-								"panic");
+			//	SDE_DBG_DUMP("all", "dbg_bus", "vbif_dbg_bus",
+			//					"panic");
 			}
 		}
 	}

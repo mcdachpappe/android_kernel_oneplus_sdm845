@@ -98,6 +98,7 @@ enum msm_mdp_plane_property {
 
 	/* range properties */
 	PLANE_PROP_ZPOS = PLANE_PROP_BLOBCOUNT,
+	PLANE_PROP_CUSTOM,
 	PLANE_PROP_ALPHA,
 	PLANE_PROP_COLOR_FILL,
 	PLANE_PROP_H_DECIMATE,
@@ -159,6 +160,7 @@ enum msm_mdp_crtc_property {
 
 	CRTC_PROP_ENABLE_SUI_ENHANCEMENT,
 	CRTC_PROP_IDLE_PC_STATE,
+	CRTC_PROP_CUSTOM,
 
 	/* total # of properties */
 	CRTC_PROP_COUNT
@@ -193,6 +195,7 @@ enum msm_mdp_conn_property {
 	CONNECTOR_PROP_AUTOREFRESH,
 	CONNECTOR_PROP_LP,
 	CONNECTOR_PROP_FB_TRANSLATION_MODE,
+	CONNECTOR_PROP_CUSTOM,
 
 	/* total # of properties */
 	CONNECTOR_PROP_COUNT

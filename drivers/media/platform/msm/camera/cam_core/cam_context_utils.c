@@ -91,19 +91,10 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 	 */
 	list_del_init(&req->list);
 	spin_unlock(&ctx->lock);
-	if (!bubble_state) {
+	if (!bubble_state)
 		result = CAM_SYNC_STATE_SIGNALED_SUCCESS;
-	} else {
-		CAM_DBG(CAM_REQ,
-			"[%s][ctx_id %d] : req[%llu] is done with error",
-			ctx->dev_name, ctx->ctx_id, req->request_id);
-
-		for (j = 0; j < req->num_out_map_entries; j++)
-			CAM_DBG(CAM_REQ, "fence %d signaled with error",
-				req->out_map_entries[j].sync_id);
-
+	else
 		result = CAM_SYNC_STATE_SIGNALED_ERROR;
-	}
 
 	for (j = 0; j < req->num_out_map_entries; j++) {
 		cam_sync_signal(req->out_map_entries[j].sync_id, result);
@@ -198,7 +189,8 @@ static void cam_context_sync_callback(int32_t sync_obj, int status, void *data)
 		return;
 	}
 
-	if (atomic_inc_return(&req->num_in_acked) == req->num_in_map_entries) {
+	req->num_in_acked++;
+	if (req->num_in_acked == req->num_in_map_entries) {
 		apply.request_id = req->request_id;
 		/*
 		 * take mutex to ensure that another thread does
@@ -275,7 +267,7 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	uint64_t packet_addr;
 	struct cam_packet *packet;
 	size_t len = 0;
-	int32_t i = 0, j = 0;
+	int32_t i = 0;
 
 	if (!ctx || !cmd) {
 		CAM_ERR(CAM_CTXT, "Invalid input params %pK %pK", ctx, cmd);
@@ -350,19 +342,9 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	req->num_hw_update_entries = cfg.num_hw_update_entries;
 	req->num_out_map_entries = cfg.num_out_map_entries;
 	req->num_in_map_entries = cfg.num_in_map_entries;
-	atomic_set(&req->num_in_acked, 0);
 	req->request_id = packet->header.request_id;
 	req->status = 1;
 	req->req_priv = cfg.priv;
-
-	for (i = 0; i < req->num_out_map_entries; i++) {
-		rc = cam_sync_get_obj_ref(req->out_map_entries[i].sync_id);
-		if (rc) {
-			CAM_ERR(CAM_CTXT, "Can't get ref for sync %d",
-				req->out_map_entries[i].sync_id);
-			goto put_ref;
-		}
-	}
 
 	if (req->num_in_map_entries > 0) {
 		spin_lock(&ctx->lock);
@@ -374,17 +356,17 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 				"[%s][%d] : Moving req[%llu] from free_list to pending_list",
 				ctx->dev_name, ctx->ctx_id, req->request_id);
 
-		for (j = 0; j < req->num_in_map_entries; j++) {
+		for (i = 0; i < req->num_in_map_entries; i++) {
 			cam_context_getref(ctx);
 			rc = cam_sync_register_callback(
 					cam_context_sync_callback,
 					(void *)req,
-					req->in_map_entries[j].sync_id);
+					req->in_map_entries[i].sync_id);
 			if (rc) {
 				CAM_ERR(CAM_CTXT,
 					"[%s][%d] Failed register fence cb: %d ret = %d",
 					ctx->dev_name, ctx->ctx_id,
-					req->in_map_entries[j].sync_id, rc);
+					req->in_map_entries[i].sync_id, rc);
 				spin_lock(&ctx->lock);
 				list_del_init(&req->list);
 				spin_unlock(&ctx->lock);
@@ -397,23 +379,16 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 
 				cam_context_putref(ctx);
 
-				goto put_ref;
+				goto free_req;
 			}
 			CAM_DBG(CAM_CTXT, "register in fence cb: %d ret = %d",
-				req->in_map_entries[j].sync_id, rc);
+				req->in_map_entries[i].sync_id, rc);
 		}
 		goto end;
 	}
 
 	return rc;
 
-put_ref:
-	for (--i; i >= 0; i--) {
-		rc = cam_sync_put_obj_ref(req->out_map_entries[i].sync_id);
-		if (rc)
-			CAM_ERR(CAM_CTXT, "Failed to put ref of fence %d",
-				req->out_map_entries[i].sync_id);
-	}
 free_req:
 	spin_lock(&ctx->lock);
 	list_add_tail(&req->list, &ctx->free_req_list);
@@ -506,7 +481,6 @@ free_hw:
 	release.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
 	ctx->hw_mgr_intf->hw_release(ctx->hw_mgr_intf->hw_mgr_priv, &release);
 	ctx->ctxt_to_hw_map = NULL;
-	ctx->dev_hdl = -1;
 end:
 	return rc;
 }
@@ -518,10 +492,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 	struct cam_ctx_request *req;
 	uint32_t i;
 	int rc = 0;
-	bool free_req;
 
 	CAM_DBG(CAM_CTXT, "[%s] E: NRT flush ctx", ctx->dev_name);
-	memset(&flush_args, 0, sizeof(flush_args));
 
 	/*
 	 * flush pending requests, take the sync lock to synchronize with the
@@ -556,21 +528,6 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 
 		flush_args.flush_req_pending[flush_args.num_req_pending++] =
 			req->req_priv;
-
-		free_req = false;
-		for (i = 0; i < req->num_in_map_entries; i++) {
-			rc = cam_sync_deregister_callback(
-				cam_context_sync_callback,
-				(void *)req,
-				req->in_map_entries[i].sync_id);
-			if (!rc) {
-				cam_context_putref(ctx);
-				if (atomic_inc_return(&req->num_in_acked) ==
-					req->num_in_map_entries)
-					free_req = true;
-			}
-		}
-
 		for (i = 0; i < req->num_out_map_entries; i++) {
 			if (req->out_map_entries[i].sync_id != -1) {
 				rc = cam_sync_signal(
@@ -578,23 +535,13 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 					CAM_SYNC_STATE_SIGNALED_ERROR);
 				if (rc == -EALREADY) {
 					CAM_ERR(CAM_CTXT,
-					"Req: %llu already signalled, sync_id:%d",
-					req->request_id,
-					req->out_map_entries[i].sync_id);
+						"Req: %llu already signalled, sync_id:%d",
+						req->request_id,
+						req->out_map_entries[i].
+						sync_id);
 					break;
 				}
 			}
-		}
-
-		/*
-		 * If we have deregistered the last sync callback, req will
-		 * not be put on the free list. So put it on the free list here
-		 */
-		if (free_req) {
-			req->ctx = NULL;
-			spin_lock(&ctx->lock);
-			list_add_tail(&req->list, &ctx->free_req_list);
-			spin_unlock(&ctx->lock);
 		}
 
 		if (cam_debug_ctx_req_list & ctx->dev_id)
@@ -682,13 +629,10 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 	struct cam_ctx_request *req = NULL;
 	struct cam_hw_flush_args flush_args;
 	uint32_t i;
-	int32_t sync_id = 0;
 	int rc = 0;
-	bool free_req = false;
 
 	CAM_DBG(CAM_CTXT, "[%s] E: NRT flush req", ctx->dev_name);
 
-	memset(&flush_args, 0, sizeof(flush_args));
 	flush_args.num_req_pending = 0;
 	flush_args.num_req_active = 0;
 	mutex_lock(&ctx->sync_mutex);
@@ -738,51 +682,32 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 	}
 
 	if (req) {
-		if (flush_args.num_req_pending) {
-			for (i = 0; i < req->num_in_map_entries; i++) {
-				rc = cam_sync_deregister_callback(
-					cam_context_sync_callback,
-					(void *)req,
-					req->in_map_entries[i].sync_id);
-				if (rc)
-					continue;
-
-				cam_context_putref(ctx);
-				if (atomic_inc_return(&req->num_in_acked) ==
-					req->num_in_map_entries)
-					free_req = true;
-			}
-		}
-
 		if (flush_args.num_req_pending || flush_args.num_req_active) {
-			for (i = 0; i < req->num_out_map_entries; i++) {
-				sync_id =
-					req->out_map_entries[i].sync_id;
-				if (sync_id != -1) {
-					rc = cam_sync_signal(sync_id,
+			for (i = 0; i < req->num_out_map_entries; i++)
+				if (req->out_map_entries[i].sync_id != -1) {
+					rc = cam_sync_signal(
+						req->out_map_entries[i].sync_id,
 						CAM_SYNC_STATE_SIGNALED_ERROR);
 					if (rc == -EALREADY) {
 						CAM_ERR(CAM_CTXT,
-						"Req: %llu already signalled, sync_id:%d",
-						req->request_id, sync_id);
+							"Req: %llu already signalled, sync_id:%d",
+							req->request_id,
+							req->out_map_entries[i].
+							sync_id);
 						break;
 					}
 				}
-			}
-			if (flush_args.num_req_active || free_req) {
-				req->ctx = NULL;
+			if (flush_args.num_req_active) {
 				spin_lock(&ctx->lock);
 				list_add_tail(&req->list, &ctx->free_req_list);
 				spin_unlock(&ctx->lock);
+				req->ctx = NULL;
 
 				if (cam_debug_ctx_req_list & ctx->dev_id)
 					CAM_INFO(CAM_CTXT,
-						"[%s][%d] : Moving req[%llu] from %s to free_list",
+						"[%s][%d] : Moving req[%llu] from active_list to free_list",
 						ctx->dev_name, ctx->ctx_id,
-						req->request_id,
-						flush_args.num_req_active ?
-							"active_list" :
-							"pending_list");
+						req->request_id);
 			}
 		}
 	}

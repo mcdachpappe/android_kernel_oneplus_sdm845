@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -32,7 +32,8 @@ static int32_t cam_flash_driver_cmd(struct cam_flash_ctrl *fctrl,
 	if (cmd->handle_type != CAM_HANDLE_USER_POINTER) {
 		CAM_ERR(CAM_FLASH, "Invalid handle type: %d",
 			cmd->handle_type);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto release_mutex;
 	}
 
 	mutex_lock(&(fctrl->flash_mutex));
@@ -149,15 +150,17 @@ static int32_t cam_flash_driver_cmd(struct cam_flash_ctrl *fctrl,
 			goto release_mutex;
 		}
 
-		if (fctrl->is_regulator_enabled == false) {
-			rc = cam_flash_prepare(fctrl, true);
-			if (rc) {
-				CAM_ERR(CAM_FLASH,
-					"Enable Regulator Failed rc = %d", rc);
-				goto release_mutex;
-			}
+		rc = cam_flash_prepare(fctrl, true);
+		if (rc) {
+			CAM_ERR(CAM_FLASH,
+				"Enable Regulator Failed rc = %d", rc);
+			goto release_mutex;
 		}
-
+		rc = cam_flash_apply_setting(fctrl, 0);
+		if (rc) {
+			CAM_ERR(CAM_FLASH, "cannot apply settings rc = %d", rc);
+			goto release_mutex;
+		}
 		fctrl->flash_state = CAM_FLASH_STATE_START;
 		break;
 	}
@@ -392,7 +395,6 @@ static struct platform_driver cam_flash_platform_driver = {
 		.name = "CAM-FLASH-DRIVER",
 		.owner = THIS_MODULE,
 		.of_match_table = cam_flash_dt_match,
-		.suppress_bind_attrs = true,
 	},
 };
 
