@@ -29,11 +29,11 @@
 #include <sound/jack.h>
 #include <sound/pcm_params.h>
 #include <sound/info.h>
-#include <device_event.h>
 #include <dsp/audio_notifier.h>
 #include <dsp/q6afe-v2.h>
 #include <dsp/q6core.h>
 #include <linux/of_gpio.h>
+#include "device_event.h"
 #include "msm-pcm-routing-v2.h"
 #include "codecs/msm-cdc-pinctrl.h"
 #include "codecs/wcd934x/wcd934x.h"
