@@ -23,6 +23,7 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/types.h>
+#include <linux/pstore.h>
 
 /*
  * Choose whether access to the RAM zone requires locking or not.  If a zone
@@ -60,6 +61,30 @@ struct persistent_ram_zone {
 
 	char *old_log;
 	size_t old_log_size;
+};
+
+struct ramoops_context {
+	struct persistent_ram_zone **przs;
+	struct persistent_ram_zone *cprz;
+	struct persistent_ram_zone *fprz;
+	struct persistent_ram_zone *mprz;
+	phys_addr_t phys_addr;
+	unsigned long size;
+	unsigned int memtype;
+	size_t record_size;
+	size_t console_size;
+	size_t ftrace_size;
+	size_t pmsg_size;
+	int dump_oops;
+	struct persistent_ram_ecc_info ecc_info;
+	unsigned int max_dump_cnt;
+	unsigned int dump_write_cnt;
+	/* _read_cnt need clear on ramoops_pstore_open */
+	unsigned int dump_read_cnt;
+	unsigned int console_read_cnt;
+	unsigned int ftrace_read_cnt;
+	unsigned int pmsg_read_cnt;
+	struct pstore_info pstore;
 };
 
 struct persistent_ram_zone *persistent_ram_new(phys_addr_t start, size_t size,
