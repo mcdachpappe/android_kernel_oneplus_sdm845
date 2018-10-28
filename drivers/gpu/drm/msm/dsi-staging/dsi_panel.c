@@ -1908,15 +1908,11 @@ error:
 static int dsi_panel_parse_misc_features(struct dsi_panel *panel,
 				     struct device_node *of_node)
 {
-	panel->ulps_enabled =
-		of_property_read_bool(of_node, "qcom,ulps-enabled");
-
+	panel->ulps_enabled = true;
 	pr_info("%s: ulps feature %s\n", __func__,
 		(panel->ulps_enabled ? "enabled" : "disabled"));
 
-	panel->ulps_suspend_enabled =
-		of_property_read_bool(of_node, "qcom,suspend-ulps-enabled");
-
+	panel->ulps_suspend_enabled = true;
 	pr_info("%s: ulps during suspend feature %s", __func__,
 		(panel->ulps_suspend_enabled ? "enabled" : "disabled"));
 
@@ -1926,8 +1922,8 @@ static int dsi_panel_parse_misc_features(struct dsi_panel *panel,
 	panel->sync_broadcast_en = of_property_read_bool(of_node,
 			"qcom,cmd-sync-wait-broadcast");
 
-	panel->lp11_init = of_property_read_bool(of_node,
-			"qcom,mdss-dsi-lp11-init");
+	panel->lp11_init = false;
+
 	return 0;
 }
 
@@ -2649,54 +2645,35 @@ read_fail:
 static int dsi_panel_parse_roi_alignment(struct device_node *of_node,
 					 struct msm_roi_alignment *align)
 {
-	int len = 0, rc = 0;
-	u32 value[6];
-	struct property *data;
+	u32 value[6] = { 1080, 8, 1080, 8, 1080, 8 };
 
 	if (!align || !of_node)
 		return -EINVAL;
 
 	memset(align, 0, sizeof(*align));
 
-	data = of_find_property(of_node, "qcom,panel-roi-alignment", &len);
-	len /= sizeof(u32);
-	if (!data) {
-		pr_err("panel roi alignment not found\n");
-		rc = -EINVAL;
-	} else if (len != 6) {
-		pr_err("incorrect roi alignment len %d\n", len);
-		rc = -EINVAL;
-	} else {
-		rc = of_property_read_u32_array(of_node,
-				"qcom,panel-roi-alignment", value, len);
-		if (rc)
-			pr_debug("error reading panel roi alignment values\n");
-		else {
-			align->xstart_pix_align = value[0];
-			align->ystart_pix_align = value[1];
-			align->width_pix_align = value[2];
-			align->height_pix_align = value[3];
-			align->min_width = value[4];
-			align->min_height = value[5];
-		}
+	align->xstart_pix_align = value[0];
+	align->ystart_pix_align = value[1];
+	align->width_pix_align = value[2];
+	align->height_pix_align = value[3];
+	align->min_width = value[4];
+	align->min_height = value[5];
 
-		pr_info("roi alignment: [%d, %d, %d, %d, %d, %d]\n",
-			align->xstart_pix_align,
-			align->width_pix_align,
-			align->ystart_pix_align,
-			align->height_pix_align,
-			align->min_width,
-			align->min_height);
-	}
+	pr_info("roi alignment: [%d, %d, %d, %d, %d, %d]\n",
+		align->xstart_pix_align,
+		align->width_pix_align,
+		align->ystart_pix_align,
+		align->height_pix_align,
+		align->min_width,
+		align->min_height);
 
-	return rc;
+	return 0;
 }
 
 static int dsi_panel_parse_partial_update_caps(struct dsi_display_mode *mode,
 				struct device_node *of_node)
 {
 	struct msm_roi_caps *roi_caps = NULL;
-	const char *data;
 	int rc = 0;
 
 	if (!mode || !mode->priv_info) {
@@ -2708,23 +2685,7 @@ static int dsi_panel_parse_partial_update_caps(struct dsi_display_mode *mode,
 
 	memset(roi_caps, 0, sizeof(*roi_caps));
 
-	data = of_get_property(of_node, "qcom,partial-update-enabled", NULL);
-	if (data) {
-		if (!strcmp(data, "dual_roi"))
-			roi_caps->num_roi = 2;
-		else if (!strcmp(data, "single_roi"))
-			roi_caps->num_roi = 1;
-		else {
-			pr_info(
-			"invalid value for qcom,partial-update-enabled: %s\n",
-			data);
-			return 0;
-		}
-	} else {
-		pr_info("partial update disabled as the property is not set\n");
-		return 0;
-	}
-
+	roi_caps->num_roi = 1;
 	roi_caps->merge_rois = of_property_read_bool(of_node,
 			"qcom,partial-update-roi-merge");
 
