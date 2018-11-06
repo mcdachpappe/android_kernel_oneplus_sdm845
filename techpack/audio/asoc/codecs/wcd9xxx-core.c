@@ -23,7 +23,6 @@
 #include <linux/regmap.h>
 #include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include <sound/soc.h>
-#include <linux/of_gpio.h>
 #include "core.h"
 #include "pdata.h"
 #include "msm-cdc-pinctrl.h"
