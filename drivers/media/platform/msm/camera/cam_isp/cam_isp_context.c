@@ -1048,7 +1048,7 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 	CAM_DBG(CAM_ISP, "Apply request %lld", req->request_id);
 	req_isp = (struct cam_isp_ctx_req *) req->req_priv;
 
-	if (ctx_isp->active_req_cnt >=  2) {
+	if (ctx_isp->active_req_cnt >=  4) {
 		CAM_ERR_RATE_LIMIT(CAM_ISP,
 			"Reject apply request (id %lld) due to congestion(cnt = %d)",
 			req->request_id,
