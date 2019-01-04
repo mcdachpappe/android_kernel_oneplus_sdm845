@@ -1842,11 +1842,6 @@ static inline void int_touch(void)
 
 	last_status = current_status & 0x02;
 
-	if (ts->project_version == 0x03) {
-		if (ts->en_up_down && ts->in_gesture_mode == 0)
-			fp_detect(ts);
-	}
-
 	if (finger_num == 0 /* && last_status && (check_key <= 1) */ ) {
 		if (ts->project_version == 0x03) {
 			if ((ts->unlock_succes == 1) && (need_reset == 1)
@@ -1875,13 +1870,6 @@ static inline void int_touch(void)
 		if (!ts->en_up_down)
 			tp_baseline_get(ts, false);
 	}
-#ifdef SUPPORT_GESTURE
-	if (ts->in_gesture_mode == 1 && ts->is_suspended == 1) {
-		mutex_lock(&ts->mutex);
-		gesture_judge(ts);
-		mutex_unlock(&ts->mutex);
-	}
-#endif
 }
 
 static char log_count = 0;
@@ -2027,7 +2015,22 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 	}
 
 	if (inte & 0x04) {
-		int_touch();
+		if (ts->project_version == 0x03) {
+			if (ts->en_up_down && ts->in_gesture_mode == 0)
+				fp_detect(ts);
+		}
+
+		if (ts->is_suspended == 1) {
+#ifdef SUPPORT_GESTURE
+			if (ts->in_gesture_mode == 1) {
+				mutex_lock(&ts->mutex);
+				gesture_judge(ts);
+				mutex_unlock(&ts->mutex);
+			}
+#endif
+		} else {
+			int_touch();
+		}
 	}
 	if (inte & 0x10) {
 		int_key_report_s3508(ts);
@@ -6526,7 +6529,7 @@ static int synaptics_ts_suspend(struct device *dev)
 			mutex_unlock(&ts->mutex);
 			TPD_ERR("enter gesture mode\n");
 		}
-		set_doze_time(2);
+		// set_doze_time(2);
 		if (ts->project_version == 0x03) {
 			mutex_lock(&ts->mutex);
 			tp_single_tap_en(ts, true);
