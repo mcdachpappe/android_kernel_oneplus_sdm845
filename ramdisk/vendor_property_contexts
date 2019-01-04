@@ -262,10 +262,13 @@ vendor.rf.version                        u:object_r:boottime_prop:s0
 vendor.service.wifi.socket.enable        u:object_r:boottime_prop:s0
 vendor.telephony.default_network         u:object_r:boottime_prop:s0
 vendor.usb.config                        u:object_r:boottime_prop:s0
-vendor.vidc.enc.log.in                   u:object_r:boottime_prop:s0
-vendor.vidc.enc.log.out                  u:object_r:boottime_prop:s0
-vendor.vidc.dec.log.in                   u:object_r:boottime_prop:s0
-vendor.vidc.dec.log.out                  u:object_r:boottime_prop:s0
+
+#remove by fred.li for disable VT dump log in MP
+#vendor.vidc.enc.log.in                   u:object_r:boottime_prop:s0
+#vendor.vidc.enc.log.out                  u:object_r:boottime_prop:s0
+#vendor.vidc.dec.log.in                   u:object_r:boottime_prop:s0
+#vendor.vidc.dec.log.out                  u:object_r:boottime_prop:s0
+
 vendor.wlan.ftm.up                       u:object_r:boottime_prop:s0
 vendor.wlan.ftm.daemon                   u:object_r:boottime_prop:s0
 vendor.wlan.write.con_mode               u:object_r:boottime_prop:s0
@@ -317,11 +320,18 @@ persist.vendor.radio.serialno            u:object_r:boottime_prop:s0
 # add for oemlog enable input log
 persist.vendor.launch.auto_test          u:object_r:boottime_prop:s0
 
+# add for VT dump log
+persist.vendor.VT_dump.clean             u:object_r:boottime_prop:s0
+
 # add for qxdm log
 persist.vendor.qxdm.copymask             u:object_r:boottime_prop:s0
 persist.vendor.qxdm.copylog              u:object_r:boottime_prop:s0
 persist.vendor.diag.max.size             u:object_r:boottime_prop:s0
 persist.vendor.diag.max.num              u:object_r:boottime_prop:s0
+persist.vendor.oem.fp.version            u:object_r:boottime_prop:s0
+
+# xieshsh  add for color matrix
+persist.vendor.color.matrix             u:object_r:boottime_prop:s0
 #line 1 "vendor/oneplus/config/sepolicy/enchilada/property_contexts"
 persist.allcommode                u:object_r:boottime_prop:s0
 persist.camera.ois.disable        u:object_r:boottime_prop:s0
