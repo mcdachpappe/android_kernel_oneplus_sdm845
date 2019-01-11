@@ -11,12 +11,24 @@ RAMFS_TMP="/tmp/arter97-op6-ramdisk"
 echo "ramfs_tmp = $RAMFS_TMP"
 cd $KERNELDIR
 
-if [ "${1}" = "skip" ] ; then
+stock=0
+if [[ "${1}" == "stock" ]] ; then
+	stock=1
+	shift
+fi
+
+if [[ "${1}" == "skip" ]] ; then
 	echo "Skipping Compilation"
 else
+	if [[ "$stock" == "1" ]] ; then
+		sed -i -e 's@"want_initramfs"@"skip_initramfs"@g' init/initramfs.c
+	fi
 	echo "Compiling kernel"
 	cp defconfig .config
 	make "$@" || exit 1
+	if [[ "$stock" == "1" ]] ; then
+		sed -i -e 's@"skip_initramfs"@"want_initramfs"@g' init/initramfs.c
+	fi
 fi
 
 echo "Building new ramdisk"
@@ -31,6 +43,12 @@ cd $RAMFS_TMP
 #clear git repositories in ramfs
 find . -name .git -exec rm -rf {} \;
 find . -name EMPTY_DIRECTORY -exec rm -rf {} \;
+
+if [[ "$stock" == "1" ]] ; then
+	# Don't use Magisk
+	mv .backup/init init
+	rm -rf .backup
+fi
 
 $KERNELDIR/ramdisk_fix_permissions.sh 2>/dev/null
 

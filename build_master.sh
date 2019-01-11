@@ -1,7 +1,8 @@
 #!/bin/bash
-if [ ! "${1}" = "skip" ] ; then
+
+if [[ "${1}" != "skip" ]] ; then
 	./build_clean.sh
-	./build_kernel.sh "$@" || exit 1
+	./build_kernel.sh stock "$@" || exit 1
 fi
 
 if [ -e boot.img ] ; then
