@@ -4500,7 +4500,6 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 		        dsi_panel_set_night_mode(panel, panel->night_mode);
 		    if (panel->adaption_mode)
 		        dsi_panel_set_adaption_mode(panel, panel->adaption_mode);
-			   rc= dsi_panel_update_backlight(panel,panel->bl_config.bl_level);
                                 }
               printk(KERN_ERR"send AOD OFF commd end \n");
                 
