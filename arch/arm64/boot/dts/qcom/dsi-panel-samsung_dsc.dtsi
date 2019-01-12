@@ -441,9 +441,6 @@
 					39 01 00 00 00 00 03 FC A5 A5];
 				qcom,mdss-dsi-panel-read-register-open-command-state  = "dsi_hs_mode";
 				qcom,mdss-dsi-panel-read-register-close-command-state = "dsi_hs_mode";
-
-				qcom,partial-update-enabled = "single_roi";
-				qcom,panel-roi-alignment = <1080 8 1080 8 1080 8>;
 			
 				};
 		};

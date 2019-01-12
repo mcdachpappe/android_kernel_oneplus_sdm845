@@ -526,8 +526,6 @@
 				qcom,mdss-dsi-panel-hbm-diming-off-command = [39 01 00 00 00 00 02 B7 12];
 				qcom,mdss-dsi-panel-hbm-diming-off-command-state = "dsi_lp_mode";
 
-				qcom,partial-update-enabled = "single_roi";
-				qcom,panel-roi-alignment = <1080 8 1080 8 1080 8>;
 
 				};
 		};
