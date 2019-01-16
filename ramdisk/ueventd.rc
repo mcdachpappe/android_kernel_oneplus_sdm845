@@ -54,10 +54,6 @@ subsystem sound
 /dev/hwbinder             0666   root       root
 /dev/vndbinder            0666   root       root
 
-# liochen@BSP, 2016/12/13, Add fastboot oem lock/unlock command
-/dev/block/sda12          0600   system     system
-/dev/block/sda4           0660   root       system
-
 /dev/pmsg0                0222   root       log
 
 # the msm hw3d client device node is world writable/readable.
@@ -81,7 +77,6 @@ subsystem sound
 /dev/graphics/*           0660   root       graphics
 /dev/msm_hw3dm            0660   system     graphics
 /dev/input/*              0660   root       input
-/dev/v4l-touch*           0660   root       input
 /dev/eac                  0660   root       audio
 /dev/cam                  0660   root       camera
 /dev/pmem                 0660   system     graphics
