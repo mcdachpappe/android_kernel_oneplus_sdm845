@@ -27,6 +27,9 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+# Setup readahead
+find /sys/devices -name read_ahead_kb | while read node; do echo 128 > $node; done
+
 # Set the default IRQ affinity to the silver cluster. When a
 # CPU is isolated/hotplugged, the IRQ affinity is adjusted
 # to one of the CPU from the default IRQ affinity mask.
