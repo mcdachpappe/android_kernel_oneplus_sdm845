@@ -96,6 +96,7 @@ service keymaster-3-0 /sbin/android.hardware.keymaster@3.0-service-qti
     seclabel u:r:recovery:s0
 
 on boot
+    start qcom_postboot
     setprop sys.usb.config adb
     write /proc/touchpanel/gesture_enable 1
     write /sys/devices/platform/soc/c440000.qcom,spmi/spmi-0/spmi0-02/c440000.qcom,spmi:qcom,pmi8998@2:qcom,qpnp-smb2/power_supply/usb/otg_switch 1
@@ -119,3 +120,10 @@ on property:sys.listeners.registered=true
     start keymaster-3-0
     start gatekeeper-1-0
     start servicemanager
+
+service qcom_postboot /sbin/sh /init.qcom.post_boot.sh
+    user root
+    group root
+    oneshot
+    disabled
+    seclabel u:r:shell:s0
