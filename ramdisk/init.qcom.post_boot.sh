@@ -27,6 +27,18 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+if [ ! -f /sbin/recovery ]; then
+  # Hook up to existing init.qcom.post_boot.sh
+  while [ ! -f /vendor/bin/init.qcom.post_boot.sh ]; do
+    sleep 1
+  done
+  if ! mount | grep -q /vendor/bin/init.qcom.post_boot.sh; then
+    mount --bind "$0" /vendor/bin/init.qcom.post_boot.sh
+    chcon "u:object_r:qti_init_shell_exec:s0" /vendor/bin/init.qcom.post_boot.sh
+    exit
+  fi
+fi
+
 # Setup readahead
 find /sys/devices -name read_ahead_kb | while read node; do echo 128 > $node; done
 
