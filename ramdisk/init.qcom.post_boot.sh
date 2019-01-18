@@ -27,6 +27,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+exec > /dev/kmsg 2>&1
+
 if [ ! -f /sbin/recovery ]; then
   # Hook up to existing init.qcom.post_boot.sh
   while [ ! -f /vendor/bin/init.qcom.post_boot.sh ]; do
