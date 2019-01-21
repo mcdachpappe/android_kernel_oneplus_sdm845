@@ -293,22 +293,7 @@ static void msm_restart_prepare(const char *cmd)
 			(in_panic || restart_mode == RESTART_DLOAD));
 #endif
 
-	if (qpnp_pon_check_hard_reset_stored()) {
-		/* Set warm reset as true when device is in dload mode */
-		if (get_dload_mode() ||
-			((cmd != NULL && cmd[0] != '\0') &&
-			!strcmp(cmd, "edl")))
-			need_warm_reset = true;
-	} else {
-		need_warm_reset = (get_dload_mode() ||
-				(cmd != NULL && cmd[0] != '\0'));
-	}
-
-	/* Hard reset the PMIC unless memory contents must be maintained. */
-	if (need_warm_reset)
-		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
-	else
-		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
+	qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
 
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "rf", 2)) {
