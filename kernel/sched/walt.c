@@ -437,7 +437,6 @@ void clear_walt_request(int cpu)
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
 
-	clear_boost_kick(cpu);
 	clear_reserved(cpu);
 	if (rq->push_task) {
 		struct task_struct *push_task = NULL;
