@@ -13,10 +13,29 @@ rm -rf arter97
 mkdir arter97
 cd arter97
 unzip -o "$ZIP"
+chmod 755 fiximg
 
 ui_print " ";
 ui_print " - mounting data partition"
 mount /data
+
+ui_print " - mounting /system partition"
+mount -o ro /system
+PROP=/system/build.prop
+if [ -e /system/system/build.prop ]; then PROP=/system/system/build.prop; fi
+if [ -e $PROP ]; then
+  VER=$(cat $PROP | tr '=' ' ' | grep ro.build.version.release | while read a b; do echo $b; done)
+  SPL=$(cat $PROP | tr '=' ' ' | grep ro.build.version.security_patch | while read a b; do echo $b; done)
+  ui_print " - modifying boot.img"
+  ui_print "   with Android version $VER"
+  ui_print "   and security patch level $SPL"
+  ./fiximg boot.img $VER $SPL
+else
+  ui_print " "
+  ui_print "   Failed to read build.prop"
+  ui_print "   SafetyNet will fail"
+  ui_print " "
+fi
 
 IMGBLOCK=/dev/block/bootdevice/by-name/boot$(cat /proc/cmdline | tr ' ' '\n' | grep slot_suffix | tr '=' ' ' | awk '{print $2}')
 ui_print " - flashing boot.img to $IMGBLOCK"
@@ -25,6 +44,9 @@ cat boot.img /dev/zero > $IMGBLOCK 2>/dev/null
 ui_print " - tuning file systems"
 fstrim -v /data   > /dev/null 2>&1
 fstrim -v /cache  > /dev/null 2>&1
+
+ui_print " - unmounting /system partition"
+umount /system > /dev/null 2>&1
 
 ui_print " - unmounting /data partition"
 umount /data > /dev/null 2>&1
