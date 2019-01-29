@@ -80,7 +80,6 @@
 		qcom,mdss-dsi-panel-seria-num-hour-index = <14>;
 		qcom,mdss-dsi-panel-seria-num-min-index = <15>;
 		qcom,ulps-enabled;
-		qcom,suspend-ulps-enabled;
 		qcom,panel-allow-phy-poweroff;
 		qcom,mdss-dsi-display-timings {
 			timing@0{
