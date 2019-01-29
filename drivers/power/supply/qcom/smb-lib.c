@@ -6736,10 +6736,9 @@ static void op_check_charger_uovp(struct smb_charger *chg, int vchg_mv)
 	if (!chg->vbus_present)
 		return;
 
-	pr_debug("charger_voltage=%d charger_ovp=%d\n", vchg_mv, chg->chg_ovp);
-
 	if (!chg->chg_ovp) {
 		if (vchg_mv > CHG_SOFT_OVP_MV || vchg_mv <= CHG_SOFT_UVP_MV) {
+			pr_err("charger_voltage=%d charger_ovp=%d\n", vchg_mv, chg->chg_ovp);
 			pr_err("charger is over voltage, count=%d\n",
 				over_volt_count);
 			uovp_satus = true;
@@ -6766,6 +6765,7 @@ static void op_check_charger_uovp(struct smb_charger *chg, int vchg_mv)
 			else
 				not_over_volt_count = 0;
 
+			pr_err("charger_voltage=%d charger_ovp=%d\n", vchg_mv, chg->chg_ovp);
 			pr_err("uovp_satus=%d, pre_uovp_satus=%d,not_over_volt_count=%d\n",
 				uovp_satus, pre_uovp_satus,
 					not_over_volt_count);
