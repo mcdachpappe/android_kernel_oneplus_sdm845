@@ -503,10 +503,10 @@ static struct snd_soc_aux_dev *msm_aux_dev;
 static struct snd_soc_codec_conf *msm_codec_conf;
 static struct msm_asoc_wcd93xx_codec msm_codec_fn;
 
-int usb_sw_gpio = -1;
-int hp_sw_gpio = -1;
-int mbhc_sw_gpio = -1;
-int ldo_sw_gpio = -1;
+static int usb_sw_gpio = -1;
+static int hp_sw_gpio = -1;
+static int mbhc_sw_gpio = -1;
+static int ldo_sw_gpio = -1;
 extern int smartpa_present;
 extern bool fsa4480_enable;
 extern bool audio_adapter_flag;
