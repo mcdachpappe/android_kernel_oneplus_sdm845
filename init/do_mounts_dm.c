@@ -309,6 +309,7 @@ error:
  * You can assume the first device is /dev/dm-0, the next device is /dev/dm-1,
  * and so forth.
  */
+#if 0
 static int __init dm_setup(char *str)
 {
 	struct dm_option opt;
@@ -342,6 +343,7 @@ parse_fail:
 	DMWARN("Invalid arguments supplied to dm=.");
 	return 0;
 }
+#endif
 
 static void __init dm_setup_drives(void)
 {
@@ -458,8 +460,6 @@ dm_create_fail:
 	       dev->minor, dev->name);
 	dm_setup_cleanup(devices);
 }
-
-// __setup("dm=", dm_setup); // root is mounted directly
 
 void __init dm_run_setup(void)
 {
