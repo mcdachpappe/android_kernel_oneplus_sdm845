@@ -376,6 +376,7 @@
 				2054400    876
 				2169600    900
 				2208000    924
+				2304000    940
 				2361600    948
 				2400000   1170
 				2457600   1200
@@ -418,6 +419,7 @@
 				2054400    87
 				2169600    90
 				2208000    92
+				2304000    93
 				2361600    94
 				2400000   117
 				2457600   120
@@ -450,7 +452,7 @@
 
 			vbmeta {
 				compatible = "android,vbmeta";
-				parts = "vbmeta,boot,system,vendor,dtbo";
+				parts = "vbmeta,boot,system,vendor,dtbo,recovery";
 			};
 
 			fstab {
@@ -460,7 +462,7 @@
 					dev = "/dev/block/platform/soc/1d84000.ufshc/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
-					fsmgr_flags = "wait,slotselect,avb";
+					fsmgr_flags = "wait,avb";
 				};
 			};
 		};
