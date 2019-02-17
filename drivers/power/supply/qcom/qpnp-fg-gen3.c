@@ -4111,6 +4111,9 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
 		pval->intval = chip->bp.float_volt_uv;
 		break;
+	case POWER_SUPPLY_PROP_CYCLE_COUNT:
+		pval->intval = 0;
+		break;
 	case POWER_SUPPLY_PROP_CYCLE_COUNTS:
 		pval->strval = fg_get_cycle_count(chip);
 		break;
