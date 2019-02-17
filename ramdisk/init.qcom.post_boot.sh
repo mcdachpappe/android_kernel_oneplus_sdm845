@@ -35,6 +35,15 @@ if [ ! -f /sbin/recovery ]; then
     sleep 1
   done
   if ! mount | grep -q /vendor/bin/init.qcom.post_boot.sh; then
+    # Replace msm_irqbalance.conf
+    echo "PRIO=1,1,1,1,0,0,0,0
+# arch_timer,arch_mem_timer,arm-pmu,kgsl-3d0,1d84000.ufshc,glink_lpass
+IGNORED_IRQ=19,38,21,332,297,188" > /dev/msm_irqbalance.conf
+    chmod 644 /dev/msm_irqbalance.conf
+    mount --bind /dev/msm_irqbalance.conf /vendor/etc/msm_irqbalance.conf
+    chcon "u:object_r:vendor_configs_file:s0" /vendor/etc/msm_irqbalance.conf
+    killall msm_irqbalance
+
     mount --bind "$0" /vendor/bin/init.qcom.post_boot.sh
     chcon "u:object_r:qti_init_shell_exec:s0" /vendor/bin/init.qcom.post_boot.sh
     exit
