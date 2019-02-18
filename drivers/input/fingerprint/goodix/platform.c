@@ -88,13 +88,6 @@ int gf_parse_dts(struct gf_dev* gf_dev)
 		goto err_irq;
 	}
 	gpio_direction_input(gf_dev->irq_gpio);
-	rc = devm_gpio_request(dev, gf_dev->enable_gpio, "goodix_en");
-	if (rc) {
-		pr_err("failed to request enable gpio, rc = %d\n", rc);
-		goto err_irq;
-	}
-
-
 
 /***********power regulator_get****************/
 	gf_dev->vdd_3v2 = regulator_get(dev, "vdd-3v2");
@@ -133,6 +126,8 @@ int gf_parse_dts(struct gf_dev* gf_dev)
 	rc = regulator_enable(gf_dev->vdd_3v2);
 	if (rc)
 		pr_err("Regulator vdd enable failed rc=%d\n", rc);
+
+	return rc;
 
 err_irq:
 	devm_gpio_free(dev, gf_dev->reset_gpio);
