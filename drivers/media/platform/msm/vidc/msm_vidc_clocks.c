@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -133,7 +133,9 @@ static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 {
 	struct recon_buf *binfo, *nextb;
 	struct vidc_input_cr_data *temp, *next;
-	u32 max_cr = 0, max_cf = 0, max_input_cr = 0;
+	u32 max_cr = MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO;
+	u32 max_cf = MSM_VIDC_MIN_UBWC_COMPLEXITY_FACTOR;
+	u32 max_input_cr = MSM_VIDC_MIN_UBWC_COMPRESSION_RATIO;
 	u32 min_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
 	u32 min_input_cr = MSM_VIDC_MAX_UBWC_COMPRESSION_RATIO;
 	u32 min_cf = MSM_VIDC_MAX_UBWC_COMPLEXITY_FACTOR;
@@ -203,13 +205,17 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	hdev = core->device;
 
 	mutex_lock(&core->lock);
-	vote_data = core->vote_data;
+	list_for_each_entry(inst, &core->instances, list)
+		++vote_data_count;
+
+	vote_data = kcalloc(vote_data_count, sizeof(*vote_data),
+			GFP_TEMPORARY);
+	vote_data_count = 0;
 	if (!vote_data) {
-		dprintk(VIDC_PROF,
-			"Failed to get vote_data for inst %pK\n",
-				inst);
+		dprintk(VIDC_ERR, "%s: failed to allocate memory\n", __func__);
 		mutex_unlock(&core->lock);
-		return -EINVAL;
+		rc = -ENOMEM;
+		return rc;
 	}
 
 	list_for_each_entry(inst, &core->instances, list) {
@@ -274,6 +280,16 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 
 		vote_data[i].fps = msm_vidc_get_fps(inst);
 
+		if (inst->session_type == MSM_VIDC_ENCODER) {
+			vote_data[i].bitrate = inst->clk_data.bitrate;
+			/* scale bitrate if operating rate is larger than fps */
+			if (vote_data[i].fps > inst->prop.fps
+				&& inst->prop.fps) {
+				vote_data[i].bitrate = vote_data[i].bitrate /
+				inst->prop.fps * vote_data[i].fps;
+			}
+		}
+
 		vote_data[i].power_mode = 0;
 		if (!msm_vidc_clock_scaling || is_turbo ||
 			inst->clk_data.buffer_counter < DCVS_FTB_WINDOW)
@@ -307,6 +323,7 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 		rc = call_hfi_op(hdev, vote_bus, hdev->hfi_device_data,
 			vote_data, vote_data_count);
 
+	kfree(vote_data);
 	return rc;
 }
 

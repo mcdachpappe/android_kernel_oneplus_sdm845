@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2017 Qualcomm Atheros, Inc.
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -49,6 +49,8 @@ extern bool disable_ap_sme;
 
 #define WIL_DEFAULT_BUS_REQUEST_KBPS 128000 /* ~1Gbps */
 #define WIL_MAX_BUS_REQUEST_KBPS 800000 /* ~6.1Gbps */
+
+#define WIL_BRD_SUFFIX_LEN 4 /* max 3 letters + terminating null */
 
 /**
  * extract bits [@b0:@b1] (inclusive) from the value @x
@@ -160,6 +162,7 @@ struct RGF_ICR {
 
 /* registers - FW addresses */
 #define RGF_USER_USAGE_1		(0x880004)
+#define RGF_USER_USAGE_2		(0x880008)
 #define RGF_USER_USAGE_6		(0x880018)
 	#define BIT_USER_OOB_MODE		BIT(31)
 	#define BIT_USER_OOB_R2_MODE		BIT(30)
@@ -683,7 +686,7 @@ struct wil6210_priv {
 	const char *hw_name;
 	const char *wil_fw_name;
 	char *board_file;
-	char board_file_country[3]; /* alpha2 */
+	char board_file_reg_suffix[WIL_BRD_SUFFIX_LEN]; /* empty or CN or FCC */
 	u32 brd_file_addr;
 	u32 brd_file_max_size;
 	DECLARE_BITMAP(hw_capa, hw_capa_last);

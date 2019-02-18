@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -114,6 +114,10 @@
 #define PFM_CURRENT_SHIFT		2
 
 #define LCDB_PWRUP_PWRDN_CTL_REG	0x66
+#define PWRUP_DELAY_MASK		GENAMSK(3, 2)
+#define PWRDN_DELAY_MASK		GENMASK(1, 0)
+#define PWRDN_DELAY_MIN_MS		0
+#define PWRDN_DELAY_MAX_MS		8
 
 /* LDO */
 #define LCDB_LDO_OUTPUT_VOLTAGE_REG	0x71
@@ -125,6 +129,10 @@
 #define LCDB_LDO_PD_CTL_REG		0x77
 #define LDO_DIS_PULLDOWN_BIT		BIT(1)
 #define LDO_PD_STRENGTH_BIT		BIT(0)
+
+#define LCDB_LDO_FORCE_PD_CTL_REG	0x79
+#define LDO_FORCE_PD_EN_BIT		BIT(0)
+#define LDO_FORCE_PD_MODE		BIT(7)
 
 #define LCDB_LDO_ILIM_CTL1_REG		0x7B
 #define EN_LDO_ILIM_BIT			BIT(7)
@@ -218,10 +226,12 @@ struct qpnp_lcdb {
 	struct device			*dev;
 	struct platform_device		*pdev;
 	struct regmap			*regmap;
+	struct class			lcdb_class;
 	struct pmic_revid_data		*pmic_rev_id;
 	u32				base;
 	u32				wa_flags;
 	int				sc_irq;
+	int				pwrdn_delay_ms;
 
 	/* TTW params */
 	bool				ttw_enable;
@@ -231,6 +241,7 @@ struct qpnp_lcdb {
 	bool				lcdb_enabled;
 	bool				settings_saved;
 	bool				lcdb_sc_disable;
+	bool				secure_mode;
 	bool				voltage_step_ramp;
 	int				sc_count;
 	ktime_t				sc_module_enable_time;
@@ -295,6 +306,7 @@ enum lcdb_settings_index {
 
 enum lcdb_wa_flags {
 	NCP_SCP_DISABLE_WA = BIT(0),
+	FORCE_PD_ENABLE_WA = BIT(1),
 };
 
 static u32 soft_start_us[] = {
@@ -316,6 +328,13 @@ static u32 ncp_ilim_ma[] = {
 	460,
 	640,
 	810,
+};
+
+static const u32 pwrup_pwrdn_ms[] = {
+	0,
+	1,
+	4,
+	8,
 };
 
 #define SETTING(_id, _sec_access, _valid)	\
@@ -920,6 +939,18 @@ static int qpnp_lcdb_disable(struct qpnp_lcdb *lcdb)
 		return 0;
 	}
 
+	if (lcdb->wa_flags & FORCE_PD_ENABLE_WA) {
+		/*
+		 * force pull-down to enable quick discharge after
+		 * turning off
+		 */
+		val = LDO_FORCE_PD_EN_BIT | LDO_FORCE_PD_MODE;
+		rc = qpnp_lcdb_write(lcdb, lcdb->base +
+				     LCDB_LDO_FORCE_PD_CTL_REG, &val, 1);
+		if (rc < 0)
+			return rc;
+	}
+
 	val = 0;
 	rc = qpnp_lcdb_write(lcdb, lcdb->base + LCDB_ENABLE_CTL1_REG,
 							&val, 1);
@@ -927,6 +958,17 @@ static int qpnp_lcdb_disable(struct qpnp_lcdb *lcdb)
 		pr_err("Failed to disable lcdb rc= %d\n", rc);
 	else
 		lcdb->lcdb_enabled = false;
+
+	if (lcdb->wa_flags & FORCE_PD_ENABLE_WA) {
+		/* wait for 10 msec after module disable for LDO to discharge */
+		usleep_range(10000, 11000);
+
+		val = 0;
+		rc = qpnp_lcdb_write(lcdb, lcdb->base +
+				     LCDB_LDO_FORCE_PD_CTL_REG, &val, 1);
+		if (rc < 0)
+			return rc;
+	}
 
 	return rc;
 }
@@ -1294,6 +1336,9 @@ static int qpnp_lcdb_ldo_regulator_enable(struct regulator_dev *rdev)
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
 
+	if (lcdb->secure_mode)
+		return 0;
+
 	mutex_lock(&lcdb->lcdb_mutex);
 	rc = qpnp_lcdb_enable(lcdb);
 	if (rc < 0)
@@ -1307,6 +1352,9 @@ static int qpnp_lcdb_ldo_regulator_disable(struct regulator_dev *rdev)
 {
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
+
+	if (lcdb->secure_mode)
+		return 0;
 
 	mutex_lock(&lcdb->lcdb_mutex);
 	rc = qpnp_lcdb_disable(lcdb);
@@ -1329,6 +1377,9 @@ static int qpnp_lcdb_ldo_regulator_set_voltage(struct regulator_dev *rdev,
 {
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
+
+	if (lcdb->secure_mode)
+		return 0;
 
 	lcdb->ldo.voltage_mv = min_uV / 1000;
 	if (lcdb->voltage_step_ramp)
@@ -1373,6 +1424,9 @@ static int qpnp_lcdb_ncp_regulator_enable(struct regulator_dev *rdev)
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
 
+	if (lcdb->secure_mode)
+		return 0;
+
 	mutex_lock(&lcdb->lcdb_mutex);
 	rc = qpnp_lcdb_enable(lcdb);
 	if (rc < 0)
@@ -1386,6 +1440,9 @@ static int qpnp_lcdb_ncp_regulator_disable(struct regulator_dev *rdev)
 {
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
+
+	if (lcdb->secure_mode)
+		return 0;
 
 	mutex_lock(&lcdb->lcdb_mutex);
 	rc = qpnp_lcdb_disable(lcdb);
@@ -1408,6 +1465,9 @@ static int qpnp_lcdb_ncp_regulator_set_voltage(struct regulator_dev *rdev,
 {
 	int rc = 0;
 	struct qpnp_lcdb *lcdb  = rdev_get_drvdata(rdev);
+
+	if (lcdb->secure_mode)
+		return 0;
 
 	lcdb->ncp.voltage_mv = min_uV / 1000;
 	if (lcdb->voltage_step_ramp)
@@ -2032,6 +2092,10 @@ static void qpnp_lcdb_pmic_config(struct qpnp_lcdb *lcdb)
 		if (lcdb->pmic_rev_id->rev4 < PM660L_V2P0_REV4)
 			lcdb->wa_flags |= NCP_SCP_DISABLE_WA;
 		break;
+	case PMI632_SUBTYPE:
+	case PM855L_SUBTYPE:
+		lcdb->wa_flags |= FORCE_PD_ENABLE_WA;
+		break;
 	default:
 		break;
 	}
@@ -2045,6 +2109,15 @@ static int qpnp_lcdb_hw_init(struct qpnp_lcdb *lcdb)
 	u8 val = 0;
 
 	qpnp_lcdb_pmic_config(lcdb);
+
+	if (lcdb->pwrdn_delay_ms != -EINVAL) {
+		rc = qpnp_lcdb_masked_write(lcdb, lcdb->base +
+					    LCDB_PWRUP_PWRDN_CTL_REG,
+					    PWRDN_DELAY_MASK,
+					    lcdb->pwrdn_delay_ms);
+		if (rc < 0)
+			return rc;
+	}
 
 	rc = qpnp_lcdb_init_bst(lcdb);
 	if (rc < 0) {
@@ -2066,6 +2139,8 @@ static int qpnp_lcdb_hw_init(struct qpnp_lcdb *lcdb)
 
 	if (lcdb->sc_irq >= 0 && !(lcdb->wa_flags & NCP_SCP_DISABLE_WA)) {
 		lcdb->sc_count = 0;
+		irq_set_status_flags(lcdb->sc_irq,
+					IRQ_DISABLE_UNLAZY);
 		rc = devm_request_threaded_irq(lcdb->dev, lcdb->sc_irq,
 				NULL, qpnp_lcdb_sc_irq_handler, IRQF_ONESHOT,
 				"qpnp_lcdb_sc_irq", lcdb);
@@ -2102,7 +2177,8 @@ static int qpnp_lcdb_hw_init(struct qpnp_lcdb *lcdb)
 
 static int qpnp_lcdb_parse_dt(struct qpnp_lcdb *lcdb)
 {
-	int rc = 0;
+	int rc = 0, i = 0;
+	u32 tmp;
 	const char *label;
 	struct device_node *revid_dev_node, *temp, *node = lcdb->dev->of_node;
 
@@ -2124,6 +2200,7 @@ static int qpnp_lcdb_parse_dt(struct qpnp_lcdb *lcdb)
 	}
 
 	of_node_put(revid_dev_node);
+
 	for_each_available_child_of_node(node, temp) {
 		rc = of_property_read_string(temp, "label", &label);
 		if (rc < 0) {
@@ -2166,8 +2243,63 @@ static int qpnp_lcdb_parse_dt(struct qpnp_lcdb *lcdb)
 	lcdb->voltage_step_ramp =
 			of_property_read_bool(node, "qcom,voltage-step-ramp");
 
-	return rc;
+	lcdb->pwrdn_delay_ms = -EINVAL;
+	rc = of_property_read_u32(node, "qcom,pwrdn-delay-ms", &tmp);
+	if (!rc) {
+		if (!is_between(tmp, PWRDN_DELAY_MIN_MS, PWRDN_DELAY_MAX_MS)) {
+			pr_err("Invalid PWRDN_DLY val %d (min=%d max=%d)\n",
+				tmp, PWRDN_DELAY_MIN_MS, PWRDN_DELAY_MAX_MS);
+			return -EINVAL;
+		}
+
+		for (i = 0; i < ARRAY_SIZE(pwrup_pwrdn_ms); i++) {
+			if (tmp == pwrup_pwrdn_ms[i]) {
+				lcdb->pwrdn_delay_ms = i;
+				break;
+			}
+		}
+	}
+
+	return 0;
 }
+
+static ssize_t qpnp_lcdb_irq_control(struct class *c,
+					struct class_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct qpnp_lcdb *lcdb = container_of(c, struct qpnp_lcdb,
+							lcdb_class);
+	int val, rc;
+
+	rc = kstrtouint(buf, 0, &val);
+
+	if (rc < 0)
+		return rc;
+
+	if (val != 0 && val != 1)
+		return count;
+
+	if (val == 1 && !lcdb->secure_mode) {
+		if (lcdb->sc_irq > 0)
+			disable_irq(lcdb->sc_irq);
+
+		lcdb->secure_mode = true;
+	} else if (val == 0 && lcdb->secure_mode) {
+
+		if (lcdb->sc_irq > 0)
+			enable_irq(lcdb->sc_irq);
+
+		lcdb->secure_mode = false;
+	}
+
+	return count;
+}
+
+static struct  class_attribute lcdb_attributes[] = {
+	[0] =  __ATTR(secure_mode, 0664, NULL,
+				qpnp_lcdb_irq_control),
+	__ATTR_NULL,
+};
 
 static int qpnp_lcdb_regulator_probe(struct platform_device *pdev)
 {
@@ -2205,6 +2337,16 @@ static int qpnp_lcdb_regulator_probe(struct platform_device *pdev)
 	rc = qpnp_lcdb_parse_dt(lcdb);
 	if (rc < 0) {
 		pr_err("Failed to parse dt rc=%d\n", rc);
+		return rc;
+	}
+
+	lcdb->lcdb_class.name = "lcd_bias";
+	lcdb->lcdb_class.owner = THIS_MODULE;
+	lcdb->lcdb_class.class_attrs = lcdb_attributes;
+
+	rc = class_register(&lcdb->lcdb_class);
+	if (rc < 0) {
+		pr_err("Failed to register lcdb  class rc = %d\n", rc);
 		return rc;
 	}
 

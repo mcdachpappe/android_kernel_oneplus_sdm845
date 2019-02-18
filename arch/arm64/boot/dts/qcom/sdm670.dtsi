@@ -357,7 +357,7 @@
 				1708800   139
 			>;
 			idle-cost-data = <
-				12 10 8 6
+				12 10 8 6 4
 			>;
 		};
 		CPU_COST_1: core-cost1 {
@@ -384,12 +384,12 @@
 				2611200   1400
 			>;
 			idle-cost-data = <
-				100 80 60 40
+				100 80 60 40 20
 			>;
 		};
 		CLUSTER_COST_0: cluster-cost0 {
 			busy-cost-data = <
-				 300000    5
+				 300000    6
 				 576000    7
 				 748800    8
 				 998400    9
@@ -400,7 +400,7 @@
 				1708800   19
 			>;
 			idle-cost-data = <
-				4 3 2 1
+				5 4 3 2 1
 			>;
 		};
 		CLUSTER_COST_1: cluster-cost1 {
@@ -427,7 +427,7 @@
 				2611200   140
 			>;
 			idle-cost-data = <
-				4 3 2 1
+				5 4 3 2 1
 			>;
 		};
 	};
@@ -598,8 +598,13 @@
 		};
 
 		cont_splash_memory: cont_splash_region@9c000000 {
-			reg = <0x0 0x9c000000 0x0 0x02400000>;
+			reg = <0x0 0x9c000000 0x0 0x2300000>;
 			label = "cont_splash_region";
+		};
+
+		dfps_data_memory: dfps_data_region@9e300000 {
+			reg = <0x0 0x9e300000 0x0 0x0100000>;
+			label = "dfps_data_region";
 		};
 
 		dump_mem: mem_dump_region {
@@ -661,7 +666,7 @@
 		clocks = <&clock_aop QDSS_CLK>;
 		clock-names = "core_clk";
 
-		qom,coresight-jtagmm-cpu = <&CPU1>;
+		qcom,coresight-jtagmm-cpu = <&CPU1>;
 	};
 
 	jtag_mm2: jtagmm@7240000 {

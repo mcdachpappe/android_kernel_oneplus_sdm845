@@ -808,7 +808,6 @@ static int diag_cmd_set_msg_mask(unsigned char *src_buf, int src_len,
 		mutex_unlock(&driver->md_session_lock);
 		return -EINVAL;
 	}
-
 	msg_mask_tbl_count = (info) ? info->msg_mask_tbl_count :
 			driver->msg_mask_tbl_count;
 	for (i = 0; i < msg_mask_tbl_count; i++, mask++) {
@@ -2136,7 +2135,6 @@ int diag_copy_to_user_msg_mask(char __user *buf, size_t count,
 		mutex_unlock(&mask_info->lock);
 		return -EINVAL;
 	}
-
 	msg_mask_tbl_count = (info) ? info->msg_mask_tbl_count :
 			driver->msg_mask_tbl_count;
 	for (i = 0; i < msg_mask_tbl_count; i++, mask++) {

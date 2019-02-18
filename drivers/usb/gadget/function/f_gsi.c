@@ -1083,9 +1083,11 @@ static void ipa_work_handler(struct work_struct *w)
 			ipa_resume_work_handler(d_port);
 			d_port->sm_state = STATE_CONNECTED;
 		} else if (event == EVT_DISCONNECTED) {
+			usb_gadget_autopm_get(d_port->gadget);
 			ipa_disconnect_work_handler(d_port);
 			d_port->sm_state = STATE_INITIALIZED;
 			log_event_dbg("%s: ST_SUS_EVT_DIS", __func__);
+			usb_gadget_autopm_put_async(d_port->gadget);
 		}
 		break;
 	default:
@@ -1393,7 +1395,7 @@ static long gsi_ctrl_dev_ioctl(struct file *fp, unsigned int cmd,
 						ctrl_device);
 	struct f_gsi *gsi;
 	struct gsi_ctrl_pkt *cpkt;
-	struct ep_info info;
+	struct ep_info info = { {0} };
 	int val, ret = 0;
 	unsigned long flags;
 
@@ -2418,8 +2420,13 @@ static int gsi_set_alt(struct usb_function *f, unsigned int intf,
 		if (alt == 0 && ((gsi->d_port.in_ep &&
 				!gsi->d_port.in_ep->driver_data) ||
 				(gsi->d_port.out_ep &&
-				!gsi->d_port.out_ep->driver_data)))
+				!gsi->d_port.out_ep->driver_data))) {
 			ipa_disconnect_handler(&gsi->d_port);
+			post_event(&gsi->d_port, EVT_DISCONNECTED);
+			queue_work(gsi->d_port.ipa_usb_wq,
+				&gsi->d_port.usb_ipa_w);
+			log_event_dbg("%s: Disconnecting\n", __func__);
+		}
 
 		gsi->data_interface_up = alt;
 		log_event_dbg("DATA_INTERFACE id = %d, status = %d",
@@ -2506,11 +2513,11 @@ static void gsi_suspend(struct usb_function *f)
 		return;
 	}
 
-	/*
-	 * GPS doesn't use any data interface, hence bail out as there is no
-	 * GSI specific handling needed.
+	/* For functions such as MBIM that support alternate data
+	 * interface, suspend/resume handling becomes a no-op if the
+	 * data interface is not selected.
 	 */
-	if (gsi->prot_id == USB_PROT_GPS_CTRL) {
+	if (!gsi->data_interface_up) {
 		log_event_dbg("%s: suspend done\n", __func__);
 		usb_gsi_check_pending_wakeup(f);
 		return;
@@ -2550,7 +2557,7 @@ static void gsi_resume(struct usb_function *f)
 	/* Check any pending cpkt, and queue immediately on resume */
 	gsi_ctrl_send_notification(gsi);
 
-	if (gsi->prot_id == USB_PROT_GPS_CTRL) {
+	if (!gsi->data_interface_up) {
 		log_event_dbg("%s: resume done\n", __func__);
 		return;
 	}

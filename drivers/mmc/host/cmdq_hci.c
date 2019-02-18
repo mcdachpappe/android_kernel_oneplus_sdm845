@@ -684,7 +684,7 @@ static void cmdq_log_task_desc_history(struct cmdq_host *cq_host, u64 task,
 
 	cq_host->thist[cq_host->thist_idx].is_dcmd = is_dcmd;
 	memcpy(&cq_host->thist[cq_host->thist_idx++].task,
-		&task, cq_host->task_desc_len);
+		&task, sizeof(task));
 }
 
 static void cmdq_prep_dcmd_desc(struct mmc_host *mmc,
@@ -911,11 +911,13 @@ static void cmdq_finish_data(struct mmc_host *mmc, unsigned int tag)
 
 	cmdq_runtime_pm_put(cq_host);
 
-	if (cq_host->ops->crypto_cfg_end) {
-		err = cq_host->ops->crypto_cfg_end(mmc, mrq);
-		if (err) {
-			pr_err("%s: failed to end ice config: err %d tag %d\n",
-					mmc_hostname(mmc), err, tag);
+	if (!(mrq->cmdq_req->cmdq_req_flags & DCMD)) {
+		if (cq_host->ops->crypto_cfg_end) {
+			err = cq_host->ops->crypto_cfg_end(mmc, mrq);
+			if (err) {
+				pr_err("%s: failed to end ice config: err %d tag %d\n",
+						mmc_hostname(mmc), err, tag);
+			}
 		}
 	}
 	if (!(cq_host->caps & CMDQ_CAP_CRYPTO_SUPPORT) &&

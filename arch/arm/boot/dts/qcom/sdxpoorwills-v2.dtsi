@@ -19,4 +19,18 @@
 
 &emac_hw {
 	emac-core-version = <5>;
+	pinctrl-names = "dev-emac_pin_pps_0";
+	pinctrl-0 = <&emac_pin_pps_0>;
+};
+
+&apps_smmu {
+	/delete-property/ qcom,no-asid-retention;
+};
+
+&clock_debug {
+	compatible = "qcom,debugcc-sdxpoorwills-v2", "syscon";
+};
+
+&clock_gcc {
+	compatible = "qcom,gcc-sdxpoorwills-v2", "syscon";
 };

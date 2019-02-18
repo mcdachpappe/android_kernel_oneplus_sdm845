@@ -17,6 +17,7 @@
 #include <linux/of.h>
 #include <linux/pm_runtime.h>
 #include <linux/memblock.h>
+#include <linux/completion.h>
 #include <soc/qcom/ramdump.h>
 
 #include "main.h"
@@ -229,6 +230,27 @@ int cnss_pci_link_down(struct device *dev)
 }
 EXPORT_SYMBOL(cnss_pci_link_down);
 
+int cnss_pci_is_device_down(struct device *dev)
+{
+	struct cnss_plat_data *plat_priv = cnss_bus_dev_to_plat_priv(dev);
+	struct cnss_pci_data *pci_priv;
+
+	if (!plat_priv) {
+		cnss_pr_err("plat_priv is NULL\n");
+		return -ENODEV;
+	}
+
+	pci_priv = plat_priv->bus_priv;
+	if (!pci_priv) {
+		cnss_pr_err("pci_priv is NULL\n");
+		return -ENODEV;
+	}
+
+	return test_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state) |
+		pci_priv->pci_link_down_ind;
+}
+EXPORT_SYMBOL(cnss_pci_is_device_down);
+
 int cnss_pci_call_driver_probe(struct cnss_pci_data *pci_priv)
 {
 	int ret = 0;
@@ -325,6 +347,25 @@ int cnss_pci_call_driver_modem_status(struct cnss_pci_data *pci_priv,
 		return -EINVAL;
 
 	driver_ops->modem_status(pci_priv->pci_dev, modem_current_status);
+
+	return 0;
+}
+
+int cnss_pci_update_status(struct cnss_pci_data *pci_priv,
+			   enum cnss_driver_status status)
+{
+	struct cnss_wlan_driver *driver_ops;
+
+	if (!pci_priv)
+		return -ENODEV;
+
+	driver_ops = pci_priv->driver_ops;
+	if (!driver_ops || !driver_ops->update_status)
+		return -EINVAL;
+
+	cnss_pr_dbg("Update driver status: %d\n", status);
+
+	driver_ops->update_status(pci_priv->pci_dev, status);
 
 	return 0;
 }
@@ -514,6 +555,11 @@ static void cnss_qca6290_crash_shutdown(struct cnss_pci_data *pci_priv)
 		return;
 	}
 
+	if (test_bit(CNSS_MHI_RDDM_DONE, &plat_priv->driver_state)) {
+		cnss_pr_dbg("RDDM already collected, return\n");
+		return;
+	}
+
 	cnss_pci_collect_dump_info(pci_priv, true);
 }
 
@@ -672,6 +718,7 @@ int cnss_wlan_register_driver(struct cnss_wlan_driver *driver_ops)
 	int ret = 0;
 	struct cnss_plat_data *plat_priv = cnss_bus_dev_to_plat_priv(NULL);
 	struct cnss_pci_data *pci_priv;
+	unsigned int timeout;
 
 	if (!plat_priv) {
 		cnss_pr_err("plat_priv is NULL\n");
@@ -689,10 +736,27 @@ int cnss_wlan_register_driver(struct cnss_wlan_driver *driver_ops)
 		return -EEXIST;
 	}
 
+	if (!test_bit(CNSS_COLD_BOOT_CAL, &plat_priv->driver_state))
+		goto register_driver;
+
+	cnss_pr_dbg("Start to wait for calibration to complete\n");
+
+	timeout = cnss_get_boot_timeout(&pci_priv->pci_dev->dev);
+	ret = wait_for_completion_timeout(&plat_priv->cal_complete,
+					  msecs_to_jiffies(timeout) << 2);
+	if (!ret) {
+		cnss_pr_err("Timeout waiting for calibration to complete\n");
+		ret = -EAGAIN;
+		goto out;
+	}
+
+register_driver:
 	ret = cnss_driver_event_post(plat_priv,
 				     CNSS_DRIVER_EVENT_REGISTER_DRIVER,
 				     CNSS_EVENT_SYNC_UNINTERRUPTIBLE,
 				     driver_ops);
+
+out:
 	return ret;
 }
 EXPORT_SYMBOL(cnss_wlan_register_driver);
@@ -1103,6 +1167,59 @@ int cnss_wlan_pm_control(struct device *dev, bool vote)
 }
 EXPORT_SYMBOL(cnss_wlan_pm_control);
 
+void cnss_pci_pm_runtime_show_usage_count(struct cnss_pci_data *pci_priv)
+{
+	struct device *dev;
+
+	if (!pci_priv)
+		return;
+
+	dev = &pci_priv->pci_dev->dev;
+
+	cnss_pr_dbg("Runtime PM usage count: %d\n",
+		    atomic_read(&dev->power.usage_count));
+}
+
+int cnss_pci_pm_runtime_get(struct cnss_pci_data *pci_priv)
+{
+	if (!pci_priv)
+		return -ENODEV;
+
+	return pm_runtime_get(&pci_priv->pci_dev->dev);
+}
+
+void cnss_pci_pm_runtime_get_noresume(struct cnss_pci_data *pci_priv)
+{
+	if (!pci_priv)
+		return;
+
+	return pm_runtime_get_noresume(&pci_priv->pci_dev->dev);
+}
+
+int cnss_pci_pm_runtime_put_autosuspend(struct cnss_pci_data *pci_priv)
+{
+	if (!pci_priv)
+		return -ENODEV;
+
+	return pm_runtime_put_autosuspend(&pci_priv->pci_dev->dev);
+}
+
+void cnss_pci_pm_runtime_put_noidle(struct cnss_pci_data *pci_priv)
+{
+	if (!pci_priv)
+		return;
+
+	pm_runtime_put_noidle(&pci_priv->pci_dev->dev);
+}
+
+void cnss_pci_pm_runtime_mark_last_busy(struct cnss_pci_data *pci_priv)
+{
+	if (!pci_priv)
+		return;
+
+	pm_runtime_mark_last_busy(&pci_priv->pci_dev->dev);
+}
+
 int cnss_auto_suspend(struct device *dev)
 {
 	int ret = 0;
@@ -1217,6 +1334,94 @@ int cnss_pm_request_resume(struct cnss_pci_data *pci_priv)
 	return pm_request_resume(&pci_dev->dev);
 }
 
+#ifdef CONFIG_CNSS_QCA6390
+int cnss_pci_force_wake_request(struct device *dev)
+{
+	struct pci_dev *pci_dev = to_pci_dev(dev);
+	struct cnss_pci_data *pci_priv = cnss_get_pci_priv(pci_dev);
+	struct mhi_controller *mhi_ctrl;
+
+	if (!pci_priv)
+		return -ENODEV;
+
+	if (pci_priv->device_id != QCA6390_DEVICE_ID)
+		return 0;
+
+	mhi_ctrl = pci_priv->mhi_ctrl;
+	if (!mhi_ctrl)
+		return -EINVAL;
+
+	read_lock_bh(&mhi_ctrl->pm_lock);
+	mhi_ctrl->wake_get(mhi_ctrl, true);
+	read_unlock_bh(&mhi_ctrl->pm_lock);
+
+	return 0;
+}
+EXPORT_SYMBOL(cnss_pci_force_wake_request);
+
+int cnss_pci_is_device_awake(struct device *dev)
+{
+	struct pci_dev *pci_dev = to_pci_dev(dev);
+	struct cnss_pci_data *pci_priv = cnss_get_pci_priv(pci_dev);
+	struct mhi_controller *mhi_ctrl;
+
+	if (!pci_priv)
+		return -ENODEV;
+
+	if (pci_priv->device_id != QCA6390_DEVICE_ID)
+		return true;
+
+	mhi_ctrl = pci_priv->mhi_ctrl;
+	if (!mhi_ctrl)
+		return -EINVAL;
+
+	return mhi_ctrl->dev_state == MHI_STATE_M0 ? true : false;
+}
+EXPORT_SYMBOL(cnss_pci_is_device_awake);
+
+int cnss_pci_force_wake_release(struct device *dev)
+{
+	struct pci_dev *pci_dev = to_pci_dev(dev);
+	struct cnss_pci_data *pci_priv = cnss_get_pci_priv(pci_dev);
+	struct mhi_controller *mhi_ctrl;
+
+	if (!pci_priv)
+		return -ENODEV;
+
+	if (pci_priv->device_id != QCA6390_DEVICE_ID)
+		return 0;
+
+	mhi_ctrl = pci_priv->mhi_ctrl;
+	if (!mhi_ctrl)
+		return -EINVAL;
+
+	read_lock_bh(&mhi_ctrl->pm_lock);
+	mhi_ctrl->wake_put(mhi_ctrl, false);
+	read_unlock_bh(&mhi_ctrl->pm_lock);
+
+	return 0;
+}
+EXPORT_SYMBOL(cnss_pci_force_wake_release);
+#else
+int cnss_pci_force_wake_request(struct device *dev)
+{
+	return 0;
+}
+EXPORT_SYMBOL(cnss_pci_force_wake_request);
+
+int cnss_pci_is_device_awake(struct device *dev)
+{
+	return true;
+}
+EXPORT_SYMBOL(cnss_pci_is_device_awake);
+
+int cnss_pci_force_wake_release(struct device *dev)
+{
+	return 0;
+}
+EXPORT_SYMBOL(cnss_pci_force_wake_release);
+#endif
+
 int cnss_pci_alloc_fw_mem(struct cnss_pci_data *pci_priv)
 {
 	struct cnss_plat_data *plat_priv = pci_priv->plat_priv;
@@ -1329,6 +1534,12 @@ int cnss_pci_force_fw_assert_hdlr(struct cnss_pci_data *pci_priv)
 	plat_priv = pci_priv->plat_priv;
 	if (!plat_priv)
 		return -ENODEV;
+
+	if (test_bit(CNSS_MHI_RDDM_DONE, &pci_priv->mhi_state)) {
+		cnss_pr_err("RDDM already collected 0x%x, return\n",
+			    pci_priv->mhi_state);
+		return 0;
+	}
 
 	ret = cnss_pci_set_mhi_state(pci_priv, CNSS_MHI_TRIGGER_RDDM);
 	if (ret) {
@@ -1708,6 +1919,8 @@ static char *cnss_mhi_state_to_str(enum cnss_mhi_state mhi_state)
 		return "RESUME";
 	case CNSS_MHI_TRIGGER_RDDM:
 		return "TRIGGER_RDDM";
+	case CNSS_MHI_RDDM_DONE:
+		return "RDDM_DONE";
 	default:
 		return "UNKNOWN";
 	}
@@ -1784,6 +1997,9 @@ void cnss_pci_collect_dump_info(struct cnss_pci_data *pci_priv, bool in_panic)
 
 	if (dump_data->nentries > 0)
 		plat_priv->ramdump_info_v2.dump_data_valid = true;
+
+	cnss_pci_set_mhi_state(pci_priv, CNSS_MHI_RDDM_DONE);
+	complete(&plat_priv->rddm_complete);
 }
 
 void cnss_pci_clear_dump_info(struct cnss_pci_data *pci_priv)
@@ -1830,9 +2046,10 @@ static void cnss_mhi_notify_status(struct mhi_controller *mhi_ctrl, void *priv,
 
 	cnss_pr_dbg("MHI status cb is called with reason %d\n", reason);
 
-	if (pci_priv->driver_ops && pci_priv->driver_ops->update_status)
-		pci_priv->driver_ops->update_status(pci_priv->pci_dev,
-						    CNSS_FW_DOWN);
+	if (test_bit(CNSS_DRIVER_UNLOADING, &plat_priv->driver_state)) {
+		cnss_pr_dbg("Driver unload is in progress, ignore device error\n");
+		return;
+	}
 
 	switch (reason) {
 	case MHI_CB_EE_RDDM:
@@ -1846,8 +2063,7 @@ static void cnss_mhi_notify_status(struct mhi_controller *mhi_ctrl, void *priv,
 	set_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state);
 	del_timer(&plat_priv->fw_boot_timer);
 
-	cnss_schedule_recovery(&pci_priv->pci_dev->dev,
-			       cnss_reason);
+	cnss_schedule_recovery(&pci_priv->pci_dev->dev, cnss_reason);
 }
 
 static int cnss_pci_get_mhi_msi(struct cnss_pci_data *pci_priv)
@@ -1989,6 +2205,8 @@ static int cnss_pci_check_mhi_state_bit(struct cnss_pci_data *pci_priv,
 		    !test_bit(CNSS_MHI_TRIGGER_RDDM, &pci_priv->mhi_state))
 			return 0;
 		break;
+	case CNSS_MHI_RDDM_DONE:
+		return 0;
 	default:
 		cnss_pr_err("Unhandled MHI state: %s(%d)\n",
 			    cnss_mhi_state_to_str(mhi_state), mhi_state);
@@ -2017,6 +2235,7 @@ static void cnss_pci_set_mhi_state_bit(struct cnss_pci_data *pci_priv,
 	case CNSS_MHI_POWER_OFF:
 	case CNSS_MHI_FORCE_POWER_OFF:
 		clear_bit(CNSS_MHI_POWER_ON, &pci_priv->mhi_state);
+		clear_bit(CNSS_MHI_RDDM_DONE, &pci_priv->mhi_state);
 		break;
 	case CNSS_MHI_SUSPEND:
 		set_bit(CNSS_MHI_SUSPEND, &pci_priv->mhi_state);
@@ -2025,6 +2244,9 @@ static void cnss_pci_set_mhi_state_bit(struct cnss_pci_data *pci_priv,
 		clear_bit(CNSS_MHI_SUSPEND, &pci_priv->mhi_state);
 		break;
 	case CNSS_MHI_TRIGGER_RDDM:
+		break;
+	case CNSS_MHI_RDDM_DONE:
+		set_bit(CNSS_MHI_RDDM_DONE, &pci_priv->mhi_state);
 		break;
 	default:
 		cnss_pr_err("Unhandled MHI state (%d)\n", mhi_state);
@@ -2083,6 +2305,8 @@ int cnss_pci_set_mhi_state(struct cnss_pci_data *pci_priv,
 		break;
 	case CNSS_MHI_TRIGGER_RDDM:
 		ret = mhi_force_rddm_mode(pci_priv->mhi_ctrl);
+		break;
+	case CNSS_MHI_RDDM_DONE:
 		break;
 	default:
 		cnss_pr_err("Unhandled MHI state (%d)\n", mhi_state);
