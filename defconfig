@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.9.158 Kernel Configuration
+# Linux/arm64 4.9.160 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -4978,6 +4978,7 @@ CONFIG_SCHED_DEBUG=y
 CONFIG_SCHED_INFO=y
 # CONFIG_PANIC_ON_SCHED_BUG is not set
 # CONFIG_PANIC_ON_RT_THROTTLING is not set
+# CONFIG_SYSRQ_SCHED_DEBUG is not set
 CONFIG_SCHEDSTATS=y
 # CONFIG_SCHED_STACK_END_CHECK is not set
 # CONFIG_DEBUG_TIMEKEEPING is not set
