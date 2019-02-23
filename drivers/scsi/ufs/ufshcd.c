@@ -10289,12 +10289,9 @@ static int ufshcd_devfreq_scale(struct ufs_hba *hba, bool scale_up)
 		 * e.g. link_recovery. Hence, release the rw_sem
 		 * before hibern8.
 		 */
-		up_write(&hba->lock);
 		ret = ufshcd_uic_hibern8_enter(hba);
-		down_write(&hba->lock);
 		if (ret)
-			/* link will be bad state so no need to scale_up_gear */
-			return ret;
+			goto scale_up_gear;
 		ufshcd_custom_cmd_log(hba, "Hibern8-entered");
 	}
 
@@ -10306,8 +10303,7 @@ static int ufshcd_devfreq_scale(struct ufs_hba *hba, bool scale_up)
 	if (ufshcd_is_auto_hibern8_supported(hba)) {
 		ret = ufshcd_uic_hibern8_exit(hba);
 		if (ret)
-			/* link will be bad state so no need to scale_up_gear */
-			return ret;
+			goto scale_up_gear;
 		ufshcd_custom_cmd_log(hba, "Hibern8-Exited");
 	}
 
