@@ -7687,6 +7687,14 @@ typedef struct {
     A_UINT32 rx_fcs_err;
     /** Number of MPDUs(both data and non data) received from this peer */
     A_UINT32 rx_mpdus;
+    /** nss of last tx data to peer */
+    A_UINT32 last_tx_nss;
+    /** nss of last rx data from peer */
+    A_UINT32 last_rx_nss;
+    /** chain mask used for last tx data to peer */
+    A_UINT32 last_tx_chain_mask;
+    /** chain mask used for last rx data from peer */
+    A_UINT32 last_rx_chain_mask;
 } wmi_peer_extd2_stats;
 
 typedef struct {
@@ -10819,6 +10827,12 @@ typedef struct {
 #define WMI_PEER_PARAM_DISABLE_AGGRESSIVE_TX            0x1d
 /* Enable 11r FT Roaming */
 #define  WMI_PEER_PARAM_ENABLE_FT                       0x1e
+/* update peer flag for ptk 4 way handshake */
+#define  WMI_PEER_PARAM_NEED_PTK_4_WAY                  0x1f
+/* update peer flag for gtk 2 way handshake */
+#define  WMI_PEER_PARAM_NEED_GTK_2_WAY                  0x20
+/* update peer flag for M4 sent */
+#define  WMI_PEER_PARAM_M4_SENT                         0x21
 
 /** mimo ps values for the parameter WMI_PEER_MIMO_PS_STATE  */
 #define WMI_PEER_MIMO_PS_NONE                          0x0
