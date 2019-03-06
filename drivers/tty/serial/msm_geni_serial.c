@@ -2298,7 +2298,7 @@ static const struct uart_ops msm_geni_serial_pops = {
 
 static const struct of_device_id msm_geni_device_tbl[] = {
 #if defined(CONFIG_SERIAL_CORE_CONSOLE) || defined(CONFIG_CONSOLE_POLL)
-	{ .compatible = "qcom,msm-geni-console",
+	{ .compatible = "qcom,msm-geni-console-oem",
 			.data = (void *)&msm_geni_console_driver},
 #endif
 	{ .compatible = "qcom,msm-geni-serial-hs",
