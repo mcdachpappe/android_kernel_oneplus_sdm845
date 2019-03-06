@@ -124,7 +124,8 @@
 #define DATA_BYTES_PER_LINE	(32)
 
 #define IPC_LOG_MSG(ctx, x...) do { \
-	pr_info("msm_geni_serial: " x); \
+	if (ctx) \
+		ipc_log_string(ctx, x); \
 } while (0)
 
 #define DMA_RX_BUF_SIZE		(2048)
