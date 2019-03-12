@@ -238,6 +238,7 @@ struct fp_underscreen_info {
 #define Sgestrue            14	// S
 #define SingleTap           15	// single tap
 
+#ifdef VENDOR_EDIT_OXYGEN
 #define KEY_GESTURE_W          	246	//w
 #define KEY_GESTURE_M      		247	//m
 #define KEY_GESTURE_S			248	//s
@@ -247,6 +248,7 @@ struct fp_underscreen_info {
 #define KEY_GESTURE_V           252	// draw v to toggle flashlight
 #define KEY_GESTURE_LEFT_V      253	// draw left arrow for previous track
 #define KEY_GESTURE_RIGHT_V     254	// draw right arrow for next track
+#endif
 
 #define BIT0 (0x1 << 0)
 #define BIT1 (0x1 << 1)
@@ -1471,7 +1473,7 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		break;
 	}
 
-#if 0
+#ifdef VENDOR_EDIT_OXYGEN
 	keyCode = UnkownGestrue;
 	// Get key code based on registered gesture.
 	switch (gesture) {
@@ -3735,12 +3737,14 @@ static int synaptics_input_init(struct synaptics_ts_data *ts)
 	set_bit(BTN_TOOL_FINGER, ts->input_dev->keybit);
 #ifdef SUPPORT_GESTURE
 	set_bit(KEY_F4, ts->input_dev->keybit);	//doulbe-tap resume
+#ifdef VENDOR_EDIT_OXYGEN
 	set_bit(KEY_DOUBLE_TAP, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_CIRCLE, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_V, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_TWO_SWIPE, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_LEFT_V, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_RIGHT_V, ts->input_dev->keybit);
+#endif
 	set_bit(KEY_APPSELECT, ts->input_dev->keybit);
 	set_bit(KEY_BACK, ts->input_dev->keybit);
 #endif
