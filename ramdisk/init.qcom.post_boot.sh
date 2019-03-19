@@ -117,6 +117,9 @@ echo 450 > /sys/module/cpu_boost/parameters/input_boost_ms
 # Limit the min frequency to 825MHz
 echo 825600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
 
+# Set stock minfree
+echo "18432,23040,27648,51256,150296,200640" > /sys/module/lowmemorykiller/parameters/minfree
+
 # Enable oom_reaper
 echo 1 > /sys/module/lowmemorykiller/parameters/oom_reaper
 
