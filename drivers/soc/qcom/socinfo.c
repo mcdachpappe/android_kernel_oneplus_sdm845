@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -571,6 +571,7 @@ static struct msm_soc_info cpu_of_id[] = {
 	/* sdxpoorwills ID */
 	[334] = {SDX_CPU_SDXPOORWILLS, "SDXPOORWILLS"},
 	[335] = {SDX_CPU_SDXPOORWILLS, "SDXPOORWILLS"},
+	[408] = {SDX_CPU_SDXPOORWILLS, "SDXPOORWILLS"},
 
 	/* 9650 IDs */
 	[279] = {MSM_CPU_9650, "MDM9650"},
@@ -602,8 +603,8 @@ static struct msm_soc_info cpu_of_id[] = {
 	/* SDM710 ID */
 	[360] = {MSM_CPU_SDM710, "SDM710"},
 
-	/* SDMNOBELIUM ID */
-	[393] = {MSM_CPU_SDMNOBELIUM, "SDMNOBELIUM"},
+	/* SDM712 ID */
+	[393] = {MSM_CPU_SDM712, "SDM712"},
 
 	/* SXR1120 ID */
 	[370] = {MSM_CPU_SXR1120, "SXR1120"},
@@ -1560,9 +1561,9 @@ static void * __init setup_dummy_socinfo(void)
 		dummy_socinfo.id = 360;
 		strlcpy(dummy_socinfo.build_id, "sdm710 - ",
 			sizeof(dummy_socinfo.build_id));
-	} else if (early_machine_is_sdmnobelium()) {
+	} else if (early_machine_is_sdm712()) {
 		dummy_socinfo.id = 393;
-		strlcpy(dummy_socinfo.build_id, "sdmnobelium - ",
+		strlcpy(dummy_socinfo.build_id, "sdm712 - ",
 			sizeof(dummy_socinfo.build_id));
 	} else if (early_machine_is_sda670()) {
 		dummy_socinfo.id = 337;
