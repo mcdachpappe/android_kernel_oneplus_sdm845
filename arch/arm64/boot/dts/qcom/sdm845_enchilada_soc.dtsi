@@ -10,17 +10,8 @@
  * GNU General Public License for more details.
  */
 
-
 /{
 	reserved-memory {
-		bootloader_log_mem: bootloader_log_mem@0x9FFF7000 {
-			reg = <0 0x9FFF7000 0 0x00100000>;
-			label = "bootloader_log_mem";
-		};
-		param_mem: param_mem@ac200000 {
-			reg = <0 0xAC200000 0 0x00100000>;
-			label = "param_mem";
-		};
 		ramoops: ramoops@0xAC300000 {
 			compatible = "ramoops";
 			reg = <0 0xAC300000 0 0x00400000>;
@@ -31,17 +22,5 @@
 			devinfo-size=  <0x01000>;
 			ecc-size=	   <0x0>;
 		};
-		mtp_mem: mtp_mem@ac700000 {
-			reg = <0 0xAC700000 0 0x00B00000>;
-			label = "mtp_mem";
-		};
 	};
 };
-
-&soc {
-bootloader_log {
-	compatible = "bootloader_log";
-	linux,contiguous-region = <&bootloader_log_mem>;
-	};
-};
-
