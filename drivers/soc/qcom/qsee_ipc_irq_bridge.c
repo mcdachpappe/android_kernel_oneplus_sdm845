@@ -27,11 +27,16 @@
 #define NUM_LOG_PAGES 4
 
 #define QIIB_DBG(x...) do { \
-	pr_debug(x); \
+	if (qiib_info->log_ctx) \
+		ipc_log_string(qiib_info->log_ctx, x); \
+	else \
+		pr_debug(x); \
 	} while (0)
 
 #define QIIB_ERR(x...) do { \
 	pr_err(x); \
+	if (qiib_info->log_ctx) \
+		ipc_log_string(qiib_info->log_ctx, x); \
 	} while (0)
 
 static void qiib_cleanup(void);
