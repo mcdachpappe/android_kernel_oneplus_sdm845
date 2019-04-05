@@ -332,48 +332,6 @@ qdf_export_symbol(prealloc_disabled);
 /* Debugfs root directory for qdf_mem */
 static struct dentry *qdf_mem_debugfs_root;
 
-/**
- * struct __qdf_mem_stat - qdf memory statistics
- * @kmalloc:	total kmalloc allocations
- * @dma:	total dma allocations
- * @skb:	total skb allocations
- */
-static struct __qdf_mem_stat {
-	qdf_atomic_t kmalloc;
-	qdf_atomic_t dma;
-	qdf_atomic_t skb;
-} qdf_mem_stat;
-
-static inline void qdf_mem_kmalloc_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.kmalloc);
-}
-
-static inline void qdf_mem_dma_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.dma);
-}
-
-void qdf_mem_skb_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.skb);
-}
-
-static inline void qdf_mem_kmalloc_dec(qdf_size_t size)
-{
-	qdf_atomic_sub(size, &qdf_mem_stat.kmalloc);
-}
-
-static inline void qdf_mem_dma_dec(qdf_size_t size)
-{
-	qdf_atomic_sub(size, &qdf_mem_stat.dma);
-}
-
-void qdf_mem_skb_dec(qdf_size_t size)
-{
-	qdf_atomic_sub(size, &qdf_mem_stat.skb);
-}
-
 #ifdef MEMORY_DEBUG
 static int qdf_err_printer(void *priv, const char *fmt, ...)
 {
@@ -713,12 +671,6 @@ static QDF_STATUS qdf_mem_debugfs_init(void)
 
 #else /* WLAN_DEBUGFS */
 
-static inline void qdf_mem_kmalloc_inc(qdf_size_t size) {}
-static inline void qdf_mem_dma_inc(qdf_size_t size) {}
-static inline void qdf_mem_kmalloc_dec(qdf_size_t size) {}
-static inline void qdf_mem_dma_dec(qdf_size_t size) {}
-
-
 static QDF_STATUS qdf_mem_debugfs_init(void)
 {
 	return QDF_STATUS_E_NOSUPPORT;
@@ -1009,14 +961,6 @@ static inline bool qdf_mem_prealloc_put(void *ptr)
 	return false;
 }
 #endif /* CONFIG_WCNSS_MEM_PRE_ALLOC */
-
-static int qdf_mem_malloc_flags(void)
-{
-	if (in_interrupt() || irqs_disabled() || in_atomic())
-		return GFP_ATOMIC;
-
-	return GFP_KERNEL;
-}
 
 /* External Function implementation */
 #ifdef MEMORY_DEBUG

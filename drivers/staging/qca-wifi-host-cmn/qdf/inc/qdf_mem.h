@@ -27,7 +27,9 @@
 /* Include Files */
 #include <qdf_types.h>
 #include <i_qdf_mem.h>
+#include <linux/dmapool.h>
 
+#define QDF_ALLOC_GRANULARITY (PAGE_SIZE * 16)
 #define QDF_CACHE_LINE_SZ __qdf_cache_line_sz
 
 /**
@@ -410,22 +412,6 @@ void qdf_mem_multi_pages_free(qdf_device_t osdev,
 			      qdf_dma_context_t memctxt, bool cacheable);
 
 /**
- * qdf_mem_skb_inc() - increment total skb allocation size
- * @size: size to be added
- *
- * Return: none
- */
-void qdf_mem_skb_inc(qdf_size_t size);
-
-/**
- * qdf_mem_skb_dec() - decrement total skb allocation size
- * @size: size to be decremented
- *
- * Return: none
- */
-void qdf_mem_skb_dec(qdf_size_t size);
-
-/**
  * qdf_mem_map_table_alloc() - Allocate shared memory info structure
  * @num: number of required storage
  *
@@ -571,6 +557,63 @@ static inline qdf_dma_addr_t *qdf_mem_get_dma_addr_ptr(qdf_device_t osdev,
 	return __qdf_mem_get_dma_addr_ptr(osdev, mem_info);
 }
 
+static inline int qdf_mem_malloc_flags(void)
+{
+	if (in_interrupt() || irqs_disabled() || in_atomic())
+		return GFP_ATOMIC;
+
+	return GFP_KERNEL;
+}
+
+#ifdef WLAN_DEBUGFS
+/**
+ * struct __qdf_mem_stat - qdf memory statistics
+ * @kmalloc:	total kmalloc allocations
+ * @dma:	total dma allocations
+ * @skb:	total skb allocations
+ */
+static struct __qdf_mem_stat {
+	qdf_atomic_t kmalloc;
+	qdf_atomic_t dma;
+	qdf_atomic_t skb;
+} qdf_mem_stat;
+
+static inline void qdf_mem_kmalloc_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.kmalloc);
+}
+
+static inline void qdf_mem_dma_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.dma);
+}
+
+static inline void qdf_mem_skb_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.skb);
+}
+
+static inline void qdf_mem_kmalloc_dec(qdf_size_t size)
+{
+	qdf_atomic_sub(size, &qdf_mem_stat.kmalloc);
+}
+
+static inline void qdf_mem_dma_dec(qdf_size_t size)
+{
+	qdf_atomic_sub(size, &qdf_mem_stat.dma);
+}
+
+static inline void qdf_mem_skb_dec(qdf_size_t size)
+{
+	qdf_atomic_sub(size, &qdf_mem_stat.skb);
+}
+#else
+static inline void qdf_mem_kmalloc_inc(qdf_size_t size) {}
+static inline void qdf_mem_dma_inc(qdf_size_t size) {}
+static inline void qdf_mem_kmalloc_dec(qdf_size_t size) {}
+static inline void qdf_mem_dma_dec(qdf_size_t size) {}
+#endif
+
 /**
  * qdf_mem_shared_mem_alloc() - Allocate DMA memory for shared resource
  * @osdev: parent device instance
@@ -632,6 +675,44 @@ static inline qdf_shared_mem_t *qdf_mem_shared_mem_alloc(qdf_device_t osdev,
 	return shared_mem;
 }
 
+static inline void qdf_mem_shared_mem_alloc_pool(qdf_shared_mem_t *shared_mem,
+				struct dma_pool *pool, qdf_device_t osdev, uint32_t size)
+{
+	int ret;
+
+	shared_mem->vaddr = dma_pool_alloc(pool, qdf_mem_malloc_flags(),
+				(dma_addr_t *)&shared_mem->mem_info.iova);
+	if (shared_mem->vaddr) {
+		qdf_mem_dma_inc(size);
+	} else {
+		__qdf_print("%s; Unable to allocate DMA memory for shared resource\n",
+			    __func__);
+		qdf_mem_free(shared_mem);
+		return;
+	}
+
+	shared_mem->mem_info.size = size;
+	qdf_mem_zero(shared_mem->vaddr, shared_mem->mem_info.size);
+	shared_mem->mem_info.pa = __qdf_mem_paddr_from_dmaaddr(osdev,
+				    (qdf_dma_addr_t)shared_mem->mem_info.iova);
+	ret = qdf_mem_dma_get_sgtable(osdev->dev,
+				(void *)&shared_mem->sgtable,
+				shared_mem->vaddr,
+				qdf_mem_get_dma_addr(osdev,
+						     &shared_mem->mem_info),
+				shared_mem->mem_info.size);
+	if (ret) {
+		__qdf_print("%s; Unable to get DMA sgtable\n", __func__);
+		qdf_mem_dma_dec(size);
+		dma_pool_free(pool, shared_mem->vaddr,
+			qdf_mem_get_dma_addr(osdev, &shared_mem->mem_info));
+		qdf_mem_free(shared_mem);
+		return;
+	}
+
+	qdf_dma_get_sgtable_dma_addr(&shared_mem->sgtable);
+}
+
 /**
  * qdf_mem_shared_mem_free() - Free shared memory
  * @osdev: parent device instance
@@ -658,6 +739,24 @@ static inline void qdf_mem_shared_mem_free(qdf_device_t osdev,
 						&shared_mem->mem_info),
 					qdf_get_dma_mem_context(shared_mem,
 								memctx));
+	}
+	qdf_mem_free_sgtable(&(shared_mem->sgtable));
+	qdf_mem_free(shared_mem);
+}
+
+static inline void qdf_mem_shared_mem_free_pool(struct dma_pool *pool,
+			qdf_device_t osdev, qdf_shared_mem_t *shared_mem)
+{
+	if (!shared_mem || !pool) {
+		__qdf_print("%s: NULL shared mem struct passed\n",
+			    __func__);
+		return;
+	}
+
+	if (shared_mem->vaddr) {
+		qdf_mem_dma_dec(shared_mem->mem_info.size);
+		dma_pool_free(pool, shared_mem->vaddr,
+			qdf_mem_get_dma_addr(osdev, &shared_mem->mem_info));
 	}
 	qdf_mem_free_sgtable(&(shared_mem->sgtable));
 	qdf_mem_free(shared_mem);
