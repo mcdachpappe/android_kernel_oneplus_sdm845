@@ -1065,7 +1065,6 @@ static int htt_tx_ipa_uc_wdi_tx_buf_alloc(struct htt_pdev_t *pdev,
 	uint16_t idx;
 	qdf_mem_info_t *mem_map_table = NULL, *mem_info = NULL;
 	qdf_shared_mem_t *shared_tx_buffer;
-	struct dma_pool *shared_dma_pool;
 
 	ring_vaddr = (qdf_dma_addr_t *)pdev->ipa_uc_tx_rsc.tx_comp_ring->vaddr;
 	if (qdf_mem_smmu_s1_enabled(pdev->osdev)) {
@@ -1078,31 +1077,12 @@ static int htt_tx_ipa_uc_wdi_tx_buf_alloc(struct htt_pdev_t *pdev,
 		mem_info = mem_map_table;
 	}
 
-	/* Allocate DMA pool */
-	shared_dma_pool = dmam_pool_create("qca_tx_pool", pdev->osdev->dev,
-				QDF_ALLOC_GRANULARITY, uc_tx_buf_sz, 0);
-	if (shared_dma_pool) {
-		qdf_print("%s: allocated shared dma pool with %u buffer size for %u items\n",
-			  __func__, uc_tx_buf_sz, uc_tx_buf_cnt);
-	} else {
-		qdf_print("%s: Failed to allocate memory for shared dma pool\n",
-			  __func__);
-		return 0;
-	}
-
-	shared_tx_buffer = qdf_mem_malloc(sizeof(qdf_shared_mem_t) * uc_tx_buf_cnt);
-	if (!shared_tx_buffer) {
-		qdf_print("%s: Failed to allocate memory for shared tx buffer\n",
-			  __func__);
-		return 0;
-	}
-
-	/* Allocate TX buffers */
+	/* Allocate TX buffers as many as possible */
 	for (tx_buffer_count = 0;
-	     tx_buffer_count < (uc_tx_buf_cnt - 1);
-	     tx_buffer_count++) {
-		qdf_mem_shared_mem_alloc_pool(shared_tx_buffer, shared_dma_pool,
-				pdev->osdev, uc_tx_buf_sz);
+	     tx_buffer_count < (uc_tx_buf_cnt - 1); tx_buffer_count++) {
+
+		shared_tx_buffer = qdf_mem_shared_mem_alloc(pdev->osdev,
+							    uc_tx_buf_sz);
 		if (!shared_tx_buffer || !shared_tx_buffer->vaddr) {
 			qdf_print("IPA WDI TX buffer alloc fail %d allocated\n",
 				  tx_buffer_count);
@@ -1156,8 +1136,6 @@ static int htt_tx_ipa_uc_wdi_tx_buf_alloc(struct htt_pdev_t *pdev,
 						tx_buffer_count]->mem_info;
 			 mem_info++;
 		}
-
-		shared_tx_buffer++;
 	}
 
 	/*
@@ -1175,8 +1153,7 @@ static int htt_tx_ipa_uc_wdi_tx_buf_alloc(struct htt_pdev_t *pdev,
 		/* Free over allocated buffers below power of 2 */
 		for (idx = tx_buffer_count_pwr2; idx < tx_buffer_count; idx++) {
 			if (pdev->ipa_uc_tx_rsc.tx_buf_pool_strg[idx]) {
-				qdf_mem_shared_mem_free_pool(shared_dma_pool,
-					pdev->osdev,
+				qdf_mem_shared_mem_free(pdev->osdev,
 					pdev->ipa_uc_tx_rsc.tx_buf_pool_strg[
 								idx]);
 				 pdev->ipa_uc_tx_rsc.tx_buf_pool_strg[idx] =
