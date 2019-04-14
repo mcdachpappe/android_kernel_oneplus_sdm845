@@ -1938,13 +1938,19 @@ static int dsi_panel_parse_jitter_config(
 {
 	int rc;
 	struct dsi_display_mode_priv_info *priv_info;
-	u32 jitter[DEFAULT_PANEL_JITTER_ARRAY_SIZE] = { 0x8, 0xa };
+	u32 jitter[DEFAULT_PANEL_JITTER_ARRAY_SIZE] = {0, 0};
 	u64 jitter_val = 0;
 
 	priv_info = mode->priv_info;
 
-	jitter_val = jitter[0];
-	jitter_val = div_u64(jitter_val, jitter[1]);
+	rc = of_property_read_u32_array(of_node, "qcom,mdss-dsi-panel-jitter",
+				jitter, DEFAULT_PANEL_JITTER_ARRAY_SIZE);
+	if (rc) {
+		pr_debug("panel jitter not defined rc=%d\n", rc);
+	} else {
+		jitter_val = jitter[0];
+		jitter_val = div_u64(jitter_val, jitter[1]);
+	}
 
 	if (rc || !jitter_val || (jitter_val > MAX_PANEL_JITTER)) {
 		priv_info->panel_jitter_numer = DEFAULT_PANEL_JITTER_NUMERATOR;
