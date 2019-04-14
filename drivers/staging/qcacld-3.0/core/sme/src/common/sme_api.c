@@ -18451,8 +18451,10 @@ send_flush_cmd:
 	    cds_mq_post_message(QDF_MODULE_ID_WMA, &msg)) {
 		sme_err("Not able to post message to WDA");
 
-		if (pmk_cache)
+		if (pmk_cache) {
+			qdf_mem_zero(pmk_cache, sizeof(*pmk_cache));
 			qdf_mem_free(pmk_cache);
+		}
 
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -19362,10 +19364,8 @@ QDF_STATUS sme_fast_reassoc(tHalHandle hal, tCsrRoamProfile *profile,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (session->pCurRoamProfile->supplicant_disabled_roaming ||
-	    session->pCurRoamProfile->driver_disabled_roaming) {
-		sme_debug("roaming status in Supplicant %d and in driver %d",
-			session->pCurRoamProfile->supplicant_disabled_roaming,
+	if (session->pCurRoamProfile->driver_disabled_roaming) {
+		sme_debug("roaming status in driver %d",
 			session->pCurRoamProfile->driver_disabled_roaming);
 		return QDF_STATUS_E_FAILURE;
 	}
