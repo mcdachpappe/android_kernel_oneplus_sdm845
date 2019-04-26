@@ -170,25 +170,25 @@ struct fp_underscreen_info {
 #define BIT6 (0x1 << 6)
 #define BIT7 (0x1 << 7)
 
-static int LeftVee_gesture = 0;	//">"
-static int RightVee_gesture = 0;	//"<"
-static int DouSwip_gesture = 0;	// "||"
-static int Circle_gesture = 0;		// "O"
-static int UpVee_gesture = 0;		//"V"
-static int DownVee_gesture = 0;	//"^"
-static int DouTap_gesture = 0;		//"double tap"
+static int LeftVee_gesture __read_mostly;	//">"
+static int RightVee_gesture __read_mostly;	//"<"
+static int DouSwip_gesture __read_mostly;	// "||"
+static int Circle_gesture __read_mostly;		// "O"
+static int UpVee_gesture __read_mostly;		//"V"
+static int DownVee_gesture __read_mostly;	//"^"
+static int DouTap_gesture __read_mostly;		//"double tap"
 
-static int Left2RightSwip_gesture = 0;	//"(-->)"
-static int Right2LeftSwip_gesture = 0;	//"(<--)"
-static int Up2DownSwip_gesture = 0;	//"up to down |"
-static int Down2UpSwip_gesture = 0;	//"down to up |"
+static int Left2RightSwip_gesture __read_mostly;	//"(-->)"
+static int Right2LeftSwip_gesture __read_mostly;	//"(<--)"
+static int Up2DownSwip_gesture __read_mostly;	//"up to down |"
+static int Down2UpSwip_gesture __read_mostly;	//"down to up |"
 
-static int Wgestrue_gesture = 0;	//"(W)"
-static int Mgestrue_gesture = 0;	//"(M)"
-static int Sgestrue_gesture = 0;	//"(S)"
-static int Single_gesture = 0;		//"(SingleTap)"
-static int Enable_gesture = 0;
-static int gesture_switch = 0;
+static int Wgestrue_gesture __read_mostly;	//"(W)"
+static int Mgestrue_gesture __read_mostly;	//"(M)"
+static int Sgestrue_gesture __read_mostly;	//"(S)"
+static int Single_gesture __read_mostly;		//"(SingleTap)"
+static int Enable_gesture __read_mostly;
+static int gesture_switch __read_mostly;
 #endif
 
 /*********************for Debug LOG switch*******************/
@@ -198,7 +198,7 @@ static int gesture_switch = 0;
 #define TPD_DEBUG(a,arg...)  pr_debug(TPD_DEVICE ": " a,##arg)
 
 /*---------------------------------------------Global Variable----------------------------------------------*/
-static int baseline_ret = 0;
+static int baseline_ret;
 static long int TP_FW;
 static int tp_dev = 6;
 static int button_map[3];
@@ -209,36 +209,36 @@ static int16_t baseline[33][33];
 static int16_t delta[33][33];
 static int TX_NUM;
 static int RX_NUM;
-static int report_key_point_y = 0;
-static int force_update = 0;
+static int report_key_point_y;
+static int force_update;
 static int LCD_WIDTH;
 static int LCD_HEIGHT;
-static int get_tp_base = 0;
+static int get_tp_base;
 #define ENABLE_TPEDGE_LIMIT
 #ifdef ENABLE_TPEDGE_LIMIT
 static int F51_GRIP_CONFIGURATION;
 static int limit_enable = 1;
 static void synaptics_tpedge_limitfunc(void);
 #endif
-//static int ch_getbase_status = 0;
-struct timeval tpstart, tpend;
-int not_getbase;
-int need_reset;
-int singer_touch_mun;
-int recored_pointx[2] = { 0, 0 };
-int recored_pointy[2] = { 0, 0 };
+//static int ch_getbase_status;
+static struct timeval tpstart, tpend;
+static int not_getbase;
+static int need_reset;
+static int singer_touch_mun;
+static int recored_pointx[2];
+static int recored_pointy[2];
 
 #ifdef SUPPORT_TP_SLEEP_MODE
 static int sleep_enable;
 #endif
 #ifdef SUPPORT_TP_TOUCHKEY
-static int key_switch = 0;
-static bool key_back_disable = false, key_appselect_disable = false;
+static int key_switch;
+static bool key_back_disable, key_appselect_disable;
 #endif
-static struct synaptics_ts_data *ts_g = NULL;
-static struct workqueue_struct *synaptics_wq = NULL;
-static struct workqueue_struct *get_base_report = NULL;
-static struct proc_dir_entry *prEntry_tp = NULL;
+static struct synaptics_ts_data *ts_g;
+static struct workqueue_struct *synaptics_wq;
+static struct workqueue_struct *get_base_report;
+static struct proc_dir_entry *prEntry_tp;
 
 #ifdef SUPPORT_GESTURE
 static uint32_t clockwise;
@@ -317,7 +317,7 @@ static int F34_FLASH_CTRL00;
 static int F51_CUSTOM_CTRL00;
 static int F51_CUSTOM_DATA04;
 static int F51_CUSTOM_DATA11;
-static __read_mostly int version_is_s3508 = 0;
+static int version_is_s3508 __read_mostly;
 #if TP_TEST_ENABLE
 static int F54_ANALOG_QUERY_BASE;	//0x73
 static int F54_ANALOG_COMMAND_BASE;	//0x72
@@ -343,17 +343,17 @@ static ssize_t synaptics_rmi4_vendor_id_show(struct device *dev,
 static int synapitcs_ts_update(struct i2c_client *client, const uint8_t * data,
 			       uint32_t data_len, bool force);
 
-static int synaptics_rmi4_i2c_read_byte(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_read_byte(struct i2c_client *client,
 					unsigned char addr);
 
-static int synaptics_rmi4_i2c_write_byte(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_write_byte(struct i2c_client *client,
 					 unsigned char addr,
 					 unsigned char data);
 
-static int synaptics_rmi4_i2c_read_word(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_read_word(struct i2c_client *client,
 					unsigned char addr);
 
-static int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
 					 unsigned char addr,
 					 unsigned short data);
 static int synaptics_mode_change(int mode);
@@ -398,7 +398,7 @@ static const struct i2c_device_id synaptics_ts_id[] = {
 	{}
 };
 
-static struct of_device_id synaptics_match_table[] = {
+static const struct of_device_id synaptics_match_table[] = {
 	{.compatible = TPD_DEVICE,},
 	{},
 };
@@ -1040,124 +1040,55 @@ static void int_state(struct synaptics_ts_data *ts)
 	}
 }
 */
-/*Added for larger than 32 length read!*/
 
-int synaptics_rmi4_i2c_read_block(struct i2c_client *client,
-				  unsigned char addr,
-				  unsigned short length, unsigned char *data)
-{
-	int retval;
-	unsigned char retry;
-	unsigned char buf;
-	struct i2c_msg msg[] = {
-		{
-		 .addr = client->addr,
-		 .flags = 0,
-		 .len = 1,
-		 .buf = &buf,
-		 },
-		{
-		 .addr = client->addr,
-		 .flags = I2C_M_RD,
-		 .len = length,
-		 .buf = data,
-		 },
-	};
-	buf = addr & 0xFF;
-	for (retry = 0; retry < 2; retry++) {
-		if (i2c_transfer(client->adapter, msg, 2) == 2) {
-			retval = length;
-			break;
-		}
-		msleep(20);
-	}
-	if (retry == 2) {
-		dev_err(&client->dev,
-			"%s: I2C read over retry limit\n", __func__);
-		//rst_flag_counter = 1;//reset tp
-		retval = -5;
-	} else {
-		//rst_flag_counter = 0;
-	}
-	return retval;
-}
-
-int synaptics_rmi4_i2c_write_block(struct i2c_client *client,
-				   unsigned char addr,
-				   unsigned short length,
-				   unsigned char const *data)
-{
-	int retval;
-	unsigned char retry;
-	unsigned char buf[length + 1];
-	struct i2c_msg msg[] = {
-		{
-		 .addr = client->addr,
-		 .flags = 0,
-		 .len = length + 1,
-		 .buf = buf,
-		 }
-	};
-
-	buf[0] = addr & 0xff;
-	memcpy(&buf[1], &data[0], length);
-
-	for (retry = 0; retry < 2; retry++) {
-		if (i2c_transfer(client->adapter, msg, 1) == 1) {
-			retval = length;
-			break;
-		}
-		msleep(20);
-	}
-	if (retry == 2) {
-		//rst_flag_counter = 1;//rest tp
-		retval = -EIO;
-	} else {
-		//rst_flag_counter = 0;
-	}
-	return retval;
-}
-
-static int synaptics_rmi4_i2c_read_byte(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_read_byte(struct i2c_client *client,
 					unsigned char addr)
 {
 	int retval = 0;
 	unsigned char buf[2] = { 0 };
+
 	retval = synaptics_rmi4_i2c_read_block(client, addr, 1, buf);
-	if (retval >= 0)
+	if (likely(retval >= 0))
 		retval = buf[0] & 0xff;
+
 	return retval;
 }
 
-static int synaptics_rmi4_i2c_write_byte(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_write_byte(struct i2c_client *client,
 					 unsigned char addr, unsigned char data)
 {
 	int retval;
 	unsigned char data_send = data;
+
 	retval = synaptics_rmi4_i2c_write_block(client, addr, 1, &data_send);
+
 	return retval;
 }
 
-static int synaptics_rmi4_i2c_read_word(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_read_word(struct i2c_client *client,
 					unsigned char addr)
 {
 	int retval;
 	unsigned char buf[2] = { 0 };
+
 	retval = synaptics_rmi4_i2c_read_block(client, addr, 2, buf);
-	if (retval >= 0)
+	if (likely(retval >= 0))
 		retval = buf[1] << 8 | buf[0];
+
 	return retval;
 }
 
-static int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
+static inline int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
 					 unsigned char addr,
 					 unsigned short data)
 {
 	int retval;
 	unsigned char buf[2] = { data & 0xff, (data >> 8) & 0xff };
+
 	retval = synaptics_rmi4_i2c_write_block(client, addr, 2, buf);
-	if (retval >= 0)
+	if (likely(retval >= 0))
 		retval = buf[1] << 8 | buf[0];
+
 	return retval;
 }
 
@@ -1393,12 +1324,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 	uint8_t regswipe_s3706[25];
 	int is_double_tap = 0;
 
-	if (version_is_s3508 == 1)
-		F12_2D_DATA04 = 0x0008;
-	else if (version_is_s3508 == 2)	/*s3706 */
-		F12_2D_DATA04 = 0x000A;
-	else
-		F12_2D_DATA04 = 0x000A;
 	TPD_DEBUG("%s start!\n", __func__);
 	ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x00);
 	if (ret < 0) {
@@ -1630,7 +1555,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 }
 #endif
 /***************end****************/
-static char prlog_count = 0;
 #ifdef REPORT_2D_PRESSURE
 static unsigned char pres_value = 1;
 #endif
@@ -1689,12 +1613,7 @@ static inline void int_touch(void)
 	}
 #endif
 	i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
-	if (version_is_s3508 == 1)
-		F12_2D_DATA15 = 0x0009;
-	else if (version_is_s3508 == 0)
-		F12_2D_DATA15 = 0x000C;
-	else if (version_is_s3508 == 2)
-		F12_2D_DATA15 = 0x000B;	/*s3706 for 17819 */
+
 	ret =
 	    synaptics_rmi4_i2c_read_block(ts->client, F12_2D_DATA15, 2,
 					  object_attention);
@@ -1873,7 +1792,6 @@ static inline void int_touch(void)
 	}
 }
 
-static char log_count = 0;
 #ifdef SUPPORT_TP_TOUCHKEY
 #define OEM_KEY_BACK (key_switch?KEY_APPSELECT:KEY_BACK)
 #define OEM_KEY_APPSELECT (key_switch?KEY_BACK:KEY_APPSELECT)
@@ -1897,9 +1815,6 @@ static inline void int_key_report_s3508(struct synaptics_ts_data *ts)
 		return;
 	}
 	button_key = synaptics_rmi4_i2c_read_byte(ts->client, F1A_0D_DATA00);
-	if (1 == (++log_count % 4))
-		TPD_ERR("touch_key[0x%x],touchkey_state[0x%x]\n", button_key,
-			ts->pre_btn_state);
 	if ((button_key & 0x01) && !(ts->pre_btn_state & 0x01) && !key_back_disable)	//back
 	{
 		input_report_key(ts->input_dev, OEM_KEY_BACK, 1);
@@ -4594,11 +4509,11 @@ static void set_doze_time(int doze_time)
 }
 
 #define SUBABS(x,y) ((x)-(y))
+static uint8_t baseline_value[33 * 33];
 static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 {
 	int ret = 0;
 	int x, y;
-	uint8_t *value;
 	int k = 0;
 	int touch_hold_enable = 0;
 	int touch_hold_retry = 0;
@@ -4609,7 +4524,7 @@ static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 	atomic_set(&ts->is_stop, 1);
 	touch_disable(ts);
 	TPD_DEBUG("%s start!\n", __func__);
-	value = kzalloc(TX_NUM * RX_NUM * 2, GFP_KERNEL);
+	memset(baseline_value, 0, sizeof(baseline_value));
 	memset(delta_baseline, 0, sizeof(delta_baseline));
 
 	mutex_lock(&ts->mutex);
@@ -4630,12 +4545,12 @@ static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 
 	ret =
 	    synaptics_rmi4_i2c_read_block(ts->client, F54_ANALOG_DATA_BASE + 3,
-					  2 * TX_NUM * RX_NUM, value);
+					  2 * TX_NUM * RX_NUM, baseline_value);
 	for (x = 0; x < TX_NUM; x++) {
 		for (y = 0; y < RX_NUM; y++) {
 			delta_baseline[x][y] =
-			    (int16_t) (((uint16_t) (value[k])) |
-				       ((uint16_t) (value[k + 1] << 8)));
+			    (int16_t) (((uint16_t) (baseline_value[k])) |
+				       ((uint16_t) (baseline_value[k + 1] << 8)));
 			k = k + 2;
 
 			if (flag)
@@ -4707,7 +4622,6 @@ static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 		}
 	}
 	TPD_DEBUG("%s end! \n", __func__);
-	kfree(value);
 	return 0;
 }
 
@@ -4726,14 +4640,7 @@ static ssize_t touch_press_status_read(struct file *file,
 	int x, y;
 	int press_points = 0;
 	int points_misspresee = 0;
-	int str_n = 0;
-
-	char *page = kzalloc(1024 * 2, GFP_KERNEL);
-	if (!page) {
-		TPD_ERR("%s malloc memery error!", __func__);
-		return -ENOMEM;
-	}
-	TPD_ERR("%s", __func__);
+	char page[64];
 
 	for (x = 0; x < TX_NUM; x++) {
 		for (y = 0; y < RX_NUM; y++) {
@@ -4744,10 +4651,8 @@ static ssize_t touch_press_status_read(struct file *file,
 				if (x > (TX_NUM - 1) || y < (RX_NUM - 12))
 					continue;
 			}
-			if ((delta[x][y] < -30) && (delta[x][y] > -250)) {
-				//str_n += sprintf(&page[str_n],"x%d,y%d = %4d\n", x, y, delta[x][y]);
+			if ((delta[x][y] < -30) && (delta[x][y] > -250))
 				press_points++;
-			}
 			if ((delta[x][y] > 30) && (delta[x][y] < 200))
 				points_misspresee++;
 		}
@@ -4758,12 +4663,11 @@ static ssize_t touch_press_status_read(struct file *file,
 		get_tp_base = 0;
 	TPD_ERR("points_mispressee num:%d,get_tp_base:%d\n", points_misspresee,
 		get_tp_base);
-	str_n +=
-	    sprintf(&page[str_n], "\n%s %d points delta > [25]\n",
-		    (press_points > 4) ? "near" : "away", press_points);
+	sprintf(page, "\n%s %d points delta > [25]\n",
+		(press_points > 4) ? "near" : "away", press_points);
 	ret =
 	    simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
-	kfree(page);
+
 	return ret;
 }
 
@@ -5363,7 +5267,7 @@ static int synaptics_rmi4_query_firmware_id_s3706(struct i2c_client *client,
 					       F01_RMI_QUERY_BASE +
 					       F01_BUID_ID_OFFSET,
 					       sizeof(build_id), build_id);
-	if (retval < 0)
+	if (unlikely(retval < 0))
 		return retval;
 	firmware_id = (unsigned int)build_id[0] +
 	    (unsigned int)build_id[1] * 0x100 +
@@ -5373,7 +5277,7 @@ static int synaptics_rmi4_query_firmware_id_s3706(struct i2c_client *client,
 	retval = synaptics_rmi4_i2c_read_block(client,
 					       F34_FLASH_CTRL_BASE,
 					       sizeof(config_id), config_id);
-	if (retval < 0)
+	if (unlikely(retval < 0))
 		return retval;
 	conifg_id_s3706 = config_id;
 	return 0;
@@ -6278,6 +6182,21 @@ static int synaptics_ts_probe(struct i2c_client *client,
 
 		version_is_s3508 = 1;
 	}
+
+	if (version_is_s3508 == 1)
+		F12_2D_DATA04 = 0x0008;
+	else if (version_is_s3508 == 2)	/*s3706 */
+		F12_2D_DATA04 = 0x000A;
+	else
+		F12_2D_DATA04 = 0x000A;
+
+	if (version_is_s3508 == 1)
+		F12_2D_DATA15 = 0x0009;
+	else if (version_is_s3508 == 0)
+		F12_2D_DATA15 = 0x000C;
+	else if (version_is_s3508 == 2)
+		F12_2D_DATA15 = 0x000B;	/*s3706 for 17819 */
+
 	strcpy(ts->test_limit_name, "tp/14049/14049_Limit_jdi.img");
 
 	TPD_DEBUG("synatpitcs fw_name=%s\n", ts->fw_name);

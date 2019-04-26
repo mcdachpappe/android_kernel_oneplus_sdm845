@@ -481,33 +481,88 @@ int synaptics_rmi4_fwu_init(
 	struct synaptics_rmi4_data *rmi4_data,
 	const unsigned char *fw_image, struct i2c_client *client);
 /*Added for larger than 32 length read!*/
-extern  int synaptics_rmi4_i2c_read_block(
-		struct i2c_client *client,
-		unsigned char addr,
-		unsigned short length,
-		unsigned char *data);
-extern int synaptics_rmi4_i2c_write_block(
-		struct i2c_client *client,
-		unsigned char addr,
-		unsigned short length,
-		unsigned char const *data);
-static inline int synaptics_rmi4_reg_read(
-		struct i2c_client *i2c,
-		unsigned short addr,
-		unsigned char *data,
-		unsigned short len)
+
+static inline int synaptics_rmi4_i2c_read_block(struct i2c_client *client,
+				  unsigned char addr,
+				  unsigned short length, unsigned char *data)
 {
-	return synaptics_rmi4_i2c_read_block(i2c, addr, len, data);
+	int retval;
+	unsigned char retry;
+	unsigned char buf;
+	struct i2c_msg msg[] = {
+		{
+		 .addr = client->addr,
+		 .flags = 0,
+		 .len = 1,
+		 .buf = &buf,
+		 },
+		{
+		 .addr = client->addr,
+		 .flags = I2C_M_RD,
+		 .len = length,
+		 .buf = data,
+		 },
+	};
+	buf = addr & 0xFF;
+	for (retry = 0; retry < 2; retry++) {
+		if (i2c_transfer(client->adapter, msg, 2) == 2) {
+			retval = length;
+			break;
+		}
+		msleep(20);
+	}
+	if (retry == 2) {
+		dev_err(&client->dev,
+			"%s: I2C read over retry limit\n", __func__);
+		//rst_flag_counter = 1;//reset tp
+		retval = -5;
+	} else {
+		//rst_flag_counter = 0;
+	}
+	return retval;
 }
 
-static inline int synaptics_rmi4_reg_write(
-		struct i2c_client *i2c,
-		unsigned short addr,
-		unsigned char *data,
-		unsigned short len)
+static inline int synaptics_rmi4_i2c_write_block(struct i2c_client *client,
+				   unsigned char addr,
+				   unsigned short length,
+				   unsigned char const *data)
 {
-	return synaptics_rmi4_i2c_write_block(i2c, addr, len, data);
+	int retval;
+	unsigned char retry;
+	unsigned char buf[length + 1];
+	struct i2c_msg msg[] = {
+		{
+		 .addr = client->addr,
+		 .flags = 0,
+		 .len = length + 1,
+		 .buf = buf,
+		 }
+	};
+
+	buf[0] = addr & 0xff;
+	memcpy(&buf[1], &data[0], length);
+
+	for (retry = 0; retry < 2; retry++) {
+		if (i2c_transfer(client->adapter, msg, 1) == 1) {
+			retval = length;
+			break;
+		}
+		msleep(20);
+	}
+	if (retry == 2) {
+		//rst_flag_counter = 1;//rest tp
+		retval = -EIO;
+	} else {
+		//rst_flag_counter = 0;
+	}
+	return retval;
 }
+
+#define synaptics_rmi4_reg_read(i2c, addr, data, len) \
+        synaptics_rmi4_i2c_read_block(i2c, addr, len, data)
+
+#define synaptics_rmi4_reg_write(i2c, addr, data, len) \
+        synaptics_rmi4_i2c_write_block(i2c, addr, len, data)
 
 static inline ssize_t synaptics_rmi4_show_error(struct device *dev,
 		struct device_attribute *attr, char *buf)
