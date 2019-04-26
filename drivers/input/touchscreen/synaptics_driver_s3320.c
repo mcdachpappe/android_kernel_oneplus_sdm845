@@ -179,7 +179,6 @@ struct synaptics_ts_data {
 static struct synaptics_ts_data *ts_g;
 #define SCREEN_AWARE
 
-#include "synaptics_redremote.h"
 #include "synaptics_baseline.h"
 #include "synaptics_dsx_core.h"
 
@@ -201,7 +200,7 @@ struct fp_underscreen_info {
 };
 
 /******************for Red function*****************/
-#define CONFIG_SYNAPTIC_RED
+//#define CONFIG_SYNAPTIC_RED
 
 /*********************for gesture*******************/
 #ifdef SUPPORT_GESTURE
