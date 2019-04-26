@@ -141,7 +141,7 @@ struct fp_underscreen_info {
 struct pm_qos_request pm_qos_req_tp;
 
 /******************for Red function*****************/
-#define CONFIG_SYNAPTIC_RED
+//#define CONFIG_SYNAPTIC_RED
 
 /*********************for gesture*******************/
 #ifdef SUPPORT_GESTURE
