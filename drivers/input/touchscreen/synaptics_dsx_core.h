@@ -504,6 +504,12 @@ static inline int synaptics_rmi4_i2c_read_block(struct i2c_client *client,
 		 },
 	};
 	buf = addr & 0xFF;
+
+#ifdef SCREEN_AWARE
+	if (likely(!ts_g->is_suspended))
+		return i2c_transfer(client->adapter, msg, 2);
+#endif
+
 	for (retry = 0; retry < 2; retry++) {
 		if (i2c_transfer(client->adapter, msg, 2) == 2) {
 			retval = length;
@@ -541,6 +547,11 @@ static inline int synaptics_rmi4_i2c_write_block(struct i2c_client *client,
 
 	buf[0] = addr & 0xff;
 	memcpy(&buf[1], &data[0], length);
+
+#ifdef SCREEN_AWARE
+	if (likely(!ts_g->is_suspended))
+		return i2c_transfer(client->adapter, msg, 1);
+#endif
 
 	for (retry = 0; retry < 2; retry++) {
 		if (i2c_transfer(client->adapter, msg, 1) == 1) {

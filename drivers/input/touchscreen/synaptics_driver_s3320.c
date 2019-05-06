@@ -60,9 +60,6 @@
 
 #include <linux/input/mt.h>
 
-#include "synaptics_redremote.h"
-#include "synaptics_baseline.h"
-#include "synaptics_dsx_core.h"
 /*------------------------------------------------Global Define--------------------------------------------*/
 
 #define TP_UNKNOWN 0
@@ -95,6 +92,96 @@
 
 #define TEST_MAGIC1 0x494D494C
 #define TEST_MAGIC2 0x474D4954
+
+struct synaptics_ts_data {
+	struct i2c_client *client;
+	struct mutex mutex;
+	int irq;
+	int irq_gpio;
+	atomic_t irq_enable;
+	int id1_gpio;
+	int id2_gpio;
+	int id3_gpio;
+	int reset_gpio;
+	int v1p8_gpio;
+	int support_hw_poweroff;
+	int support_1080x2160_tp;
+	int support_1080x2340_tp;
+	int enable2v8_gpio;
+	int max_num;
+	int enable_remote;
+	int regulator_vdd_vmin;
+	int regulator_vdd_vmax;
+	int regulator_vdd_current;
+	int regulator_avdd_vmin;
+	int regulator_avdd_vmax;
+	int regulator_avdd_current;
+
+	uint32_t irq_flags;
+	uint32_t max_x;
+	uint32_t max_y;
+	uint32_t max_y_real;
+	uint32_t btn_state;
+	uint32_t pre_finger_state;
+	uint32_t pre_btn_state;
+	struct delayed_work base_work;
+	struct work_struct report_work;
+	struct delayed_work speed_up_work;
+	struct input_dev *input_dev;
+	struct hrtimer timer;
+#if defined(CONFIG_FB)
+	struct notifier_block fb_notif;
+#elif defined(CONFIG_MSM_RDM_NOTIFY)
+	struct notifier_block msm_drm_notif;
+#endif
+	/******gesture*******/
+	int gesture_enable;
+	int in_gesture_mode;
+	int glove_enable;
+	int changer_connet;
+	int is_suspended;
+	atomic_t is_stop;
+	spinlock_t lock;
+
+	/********test*******/
+	int i2c_device_test;
+
+	/******power*******/
+	struct regulator *vdd_2v8;
+	struct regulator *vcc_i2c_1v8;
+
+	/*pinctrl***** */
+	struct device *dev;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *pinctrl_state_active;
+	struct pinctrl_state *pinctrl_state_suspend;
+
+	/*******for FW update*******/
+	bool loading_fw;
+	bool support_ft;	/*support force touch */
+	char fw_name[TP_FW_NAME_MAX_LEN];
+	char test_limit_name[TP_FW_NAME_MAX_LEN];
+	char fw_id[20];
+	char manu_name[30];
+#ifdef SUPPORT_VIRTUAL_KEY
+	struct kobject *properties_kobj;
+#endif
+	uint8_t fp_up_down;
+	unsigned int en_up_down;
+	unsigned int fp_aod_cnt;
+	unsigned int unlock_succes;
+	int project_version;
+
+	struct pm_qos_request pm_qos_req;
+	struct work_struct pm_work;
+};
+
+static struct synaptics_ts_data *ts_g;
+#define SCREEN_AWARE
+
+#include "synaptics_redremote.h"
+#include "synaptics_baseline.h"
+#include "synaptics_dsx_core.h"
 
 struct test_header {
 	unsigned int magic1;
@@ -235,7 +322,6 @@ static int sleep_enable;
 static int key_switch;
 static bool key_back_disable, key_appselect_disable;
 #endif
-static struct synaptics_ts_data *ts_g;
 static struct workqueue_struct *synaptics_wq;
 static struct workqueue_struct *get_base_report;
 static struct proc_dir_entry *prEntry_tp;
@@ -461,89 +547,6 @@ static struct i2c_driver tpd_i2c_driver = {
 		   .of_match_table = synaptics_match_table,
 		   .pm = &synaptic_pm_ops,
 		   },
-};
-
-struct synaptics_ts_data {
-	struct i2c_client *client;
-	struct mutex mutex;
-	int irq;
-	int irq_gpio;
-	atomic_t irq_enable;
-	int id1_gpio;
-	int id2_gpio;
-	int id3_gpio;
-	int reset_gpio;
-	int v1p8_gpio;
-	int support_hw_poweroff;
-	int support_1080x2160_tp;
-	int support_1080x2340_tp;
-	int enable2v8_gpio;
-	int max_num;
-	int enable_remote;
-	int regulator_vdd_vmin;
-	int regulator_vdd_vmax;
-	int regulator_vdd_current;
-	int regulator_avdd_vmin;
-	int regulator_avdd_vmax;
-	int regulator_avdd_current;
-
-	uint32_t irq_flags;
-	uint32_t max_x;
-	uint32_t max_y;
-	uint32_t max_y_real;
-	uint32_t btn_state;
-	uint32_t pre_finger_state;
-	uint32_t pre_btn_state;
-	struct delayed_work base_work;
-	struct work_struct report_work;
-	struct delayed_work speed_up_work;
-	struct input_dev *input_dev;
-	struct hrtimer timer;
-#if defined(CONFIG_FB)
-	struct notifier_block fb_notif;
-#elif defined(CONFIG_MSM_RDM_NOTIFY)
-	struct notifier_block msm_drm_notif;
-#endif
-	/******gesture*******/
-	int gesture_enable;
-	int in_gesture_mode;
-	int glove_enable;
-	int changer_connet;
-	int is_suspended;
-	atomic_t is_stop;
-	spinlock_t lock;
-
-	/********test*******/
-	int i2c_device_test;
-
-	/******power*******/
-	struct regulator *vdd_2v8;
-	struct regulator *vcc_i2c_1v8;
-
-	/*pinctrl***** */
-	struct device *dev;
-	struct pinctrl *pinctrl;
-	struct pinctrl_state *pinctrl_state_active;
-	struct pinctrl_state *pinctrl_state_suspend;
-
-	/*******for FW update*******/
-	bool loading_fw;
-	bool support_ft;	/*support force touch */
-	char fw_name[TP_FW_NAME_MAX_LEN];
-	char test_limit_name[TP_FW_NAME_MAX_LEN];
-	char fw_id[20];
-	char manu_name[30];
-#ifdef SUPPORT_VIRTUAL_KEY
-	struct kobject *properties_kobj;
-#endif
-	uint8_t fp_up_down;
-	unsigned int en_up_down;
-	unsigned int fp_aod_cnt;
-	unsigned int unlock_succes;
-	int project_version;
-
-	struct pm_qos_request pm_qos_req;
-	struct work_struct pm_work;
 };
 
 static struct device_attribute attrs_oem[] = {
