@@ -2183,6 +2183,7 @@ static ssize_t synap_write_address(struct file *file,
 {
 	int buf[128];
 	char buffer_local[128];
+	unsigned char *i2c_buf;
 	int ret, i;
 	struct synaptics_ts_data *ts = ts_g;
 	int temp_block, wbyte;
@@ -2211,18 +2212,20 @@ static ssize_t synap_write_address(struct file *file,
 	wbyte = buf[3];
 	if (0xFF == temp_block)	//the  mark is to write register else read register
 	{
+		i2c_buf = kmalloc(PAGE_SIZE * 2, GFP_KERNEL);
 		for (i = 0; i < wbyte; i++) {
 			reg[i] = (char)buf[4 + i];
 		}
 		ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, page);
 		ret =
-		    synaptics_rmi4_i2c_write_block(ts->client, (char)address,
-						   wbyte, reg);
+		    synaptics_rmi4_i2c_write_block_big(ts->client, (char)address,
+						   i2c_buf, wbyte, reg);
 		TPD_DEBUG("%s write page=0x%x,address=0x%x\n", __func__, page,
 			  address);
 		for (i = 0; i < wbyte; i++) {
 			TPD_DEBUG("reg=0x%x\n", reg[i]);
 		}
+		kfree(i2c_buf);
 	} else
 		block = temp_block;
 	return count;

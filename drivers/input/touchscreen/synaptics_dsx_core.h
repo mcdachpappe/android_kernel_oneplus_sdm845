@@ -535,7 +535,7 @@ static inline int synaptics_rmi4_i2c_write_block(struct i2c_client *client,
 {
 	int retval;
 	unsigned char retry;
-	unsigned char buf[length + 1];
+	unsigned char buf[64 + 1];
 	struct i2c_msg msg[] = {
 		{
 		 .addr = client->addr,
@@ -569,11 +569,36 @@ static inline int synaptics_rmi4_i2c_write_block(struct i2c_client *client,
 	return retval;
 }
 
+
+static inline int synaptics_rmi4_i2c_write_block_big(struct i2c_client *client,
+				   unsigned char addr,
+				   unsigned char *buf,
+				   unsigned short length,
+				   unsigned char const *data)
+{
+	struct i2c_msg msg[] = {
+		{
+		 .addr = client->addr,
+		 .flags = 0,
+		 .len = length + 1,
+		 .buf = buf,
+		 }
+	};
+
+	buf[0] = addr & 0xff;
+	memcpy(&buf[1], &data[0], length);
+
+	return i2c_transfer(client->adapter, msg, 1);
+}
+
 #define synaptics_rmi4_reg_read(i2c, addr, data, len) \
         synaptics_rmi4_i2c_read_block(i2c, addr, len, data)
 
 #define synaptics_rmi4_reg_write(i2c, addr, data, len) \
         synaptics_rmi4_i2c_write_block(i2c, addr, len, data)
+
+#define synaptics_rmi4_reg_write_big(i2c, addr, buf, data, len) \
+        synaptics_rmi4_i2c_write_block_big(i2c, addr, buf, len, data)
 
 static inline ssize_t synaptics_rmi4_show_error(struct device *dev,
 		struct device_attribute *attr, char *buf)

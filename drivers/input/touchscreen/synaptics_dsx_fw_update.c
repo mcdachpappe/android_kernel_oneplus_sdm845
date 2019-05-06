@@ -1969,6 +1969,7 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 	int retval;
 	unsigned char data_base;
 	unsigned char length[2];
+	unsigned char *buf = NULL;
 	unsigned short transfer;
 	unsigned short remaining = block_cnt;
 	unsigned short block_number = 0;
@@ -1992,6 +1993,8 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 				__func__);
 		return retval;
 	}
+
+	retval = 0;
 
 	do {
 		if (remaining / fwu->payload_length)
@@ -2032,20 +2035,22 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 #endif
 		left_bytes = transfer * fwu->block_size;
 
+		retval = 0;
+		buf = kmalloc(PAGE_SIZE * 2, GFP_KERNEL);
+
 		do {
 			if (left_bytes / max_write_size)
 				write_size = max_write_size;
 			else
 				write_size = left_bytes;
 
-			retval = synaptics_rmi4_reg_write(fwu->client,
+			retval = synaptics_rmi4_reg_write_big(fwu->client,
 					data_base + fwu->off.payload,
-					block_ptr,
-					write_size);
+					buf, block_ptr, write_size);
 			if (retval < 0) {
 			TPD_ERR("%s: Failed to write (remaining = %d)\n",
 						__func__, remaining);
-				return retval;
+				goto free_buf;
 			}
 
 			block_ptr += write_size;
@@ -2055,13 +2060,17 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to wait idle (remaining %d)\n",
 					__func__, remaining);
-			return retval;
+			goto free_buf;
 		}
 
 		remaining -= transfer;
 	} while (remaining);
 
-	return 0;
+free_buf:
+	if (buf)
+		kfree(buf);
+
+	return retval;
 }
 
 static int fwu_write_f34_v5v6_blocks(unsigned char *block_ptr,
@@ -2070,6 +2079,7 @@ static int fwu_write_f34_v5v6_blocks(unsigned char *block_ptr,
 	int retval;
 	unsigned char data_base;
 	unsigned char block_number[] = {0, 0};
+	unsigned char *buf;
 	unsigned short blk;
 
 	data_base = fwu->f34_fd.data_base_addr;
@@ -2086,35 +2096,39 @@ static int fwu_write_f34_v5v6_blocks(unsigned char *block_ptr,
 		return retval;
 	}
 
+	retval = 0;
+	buf = kmalloc(PAGE_SIZE * 2, GFP_KERNEL);
+
 	for (blk = 0; blk < block_cnt; blk++) {
-		retval = synaptics_rmi4_reg_write(fwu->client,
+		retval = synaptics_rmi4_reg_write_big(fwu->client,
 				data_base + fwu->off.payload,
-				block_ptr,
-				fwu->block_size);
+				buf, block_ptr, fwu->block_size);
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to write block data (block %d)\n",
 					__func__, blk);
-			return retval;
+			goto free_buf;
 		}
 
 		retval = fwu_write_f34_command(command);
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to write command for block %d\n",
 					__func__, blk);
-			return retval;
+			goto free_buf;
 		}
 
 		retval = fwu_wait_for_idle(WRITE_WAIT_MS, false);
 		if (retval < 0) {
 			TPD_ERR("%s Failed wait idle status (block %d)\n",
 					__func__, blk);
-			return retval;
+			goto free_buf;
 		}
 
 		block_ptr += fwu->block_size;
 	}
 
-	return 0;
+free_buf:
+	kfree(buf);
+	return retval;
 }
 
 static int fwu_write_f34_blocks(unsigned char *block_ptr,

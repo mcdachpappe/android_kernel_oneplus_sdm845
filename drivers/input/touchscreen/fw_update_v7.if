@@ -1243,6 +1243,7 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 	int retval;
 	unsigned char base;
 	unsigned char length[2];
+	unsigned char *buf;
 	unsigned short transfer;
 	unsigned short max_transfer;
 	unsigned short remaining = block_cnt;
@@ -1273,6 +1274,9 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 	else
 		max_transfer = fwu->payload_length;
 
+	retval = 0;
+	buf = kmalloc(PAGE_SIZE * 2, GFP_KERNEL);
+
 	do {
 		if (remaining / max_transfer)
 			transfer = max_transfer;
@@ -1289,37 +1293,39 @@ static int fwu_write_f34_v7_blocks(unsigned char *block_ptr,
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to write transfer length (%d blocks remaining)\n",
 					__func__, remaining);
-			return retval;
+			goto free_buf;
 		}
 
 		retval = fwu_write_f34_command(command);
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to write command (%d blocks remaining)\n",
 					__func__, remaining);
-			return retval;
+			goto free_buf;
 		}
 
-		retval = synaptics_rmi4_i2c_write_block(fwu->client,
-				base + fwu->off.payload,
+		retval = synaptics_rmi4_i2c_write_block_big(fwu->client,
+				base + fwu->off.payload, buf,
 				transfer * fwu->block_size,block_ptr);
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to write block data (%d blocks remaining)\n",
 					__func__, remaining);
-			return retval;
+			goto free_buf;
 		}
 
 		retval = fwu_wait_for_idle(WRITE_WAIT_MS, true);
 		if (retval < 0) {
 			TPD_ERR("%s: Failed to wait for idle status (%d blocks remaining)\n",
 					__func__, remaining);
-			return retval;
+			goto free_buf;
 		}
 
 		block_ptr += (transfer * fwu->block_size);
 		remaining -= transfer;
 	} while (remaining);
 
-	return 0;
+free_buf:
+	kfree(buf);
+	return retval;
 }
 
 static int fwu_write_f34_blocks(unsigned char *block_ptr,
