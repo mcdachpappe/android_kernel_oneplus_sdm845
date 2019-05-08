@@ -1494,6 +1494,16 @@ config CPUSET_TOP_APP
 
 endif
 
+config STUNE_ASSIST
+	bool "SchedTune configuration helper"
+	depends on CGROUP_SCHEDTUNE
+	depends on ANDROID
+	help
+	  This option enables the configuration of default SchedTune
+	  parameters from kernel.
+
+	  Say N if unsure.
+
 config DYNAMIC_STUNE_BOOST
 	bool "Dynamic SchedTune boosting support"
 	depends on SCHED_TUNE
