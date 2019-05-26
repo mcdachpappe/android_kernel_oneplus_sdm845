@@ -661,6 +661,13 @@ void thermal_zone_device_update(struct thermal_zone_device *tz,
 	thermal_zone_set_trips(tz);
 
 	tz->notify_event = event;
+	/*
+	 * To prevent cooling_device throttling
+	 * when tz->temperature keep initialized status.
+	 */
+	if (tz->temperature == THERMAL_TEMP_INVALID ||
+		tz->temperature == THERMAL_TEMP_INVALID_LOW)
+		return;
 
 	for (count = 0; count < tz->trips; count++)
 		handle_thermal_trip(tz, count);
@@ -2624,7 +2631,7 @@ static int thermal_pm_notify(struct notifier_block *nb,
 			if (tz->ops->is_wakeable &&
 				tz->ops->is_wakeable(tz))
 				continue;
-			thermal_zone_device_reset(tz);
+			thermal_zone_device_init(tz);
 			thermal_zone_device_update(tz,
 						   THERMAL_EVENT_UNSPECIFIED);
 		}
