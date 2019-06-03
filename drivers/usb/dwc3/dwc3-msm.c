@@ -136,33 +136,6 @@ struct dwc3_msm_req_complete {
 			      struct usb_request *req);
 };
 
-enum dwc3_drd_state {
-	DRD_STATE_UNDEFINED = 0,
-
-	DRD_STATE_IDLE,
-	DRD_STATE_PERIPHERAL,
-	DRD_STATE_PERIPHERAL_SUSPEND,
-
-	DRD_STATE_HOST_IDLE,
-	DRD_STATE_HOST,
-};
-
-static const char *const state_names[] = {
-	[DRD_STATE_IDLE] = "idle",
-	[DRD_STATE_PERIPHERAL] = "peripheral",
-	[DRD_STATE_PERIPHERAL_SUSPEND] = "peripheral_suspend",
-	[DRD_STATE_HOST_IDLE] = "host_idle",
-	[DRD_STATE_HOST] = "host",
-};
-
-static const char *dwc3_drd_state_string(enum dwc3_drd_state state)
-{
-	if (state < 0 || state >= ARRAY_SIZE(state_names))
-		return "UNDEFINED";
-
-	return state_names[state];
-}
-
 enum dwc3_id_state {
 	DWC3_ID_GROUND = 0,
 	DWC3_ID_FLOAT,
@@ -249,7 +222,7 @@ struct dwc3_msm {
 	unsigned long		inputs;
 	unsigned int		max_power;
 	bool			charging_disabled;
-	enum dwc3_drd_state	drd_state;
+	enum usb_otg_state	otg_state;
 	u32			bus_perf_client;
 	struct msm_bus_scale_pdata	*bus_scale_table;
 	struct power_supply	*usb_psy;
@@ -2139,7 +2112,7 @@ static void dwc3_msm_power_collapse_por(struct dwc3_msm *mdwc)
 	dwc3_msm_write_reg_field(mdwc->base, PWR_EVNT_IRQ_MASK_REG,
 				PWR_EVNT_POWERDOWN_IN_P3_MASK, 1);
 
-	if (mdwc->drd_state == DRD_STATE_HOST) {
+	if (mdwc->otg_state == OTG_STATE_A_HOST) {
 		dev_dbg(mdwc->dev, "%s: set the core in host mode\n",
 							__func__);
 		dwc3_set_mode(dwc, DWC3_GCTL_PRTCAP_HOST);
@@ -2339,7 +2312,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool hibernation)
 	}
 
 	if (!mdwc->vbus_active && dwc->is_drd &&
-		mdwc->drd_state == DRD_STATE_PERIPHERAL) {
+		mdwc->otg_state == OTG_STATE_B_PERIPHERAL) {
 		/*
 		 * In some cases, the pm_runtime_suspend may be called by
 		 * usb_bam when there is pending lpm flag. However, if this is
@@ -2361,7 +2334,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool hibernation)
 	 * then check controller state of L2 and break
 	 * LPM sequence. Check this for device bus suspend case.
 	 */
-	if ((dwc->is_drd && mdwc->drd_state == DRD_STATE_PERIPHERAL_SUSPEND) &&
+	if ((dwc->is_drd && mdwc->otg_state == OTG_STATE_B_SUSPEND) &&
 		(dwc->gadget.state != USB_STATE_CONFIGURED)) {
 		pr_err("%s(): Trying to go in LPM with state:%d\n",
 					__func__, dwc->gadget.state);
@@ -2376,8 +2349,8 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool hibernation)
 	 */
 
 	if (!mdwc->in_host_mode && (mdwc->vbus_active &&
-		(mdwc->drd_state == DRD_STATE_PERIPHERAL_SUSPEND ||
-		mdwc->drd_state == DRD_STATE_PERIPHERAL) && !mdwc->suspend)) {
+		(mdwc->otg_state == OTG_STATE_B_SUSPEND ||
+		mdwc->otg_state == OTG_STATE_B_PERIPHERAL) && !mdwc->suspend)) {
 		dev_dbg(mdwc->dev,
 			"Received wakeup event before the core suspend\n");
 		mutex_unlock(&mdwc->suspend_resume_mutex);
@@ -4292,7 +4265,7 @@ static int dwc3_restart_usb_host_mode(struct notifier_block *nb,
 	dbg_event(0xFF, "pm_runtime_sus", ret);
 
 	dwc->maximum_speed = usb_speed;
-	mdwc->drd_state = DRD_STATE_IDLE;
+	mdwc->otg_state = OTG_STATE_B_IDLE;
 	schedule_delayed_work(&mdwc->sm_work, 0);
 	dbg_event(0xFF, "complete_host_change", dwc->maximum_speed);
 err:
@@ -4359,7 +4332,7 @@ set_prop:
  *
  * @w: Pointer to the dwc3 otg workqueue
  *
- * NOTE: After any change in drd_state, we must reschdule the state machine.
+ * NOTE: After any change in otg_state, we must reschdule the state machine.
  */
 static void dwc3_otg_sm_work(struct work_struct *w)
 {
@@ -4378,13 +4351,13 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		return;
 	}
 
-	state = dwc3_drd_state_string(mdwc->drd_state);
+	state = usb_otg_state_string(mdwc->otg_state);
 	dev_dbg(mdwc->dev, "%s state\n", state);
 	dbg_event(0xFF, state, 0);
 
 	/* Check OTG state */
-	switch (mdwc->drd_state) {
-	case DRD_STATE_UNDEFINED:
+	switch (mdwc->otg_state) {
+	case OTG_STATE_UNDEFINED:
 		/* put controller and phy in suspend if no cable connected */
 		if (test_bit(ID, &mdwc->inputs) &&
 				!test_bit(B_SESS_VLD, &mdwc->inputs)) {
@@ -4396,16 +4369,16 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 			pm_runtime_put_sync(mdwc->dev);
 			dbg_event(0xFF, "Undef NoUSB",
 				atomic_read(&mdwc->dev->power.usage_count));
-			mdwc->drd_state = DRD_STATE_IDLE;
+			mdwc->otg_state = OTG_STATE_B_IDLE;
 			break;
 		}
 
 		dbg_event(0xFF, "Exit UNDEF", 0);
-		mdwc->drd_state = DRD_STATE_IDLE;
+		mdwc->otg_state = OTG_STATE_B_IDLE;
 		pm_runtime_set_suspended(mdwc->dev);
 		pm_runtime_enable(mdwc->dev);
 		/* fall-through */
-	case DRD_STATE_IDLE:
+	case OTG_STATE_B_IDLE:
 		if (test_bit(WAIT_FOR_LPM, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "still not in lpm, wait.\n");
 			break;
@@ -4413,7 +4386,7 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 
 		if (!test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "!id\n");
-			mdwc->drd_state = DRD_STATE_HOST_IDLE;
+			mdwc->otg_state = OTG_STATE_A_IDLE;
 			work = 1;
 		} else if (test_bit(B_SESS_VLD, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "b_sess_vld\n");
@@ -4423,14 +4396,14 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				msecs_to_jiffies(SDP_CONNETION_CHECK_TIME));
 			/*
 			 * Increment pm usage count upon cable connect. Count
-			 * is decremented in DRD_STATE_PERIPHERAL state on
+			 * is decremented in OTG_STATE_B_PERIPHERAL state on
 			 * cable disconnect or in bus suspend.
 			 */
 			pm_runtime_get_sync(mdwc->dev);
 			dbg_event(0xFF, "BIDLE gsync",
 				atomic_read(&mdwc->dev->power.usage_count));
 			dwc3_otg_start_peripheral(mdwc, 1);
-			mdwc->drd_state = DRD_STATE_PERIPHERAL;
+			mdwc->otg_state = OTG_STATE_B_PERIPHERAL;
 			work = 1;
 		} else {
 			dwc3_msm_gadget_vbus_draw(mdwc, 0);
@@ -4438,17 +4411,17 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		}
 		break;
 
-	case DRD_STATE_PERIPHERAL:
+	case OTG_STATE_B_PERIPHERAL:
 		if (!test_bit(B_SESS_VLD, &mdwc->inputs) ||
 				!test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "!id || !bsv\n");
-			mdwc->drd_state = DRD_STATE_IDLE;
+			mdwc->otg_state = OTG_STATE_B_IDLE;
 			cancel_delayed_work_sync(&mdwc->sdp_check);
 			dwc3_otg_start_peripheral(mdwc, 0);
 			/*
 			 * Decrement pm usage count upon cable disconnect
 			 * which was incremented upon cable connect in
-			 * DRD_STATE_IDLE state
+			 * OTG_STATE_B_IDLE state
 			 */
 			pm_runtime_put_sync_suspend(mdwc->dev);
 			dbg_event(0xFF, "!BSV psync",
@@ -4457,13 +4430,13 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		} else if (test_bit(B_SUSPEND, &mdwc->inputs) &&
 			test_bit(B_SESS_VLD, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "BPER bsv && susp\n");
-			mdwc->drd_state = DRD_STATE_PERIPHERAL_SUSPEND;
+			mdwc->otg_state = OTG_STATE_B_SUSPEND;
 			/*
 			 * Decrement pm usage count upon bus suspend.
 			 * Count was incremented either upon cable
-			 * connect in DRD_STATE_IDLE or host
+			 * connect in OTG_STATE_B_IDLE or host
 			 * initiated resume after bus suspend in
-			 * DRD_STATE_PERIPHERAL_SUSPEND state
+			 * OTG_STATE_B_SUSPEND state
 			 */
 			pm_runtime_mark_last_busy(mdwc->dev);
 			pm_runtime_put_autosuspend(mdwc->dev);
@@ -4472,20 +4445,20 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		}
 		break;
 
-	case DRD_STATE_PERIPHERAL_SUSPEND:
+	case OTG_STATE_B_SUSPEND:
 		if (!test_bit(B_SESS_VLD, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "BSUSP: !bsv\n");
-			mdwc->drd_state = DRD_STATE_IDLE;
+			mdwc->otg_state = OTG_STATE_B_IDLE;
 			cancel_delayed_work_sync(&mdwc->sdp_check);
 			dwc3_otg_start_peripheral(mdwc, 0);
 		} else if (!test_bit(B_SUSPEND, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "BSUSP !susp\n");
-			mdwc->drd_state = DRD_STATE_PERIPHERAL;
+			mdwc->otg_state = OTG_STATE_B_PERIPHERAL;
 			/*
 			 * Increment pm usage count upon host
 			 * initiated resume. Count was decremented
 			 * upon bus suspend in
-			 * DRD_STATE_PERIPHERAL state.
+			 * OTG_STATE_B_PERIPHERAL state.
 			 */
 			pm_runtime_get_sync(mdwc->dev);
 			dbg_event(0xFF, "!SUSP gsync",
@@ -4493,15 +4466,15 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 		}
 		break;
 
-	case DRD_STATE_HOST_IDLE:
+	case OTG_STATE_A_IDLE:
 		/* Switch to A-Device*/
 		if (test_bit(ID, &mdwc->inputs)) {
 			dev_dbg(mdwc->dev, "id\n");
-			mdwc->drd_state = DRD_STATE_IDLE;
+			mdwc->otg_state = OTG_STATE_B_IDLE;
 			mdwc->vbus_retry_count = 0;
 			work = 1;
 		} else {
-			mdwc->drd_state = DRD_STATE_HOST;
+			mdwc->otg_state = OTG_STATE_A_HOST;
 			ret = dwc3_otg_start_host(mdwc, 1);
 			if ((ret == -EPROBE_DEFER) &&
 						mdwc->vbus_retry_count < 3) {
@@ -4509,24 +4482,24 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				 * Get regulator failed as regulator driver is
 				 * not up yet. Will try to start host after 1sec
 				 */
-				mdwc->drd_state = DRD_STATE_HOST_IDLE;
+				mdwc->otg_state = OTG_STATE_A_IDLE;
 				dev_dbg(mdwc->dev, "Unable to get vbus regulator. Retrying...\n");
 				delay = VBUS_REG_CHECK_DELAY;
 				work = 1;
 				mdwc->vbus_retry_count++;
 			} else if (ret) {
 				dev_err(mdwc->dev, "unable to start host\n");
-				mdwc->drd_state = DRD_STATE_HOST_IDLE;
+				mdwc->otg_state = OTG_STATE_A_IDLE;
 				goto ret;
 			}
 		}
 		break;
 
-	case DRD_STATE_HOST:
+	case OTG_STATE_A_HOST:
 		if (test_bit(ID, &mdwc->inputs) || mdwc->hc_died) {
 			dev_dbg(mdwc->dev, "id || hc_died\n");
 			dwc3_otg_start_host(mdwc, 0);
-			mdwc->drd_state = DRD_STATE_IDLE;
+			mdwc->otg_state = OTG_STATE_B_IDLE;
 			mdwc->vbus_retry_count = 0;
 			mdwc->hc_died = false;
 			work = 1;
@@ -4639,7 +4612,7 @@ static int dwc3_msm_pm_restore(struct device *dev)
 	pm_runtime_enable(dev);
 
 	/* Restore PHY flags if hibernated in host mode */
-	if (mdwc->drd_state == DRD_STATE_HOST) {
+	if (mdwc->otg_state == OTG_STATE_A_HOST) {
 		usb_phy_notify_connect(mdwc->hs_phy, USB_SPEED_HIGH);
 		mdwc->hs_phy->flags |= PHY_HOST_MODE;
 		if (mdwc->ss_phy) {
