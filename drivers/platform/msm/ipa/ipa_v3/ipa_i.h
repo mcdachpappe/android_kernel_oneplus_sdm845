@@ -1607,6 +1607,7 @@ struct ipa3_context {
 	bool use_ipa_pm;
 	bool vlan_mode_iface[IPA_VLAN_IF_MAX];
 	bool wdi_over_pcie;
+	bool fw_loaded;
 };
 
 struct ipa3_plat_drv_res {
