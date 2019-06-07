@@ -185,6 +185,5 @@ msm_drm-$(CONFIG_DRM_MSM) += \
 	msm_debugfs.o
 
 obj-$(CONFIG_DRM_MSM)	+= msm_drm.o
-msm_drm-$(CONFIG_KLAPSE) += sde/klapse.o
 
 CFLAGS_sde_crtc.o += -Wframe-larger-than=8192
