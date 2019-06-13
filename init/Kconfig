@@ -1438,6 +1438,16 @@ config SCHED_TUNE
 
 	  If unsure, say N.
 
+config CPUSET_ASSIST
+	bool "CPUSet configuration helper"
+	depends on CPUSETS
+	depends on ANDROID
+	help
+	  This option enables the configuration of default cpusets
+	  parameters from kernel.
+
+	  If unsure, say N.
+
 config DYNAMIC_STUNE_BOOST
 	bool "Dynamic SchedTune boosting support"
 	depends on SCHED_TUNE
