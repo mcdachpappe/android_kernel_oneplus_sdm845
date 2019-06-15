@@ -3076,7 +3076,7 @@ int smblib_set_prop_sdp_current_max(struct smb_charger *chg,
 	int rc = 0;
 
 /* david.liu@bsp, 20171023 Battery & Charging porting */
-	pr_err("set usb current_max=%d\n", val->intval);
+	pr_debug("set usb current_max=%d\n", val->intval);
 	if (!chg->pd_active) {
 		rc = smblib_handle_usb_current(chg, val->intval);
 	} else if (chg->system_suspend_supported) {
@@ -5243,7 +5243,7 @@ static void op_get_aicl_work(struct work_struct *work)
 		return;
 	}
 
-	pr_info("AICL result=%dmA\n", settled_ua / 1000);
+	pr_debug("AICL result=%dmA\n", settled_ua / 1000);
 }
 static bool is_usb_present(struct smb_charger *chg);
 
@@ -5379,7 +5379,7 @@ static int op_charging_en(struct smb_charger *chg, bool en)
 {
 	int rc;
 
-	pr_err("enable=%d\n", en);
+	pr_debug("enable=%d\n", en);
 
 	if (chg->chg_disabled && en) {
 		pr_info("chg_disabled just return\n");
@@ -5612,7 +5612,7 @@ static int op_set_collapse_fet(struct smb_charger *chg, bool on)
 			USBIN_AICL_OPTIONS_CFG_REG, rc);
 		return rc;
 	}
-	pr_info("USBIN_AICL_OPTIONS_CFG_REG(0x%x)=0x%x\n",
+	pr_debug("USBIN_AICL_OPTIONS_CFG_REG(0x%x)=0x%x\n",
 		USBIN_AICL_OPTIONS_CFG_REG, stat);
 
 	rc = smblib_masked_write(chg, USBIN_LOAD_CFG_REG, BIT(0)
@@ -5830,7 +5830,7 @@ static void set_usb_switch(struct smb_charger *chg, bool enable)
 			schedule_delayed_work(&chg->rechk_sw_dsh_work,
 					msecs_to_jiffies(retrger_time));
 	} else {
-		pr_err("switch off fastchg\n");
+		pr_debug("switch off fastchg\n");
 		usb_sw_gpio_set(0);
 		mcu_en_gpio_set(1);
 	}
@@ -5860,7 +5860,7 @@ static void switch_fast_chg(struct smb_charger *chg)
 		is_allowed = is_fastchg_allowed(chg);
 	if (pre_is_allowed != is_allowed) {
 		pre_is_allowed = is_allowed;
-		pr_info("is_allowed = %d\n", is_allowed);
+		pr_debug("is_allowed = %d\n", is_allowed);
 	}
 		if (is_allowed) {
 			set_usb_switch(chg, true);
@@ -5920,7 +5920,7 @@ static void retrigger_dash_work(struct work_struct *work)
 		return;
 	}
 	if (chg->ck_dash_count >= DASH_CHECK_COUNT) {
-		pr_info("retrger dash\n");
+		pr_debug("retrger dash\n");
 		chg->re_trigr_dash_done = true;
 		set_usb_switch(chg, false);
 		set_usb_switch(chg, true);
@@ -6048,7 +6048,7 @@ static int set_dash_charger_present(int status)
 		charger_present = is_usb_present(g_chg);
 		g_chg->dash_present = status && charger_present;
 		if (g_chg->dash_present && !pre_dash_present) {
-			pr_err("set dash online\n");
+			pr_debug("set dash online\n");
 			g_chg->usb_psy_desc.type = POWER_SUPPLY_TYPE_DASH;
 			vote(g_chg->usb_icl_votable, PD_VOTER, true,
 					DEFAULT_WALL_CHG_MA * 1000);
@@ -6085,7 +6085,7 @@ static void op_otg_icl_contrl(struct smb_charger *chg)
 
 	if (icl_pre == icl)
 		return;
-	pr_info("cap=%d,icl=%d,icl_pre=%d\n", cap, icl, icl_pre);
+	pr_debug("cap=%d,icl=%d,icl_pre=%d\n", cap, icl, icl_pre);
 	rc = smblib_set_charge_param(chg, &chg->param.otg_cl,
 					icl);
 	if (rc < 0)
@@ -7077,7 +7077,7 @@ static bool op_check_vbat_is_full_by_sw(struct smb_charger *chg)
 	}
 
 	if (ret_sw == true || ret_hw == true) {
-		pr_info("[BATTERY] Battery full by sw[%s] !!\n", (ret_sw == true) ? "S" : "H");
+		pr_debug("[BATTERY] Battery full by sw[%s] !!\n", (ret_sw == true) ? "S" : "H");
 		ret_sw = ret_hw = false;
 		return true;
 	} else {
@@ -7095,7 +7095,7 @@ void checkout_term_current(struct smb_charger *chg)
 	if (chg_full) {
 		chg->chg_done = true;
 		op_charging_en(chg, false);
-		pr_info("chg_done:CAP=%d (Q:%d),VBAT=%d (Q:%d),IBAT=%d (Q:%d),BAT_TEMP=%d\n",
+		pr_debug("chg_done:CAP=%d (Q:%d),VBAT=%d (Q:%d),IBAT=%d (Q:%d),BAT_TEMP=%d\n",
 				get_prop_batt_capacity(chg),
 				get_prop_fg_capacity(chg),
 				get_prop_batt_voltage_now(chg) / 1000,
@@ -7214,7 +7214,7 @@ static void smbchg_re_det_work(struct work_struct *work)
 
 	pr_debug("chg->redet_count=%d\n", chg->redet_count);
 	if (chg->usb_enum_status) {
-		pr_info("re_det, usb_enum_status\n");
+		pr_debug("re_det, usb_enum_status\n");
 		chg->redet_count = 0;
 		return;
 	}
@@ -7828,7 +7828,7 @@ EXPORT_SYMBOL(fastcharge_information_unregister);
 
 static int notify_usb_enumeration_function(int status)
 {
-	pr_info("status=%d\n", status);
+	pr_debug("status=%d\n", status);
 	g_chg->usb_enum_status = status;
 
 	return g_chg->usb_enum_status;

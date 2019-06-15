@@ -175,7 +175,7 @@ void usb_sw_gpio_set(int value)
 		gpio_direction_output(fastchg_di->usb_sw_2_gpio, 0);
 	}
 	fastchg_di->fast_chg_allow = value;
-	pr_info("get usb_sw_gpio=%d&%d\n"
+	pr_debug("get usb_sw_gpio=%d&%d\n"
 		, gpio_get_value(fastchg_di->usb_sw_1_gpio)
 		, gpio_get_value(fastchg_di->usb_sw_2_gpio));
 }
@@ -996,7 +996,7 @@ static long  dash_dev_ioctl(struct file *filp, unsigned int cmd,
 				mod_timer(&di->watchdog,
 				jiffies + msecs_to_jiffies(15000));
 			} else if (arg == DASH_NOTIFY_FAST_PRESENT + 2) {
-				pr_err("REJECT_DATA\n");
+				pr_debug("REJECT_DATA\n");
 				dash_write(di, REJECT_DATA);
 			} else if (arg == DASH_NOTIFY_FAST_PRESENT + 3) {
 				notify_check_usb_suspend(false, false);
@@ -1013,7 +1013,7 @@ static long  dash_dev_ioctl(struct file *filp, unsigned int cmd,
 				di->fast_switch_to_normal = false;
 				di->fast_normal_to_warm = false;
 				di->fast_chg_ing = false;
-				pr_err("fastchg stop unexpectly, switch off fastchg\n");
+				pr_debug("fastchg stop unexpectly, switch off fastchg\n");
 				switch_mode_to_normal();
 				del_timer(&di->watchdog);
 				dash_write(di, REJECT_DATA);
