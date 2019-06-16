@@ -4514,7 +4514,7 @@ static void set_doze_time(int doze_time)
 }
 
 #define SUBABS(x,y) ((x)-(y))
-static uint8_t baseline_value[33 * 33];
+static uint8_t *baseline_value;
 static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 {
 	int ret = 0;
@@ -4529,7 +4529,7 @@ static int tp_baseline_get(struct synaptics_ts_data *ts, bool flag)
 	atomic_set(&ts->is_stop, 1);
 	touch_disable(ts);
 	TPD_DEBUG("%s start!\n", __func__);
-	memset(baseline_value, 0, sizeof(baseline_value));
+	memset(baseline_value, 0, TX_NUM * RX_NUM * 2);
 	memset(delta_baseline, 0, sizeof(delta_baseline));
 
 	mutex_lock(&ts->mutex);
@@ -6188,6 +6188,8 @@ static int synaptics_ts_probe(struct i2c_client *client,
 		version_is_s3508 = 1;
 	}
 
+	baseline_value = kmalloc(TX_NUM * RX_NUM * 2, GFP_KERNEL);
+
 	if (version_is_s3508 == 1)
 		F12_2D_DATA04 = 0x0008;
 	else if (version_is_s3508 == 2)	/*s3706 */
@@ -6428,6 +6430,7 @@ static int synaptics_ts_remove(struct i2c_client *client)
 	}
 	input_unregister_device(ts->input_dev);
 	input_free_device(ts->input_dev);
+	kfree(baseline_value);
 	kfree(ts);
 	tpd_power(ts, 0);
 
