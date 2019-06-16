@@ -361,7 +361,7 @@ static bool dashchg_fw_check(void)
 		}
 		/* compare recv_buf with dashchg_firmware_data[] end */
 	}
-	pr_info("result=success\n");
+	pr_debug("result=success\n");
 	return FW_CHECK_SUCCESS;
 i2c_err:
 	pr_err("result=fail\n");
@@ -423,7 +423,7 @@ static void reset_mcu_and_request_irq(struct fastchg_device_info *di)
 {
 	int ret;
 
-	pr_info("\n");
+	pr_debug("\n");
 	gpio_direction_output(di->ap_clk, 1);
 	usleep_range(10000, 10001);
 	gpio_direction_output(di->mcu_en_gpio, 1);
@@ -469,7 +469,7 @@ static void dashchg_fw_update(struct work_struct *work)
 		reset_mcu_and_request_irq(di);
 		__pm_relax(&di->fastchg_update_fireware_lock);
 		set_property_on_smbcharger(POWER_SUPPLY_PROP_SWITCH_DASH, true);
-		pr_info("FW check success\n");
+		pr_debug("FW check success\n");
 		return;
 	}
 	pr_info("start erasing data.......\n");
@@ -1252,7 +1252,7 @@ static ssize_t dash_dev_write(struct file *filp, const char __user *buf,
 	}
 	schedule_delayed_work(&di->update_fireware_version_work,
 			msecs_to_jiffies(SHOW_FW_VERSION_DELAY_MS));
-	pr_info("fw_ver_count=%d\n", di->dashchg_fw_ver_count);
+	pr_debug("fw_ver_count=%d\n", di->dashchg_fw_ver_count);
 	return count;
 }
 
@@ -1426,7 +1426,7 @@ static void check_n76e_support(struct fastchg_device_info *di)
 		init_n76e_exist_node();
 		pr_info("n76e exist\n");
 	} else {
-		pr_info("n76e not exist\n");
+		pr_debug("n76e not exist\n");
 	}
 
 }
@@ -1437,7 +1437,7 @@ static void check_enhance_support(struct fastchg_device_info *di)
 		init_enhance_dash_exist_node();
 		pr_info("enhance dash exist\n");
 	} else {
-		pr_info("enhance dash not exist\n");
+		pr_debug("enhance dash not exist\n");
 	}
 
 }
@@ -1494,7 +1494,7 @@ static int dash_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	struct fastchg_device_info *di;
 	int ret;
 
-	pr_info("dash_probe\n");
+	pr_debug("dash_probe\n");
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		pr_err("i2c_func error\n");
 		goto err_check_functionality_failed;
@@ -1556,7 +1556,7 @@ static int dash_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	check_n76e_support(di);
 	check_enhance_support(di);
 	fastcharge_information_register(&fastcharge_information);
-	pr_info("dash_probe success\n");
+	pr_debug("dash_probe success\n");
 
 	return 0;
 
