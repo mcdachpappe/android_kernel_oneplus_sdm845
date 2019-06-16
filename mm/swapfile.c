@@ -2802,15 +2802,10 @@ int swapcache_prepare(swp_entry_t entry)
 	return __swap_duplicate(entry, SWAP_HAS_CACHE);
 }
 
-struct swap_info_struct *swp_swap_info(swp_entry_t entry)
-{
-	return swap_info[swp_type(entry)];
-}
-
 struct swap_info_struct *page_swap_info(struct page *page)
 {
-	swp_entry_t entry = { .val = page_private(page) };
-	return swp_swap_info(entry);
+	swp_entry_t swap = { .val = page_private(page) };
+	return swap_info[swp_type(swap)];
 }
 
 /*
@@ -2818,6 +2813,7 @@ struct swap_info_struct *page_swap_info(struct page *page)
  */
 struct address_space *__page_file_mapping(struct page *page)
 {
+	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
 	return page_swap_info(page)->swap_file->f_mapping;
 }
 EXPORT_SYMBOL_GPL(__page_file_mapping);
@@ -2825,6 +2821,7 @@ EXPORT_SYMBOL_GPL(__page_file_mapping);
 pgoff_t __page_file_index(struct page *page)
 {
 	swp_entry_t swap = { .val = page_private(page) };
+	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
 	return swp_offset(swap);
 }
 EXPORT_SYMBOL_GPL(__page_file_index);
