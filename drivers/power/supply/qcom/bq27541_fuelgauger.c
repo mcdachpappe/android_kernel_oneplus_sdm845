@@ -1563,7 +1563,7 @@ static void bq27541_parse_dt(struct bq27541_device_info *di)
 				"qcom,modify-soc-smooth");
 	di->is_mcl_verion = of_property_read_bool(node,
 				"op,mcl_verion");
-	pr_info("di->is_mcl_verion=%d\n", di->is_mcl_verion);
+	pr_debug("di->is_mcl_verion=%d\n", di->is_mcl_verion);
 }
 static int sealed(void)
 {
@@ -2040,7 +2040,7 @@ static int bq27541_battery_probe(struct i2c_client *client,
 	retval = check_bat_present(di);
 	if( retval ) {
 		init_battery_exist_node();
-		pr_info("probe success battery exist \n");
+		pr_debug("probe success battery exist \n");
 	}
 	else {
 		pr_info("probe success battery not exist \n");
