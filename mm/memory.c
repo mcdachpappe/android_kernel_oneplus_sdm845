@@ -2743,8 +2743,11 @@ int do_swap_page(struct fault_env *fe, pte_t orig_pte)
 	if (!page) {
 		struct swap_info_struct *si = swp_swap_info(entry);
 
-		if (si->flags & SWP_SYNCHRONOUS_IO &&
-				__swap_count(si, entry) == 1) {
+		if (!(si->flags & SWP_SYNCHRONOUS_IO)) {
+			page = swapin_readahead(entry,
+				GFP_HIGHUSER_MOVABLE, vma, fe->address);
+			swapcache = page;
+		} else {
 			/* skip swapcache */
 			page = alloc_page_vma(GFP_HIGHUSER_MOVABLE, vma, fe->address);
 			if (page) {
@@ -2754,10 +2757,6 @@ int do_swap_page(struct fault_env *fe, pte_t orig_pte)
 				lru_cache_add_anon(page);
 				swap_readpage(page, true);
 			}
-		} else {
-			page = swapin_readahead(entry,
-				GFP_HIGHUSER_MOVABLE, vma, fe->address);
-			swapcache = page;
 		}
 
 		if (!page) {
