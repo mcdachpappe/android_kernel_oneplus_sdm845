@@ -13,6 +13,7 @@
 
 #include "sdm439-qrd.dtsi"
 #include "sdm429w-pm660.dtsi"
+#include "sdm429w-camera-sensor-spyro.dtsi"
 
 &mdss_dsi0 {
 	qcom,dsi-pref-prim-pan = <&dsi_hx8399c_hd_vid>;
@@ -129,9 +130,9 @@
 };
 
 &adsp_fw_mem {
-	reg = <0x0 0x8b800000 0x0 0x1100000>;
+	reg = <0x0 0x8b800000 0x0 0x1400000>;
 };
 
 &wcnss_fw_mem {
-	reg = <0x0 0x8c900000 0x0 0x700000>;
+	reg = <0x0 0x8cc00000 0x0 0x700000>;
 };
