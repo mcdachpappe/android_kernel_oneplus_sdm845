@@ -22,6 +22,7 @@ config KVM_ARM_VGIC_V3_ITS
 config KVM
 	bool "Kernel-based Virtual Machine (KVM) support"
 	depends on OF
+	depends on !LTO_CLANG # https://github.com/ClangBuiltLinux/linux/issues/472
 	select MMU_NOTIFIER
 	select PREEMPT_NOTIFIERS
 	select ANON_INODES
