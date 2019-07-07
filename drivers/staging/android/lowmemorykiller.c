@@ -88,38 +88,6 @@ static unsigned long lowmem_count(struct shrinker *s,
 		global_node_page_state(NR_INACTIVE_FILE);
 }
 
-static inline int test_task_flag(struct task_struct *p, int flag)
-{
-	struct task_struct *t;
-
-	for_each_thread(p, t) {
-		task_lock(t);
-		if (test_tsk_thread_flag(t, flag)) {
-			task_unlock(t);
-			return 1;
-		}
-		task_unlock(t);
-	}
-
-	return 0;
-}
-
-static inline int test_task_lmk_waiting(struct task_struct *p)
-{
-	struct task_struct *t;
-
-	for_each_thread(p, t) {
-		task_lock(t);
-		if (task_lmk_waiting(t)) {
-			task_unlock(t);
-			return 1;
-		}
-		task_unlock(t);
-	}
-
-	return 0;
-}
-
 #ifdef CONFIG_ANDROID_LMK_ADJ_RBTREE
 static inline struct task_struct *pick_next_from_adj_tree(struct task_struct *task);
 static inline struct task_struct *pick_first_task(void);
@@ -144,15 +112,6 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 				global_node_page_state(NR_UNEVICTABLE) -
 				total_swapcache_pages();
 	int minfree_count_offset = 0;
-
-	rcu_read_lock();
-	tsk = current->group_leader;
-	if ((tsk->flags & PF_EXITING) && test_task_flag(tsk, TIF_MEMDIE)) {
-		set_tsk_thread_flag(current, TIF_MEMDIE);
-		rcu_read_unlock();
-		return 0;
-	}
-	rcu_read_unlock();
 
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
@@ -194,24 +153,16 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 		if (tsk->flags & PF_KTHREAD)
 			continue;
 
-		/* if task no longer has any memory ignore it */
-		if (test_task_flag(tsk, TIF_MM_RELEASED))
-			continue;
-
-		if (time_before_eq(jiffies, lowmem_deathpending_timeout)) {
-			if (test_task_lmk_waiting(tsk)) {
-				rcu_read_unlock();
-				if (same_thread_group(current, tsk))
-					set_tsk_thread_flag(current,
-								TIF_MEMDIE);
-				return 0;
-			}
-		}
-
 		p = find_lock_task_mm(tsk);
 		if (!p)
 			continue;
 
+		if (task_lmk_waiting(p) &&
+		    time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+			task_unlock(p);
+			rcu_read_unlock();
+			return 0;
+		}
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
 			task_unlock(p);
@@ -220,13 +171,6 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 #else
 			continue;
 #endif
-		}
-		if (fatal_signal_pending(p) ||
-				((p->flags & PF_EXITING) &&
-					test_tsk_thread_flag(p, TIF_MEMDIE))) {
-			lowmem_print(2, "skip slow dying process %d\n", p->pid);
-			task_unlock(p);
-			continue;
 		}
 		tasksize = get_mm_rss(p->mm);
 		task_unlock(p);
@@ -270,12 +214,11 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			     free);
 		lowmem_deathpending_timeout = jiffies + HZ;
 		rem += selected_tasksize;
-		rcu_read_unlock();
-	} else
-		rcu_read_unlock();
+	}
 
 	lowmem_print(4, "lowmem_scan %lu, %x, return %lu\n",
 		     sc->nr_to_scan, sc->gfp_mask, rem);
+	rcu_read_unlock();
 	return rem;
 }
 
