@@ -78,6 +78,7 @@
 #include <linux/irq.h>
 #include <linux/cpufreq_times.h>
 #include <linux/sched/loadavg.h>
+#include <linux/cgroup-defs.h>
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
@@ -3256,11 +3257,12 @@ void scheduler_tick(void)
 	curr->sched_class->task_tick(rq, curr, 0);
 	cpu_load_update_active(rq);
 	calc_global_load_tick(rq);
-	psi_task_tick(rq);
 
 	early_notif = early_detection_notify(rq, wallclock);
 	if (early_notif)
 		cpufreq_update_util(rq, SCHED_CPUFREQ_EARLY_DET);
+
+	psi_task_tick(rq);
 
 	raw_spin_unlock(&rq->lock);
 
@@ -3617,11 +3619,11 @@ static void __sched notrace __schedule(bool preempt)
 		update_rq_clock(rq);
 
 	next = pick_next_task(rq, prev, &rf);
+	wallclock = sched_ktime_clock();
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 	rq->clock_skip_update = 0;
 
-	wallclock = sched_ktime_clock();
 	if (likely(prev != next)) {
 		prev->last_cpu_deselected_ts = wallclock;
 		if (!prev->on_rq)
@@ -9104,6 +9106,17 @@ int sched_updown_migrate_handler(struct ctl_table *table, int write,
 	return ret;
 }
 #endif
+
+void threadgroup_change_begin(struct task_struct *tsk)
+{
+	might_sleep();
+	cgroup_threadgroup_change_begin(tsk);
+}
+
+void threadgroup_change_end(struct task_struct *tsk)
+{
+	cgroup_threadgroup_change_end(tsk);
+}
 
 #ifdef CONFIG_CGROUP_SCHED
 

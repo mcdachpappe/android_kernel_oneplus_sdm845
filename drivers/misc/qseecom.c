@@ -1269,7 +1269,7 @@ static int qseecom_register_listener(struct qseecom_dev_handle *data,
 	new_entry->listener_in_use = false;
 	list_add_tail(&new_entry->list, &qseecom.registered_listener_list_head);
 
-	pr_warn("Service %d is registered\n", rcvd_lstnr.listener_id);
+	pr_debug("Service %d is registered\n", rcvd_lstnr.listener_id);
 	return ret;
 }
 
@@ -1328,7 +1328,7 @@ exit:
 	kzfree(ptr_svc);
 
 	data->released = true;
-	pr_warn("Service %d is unregistered\n", data->listener.id);
+	pr_debug("Service %d is unregistered\n", data->listener.id);
 	return ret;
 }
 

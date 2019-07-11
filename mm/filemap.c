@@ -1381,7 +1381,7 @@ no_page:
 		 * add_to_page_cache_lru lock's the page, and for mmap we expect
 		 * a unlocked page.
 		 */
-		if (fgp_flags & FGP_FOR_MMAP)
+		if (page && (fgp_flags & FGP_FOR_MMAP))
 			unlock_page(page);
 
 	}
@@ -2158,6 +2158,11 @@ static int lock_page_maybe_drop_mmap(struct vm_area_struct *vma,
 	if (trylock_page(page))
 		return 1;
 
+	/*
+	 * NOTE! This will make us return with VM_FAULT_RETRY, but with
+	 * the mmap_sem still held. That's how FAULT_FLAG_RETRY_NOWAIT
+	 * is supposed to work. We have way too many special cases..
+	 */
 	if (flags & FAULT_FLAG_RETRY_NOWAIT)
 		return 0;
 	*fpin = maybe_unlock_mmap_for_io(vma, flags, *fpin);
@@ -2311,11 +2316,11 @@ int filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 						file, page, offset);
 	} else if (!page) {
 		/* No page in the page cache at all */
-		fpin = do_sync_mmap_readahead(vma, vmf->flags, ra,
-						file, offset);
 		count_vm_event(PGMAJFAULT);
 		mem_cgroup_count_vm_event(vma->vm_mm, PGMAJFAULT);
 		ret = VM_FAULT_MAJOR;
+		fpin = do_sync_mmap_readahead(vma, vmf->flags, ra,
+						file, offset);
 retry_find:
 		page = pagecache_get_page(mapping, offset,
 					  FGP_CREAT|FGP_FOR_MMAP,
