@@ -8,8 +8,8 @@ fi
 VERSION="$(cat version)-$(date +%F | sed s@-@@g)"
 
 if [ -e boot.img ] ; then
-	rm arter97-kernel-$VERSION.zip 2>/dev/null
-	cp boot.img arter97-kernel-$VERSION.img
+	rm arter97-kernel-$VERSION-swap.zip 2>/dev/null
+	cp boot.img arter97-kernel-$VERSION-swap.img
 
 	# Pack AnyKernel2
 	rm -rf kernelzip
@@ -33,8 +33,8 @@ ramdisk_compression=lz4-l
 	cp -rp ~/android/anykernel/* kernelzip/
 	cd kernelzip/
 	7z a -mx0 arter97-kernel-$VERSION-tmp.zip *
-	zipalign -v 4 arter97-kernel-$VERSION-tmp.zip ../arter97-kernel-$VERSION.zip
+	zipalign -v 4 arter97-kernel-$VERSION-tmp.zip ../arter97-kernel-$VERSION-swap.zip
 	rm arter97-kernel-$VERSION-tmp.zip
 	cd ..
-	ls -al arter97-kernel-$VERSION.zip
+	ls -al arter97-kernel-$VERSION-swap.zip
 fi
