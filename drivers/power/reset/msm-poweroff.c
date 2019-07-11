@@ -289,7 +289,10 @@ static void msm_restart_prepare(const char *cmd)
 	set_dload_mode(false);
 #endif
 
-	qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
+	if (in_panic)
+		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
+	else
+		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
 
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "rf", 2)) {
