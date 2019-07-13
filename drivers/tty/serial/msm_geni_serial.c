@@ -386,7 +386,7 @@ static unsigned int msm_geni_serial_get_mctrl(struct uart_port *uport)
 {
 	u32 geni_ios = 0;
 	unsigned int mctrl = TIOCM_DSR | TIOCM_CAR;
-	struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
+	__maybe_unused struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
 
 	if (!uart_console(uport) && device_pending_suspend(uport)) {
 		return TIOCM_DSR | TIOCM_CAR | TIOCM_CTS;
