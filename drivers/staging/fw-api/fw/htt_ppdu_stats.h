@@ -1233,27 +1233,23 @@ typedef struct {
      * BIT [ 27:   24]   :- gi - HTT_PPDU_STATS_GI
      * BIT [ 28:   28]   :- dcm
      * BIT [ 29:   29]   :- ldpc
-     * BIT [ 30:   30]   :- valid_skipped_rate_ctrl
-     *                      This flag indicates whether the skipped_rate_ctrl
-     *                      flag should be ignored, or if it holds valid data.
-     * BIT [ 31:   31]   :- skipped_rate_ctrl
+     * BIT [ 31:   30]   :- reserved4
      */
     union {
         A_UINT32 rate_info;
         struct {
-            A_UINT32 ltf_size:                2,
-                     stbc:                    1,
-                     he_re:                   1,
-                     txbf:                    4,
-                     bw:                      4,
-                     nss:                     4,
-                     mcs:                     4,
-                     preamble:                4,
-                     gi:                      4,
-                     dcm:                     1,
-                     ldpc:                    1,
-                     valid_skipped_rate_ctrl: 1,
-                     skipped_rate_ctrl:       1;
+            A_UINT32 ltf_size:           2,
+                     stbc:               1,
+                     he_re:              1,
+                     txbf:               4,
+                     bw:                 4,
+                     nss:                4,
+                     mcs:                4,
+                     preamble:           4,
+                     gi:                 4,
+                     dcm:                1,
+                     ldpc:               1,
+                     reserved4:          2;
         };
     };
 
@@ -1855,44 +1851,17 @@ typedef struct {
     };
 } htt_ppdu_stats_flush_tlv;
 
-#define HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_M     0x0000ffff
-#define HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_S              0
-
-#define HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_GET(_var) \
-    (((_var) & HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_M) >> \
-    HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_S)
-
-#define HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_SET(_var, _val) \
-     do { \
-         HTT_CHECK_SET_VAL(HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH, _val); \
-         ((_var) |= ((_val) << HTT_PPDU_STATS_TX_MGMTCTRL_TLV_FRAME_LENGTH_S)); \
-     } while (0)
-
 typedef struct {
     htt_tlv_hdr_t tlv_hdr;
 
-    /*
-     * BIT [ 15 :   0]   :- frame_length
-     * BIT [ 31 :  16]   :- reserved1
-     */
-    union {
-        A_UINT32 rsvd__frame_length;
-        struct {
-            A_UINT32 frame_length: 16,
-                     reserved1:    16; /* set to 0x0 */
-        };
-    };
-
     /* Future purpose */
+    A_UINT32 reserved1; /* set to 0x0 */
     A_UINT32 reserved2; /* set to 0x0 */
     A_UINT32 reserved3; /* set to 0x0 */
 
     /* mgmt/ctrl frame payload
-     * The size of the actual mgmt payload (in bytes) can be obtained from
-     * the frame_length field.
-     * The size of entire payload including the padding for alignment
-     * (in bytes) can be derived from the length in tlv parametes,
-     * minus the 12 bytes of the above fields.
+     * The size of payload (in bytes) can be derived from the length in
+     * tlv parametes, minus the 12 bytes of the above fields.
      */
     A_UINT32 payload[1];
 } htt_ppdu_stats_tx_mgmtctrl_payload_tlv;

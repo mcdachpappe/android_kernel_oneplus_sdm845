@@ -145,15 +145,7 @@ enum htt_dbg_ext_stats_type {
      *           6 bit htt_msdu_flow_stats_tlv
      *   - config_param2: [Bit31 : Bit0] mac_addr31to0
      *   - config_param3: [Bit15 : Bit0] mac_addr47to32
-     *                    [Bit 16] If this bit is set, reset per peer stats
-     *                             of corresponding tlv indicated by config
-     *                             param 1.
-     *                             HTT_DBG_EXT_PEER_STATS_RESET_GET will be
-     *                             used to get this bit position.
-     *                             WMI_SERVICE_PER_PEER_HTT_STATS_RESET
-     *                             indicates that FW supports per peer HTT
-     *                             stats reset.
-     *                    [Bit31 : Bit17] reserved
+     *                    [Bit31 : Bit16] reserved
      * RESP MSG:
      *   - htt_peer_stats_t
      */
@@ -296,23 +288,6 @@ enum htt_dbg_ext_stats_type {
     /* keep this last */
     HTT_DBG_NUM_EXT_STATS = 256,
 };
-
-/*
- * Macros to get/set the bit field in config param[3] that indicates to
- * clear corresponding per peer stats specified by config param 1
- */
-#define HTT_DBG_EXT_PEER_STATS_RESET_M 0x00010000
-#define HTT_DBG_EXT_PEER_STATS_RESET_S 16
-
-#define HTT_DBG_EXT_PEER_STATS_RESET_GET(_var) \
-    (((_var) & HTT_DBG_EXT_PEER_STATS_RESET_M) >> \
-     HTT_DBG_EXT_PEER_STATS_RESET_S)
-
-#define HTT_DBG_EXT_PEER_STATS_RESET_SET(_var, _val) \
-    do { \
-        HTT_CHECK_SET_VAL(HTT_DBG_EXT_PEER_STATS_RESET, _val); \
-        ((_var) |= ((_val) << HTT_DBG_EXT_PEER_STATS_RESET_S)); \
-    } while (0)
 
 typedef enum {
     HTT_STATS_TX_PDEV_CMN_TAG                      = 0,  /* htt_tx_pdev_stats_cmn_tlv */
@@ -796,15 +771,6 @@ typedef struct {
     A_UINT32 phy_warm_reset_reason_num_cca_rx_frame_stuck;
     A_UINT32 phy_warm_reset_reason_wal_rx_recovery_rst_rx_busy;
     A_UINT32 phy_warm_reset_reason_wal_rx_recovery_rst_mac_hang;
-    A_UINT32 phy_warm_reset_reason_mac_reset_converted_phy_reset;
-
-    A_UINT32 wal_rx_recovery_rst_mac_hang_count;
-    A_UINT32 wal_rx_recovery_rst_known_sig_count;
-    A_UINT32 wal_rx_recovery_rst_no_rx_count;
-    A_UINT32 wal_rx_recovery_rst_no_rx_consecutive_count;
-    A_UINT32 wal_rx_recovery_rst_rx_busy_count;
-    A_UINT32 wal_rx_recovery_rst_phy_mac_hang_count;
-    A_UINT32 rx_flush_cnt; /* Num rx flush issued */
 } htt_hw_stats_pdev_errs_tlv;
 
 typedef struct {
@@ -1256,11 +1222,6 @@ typedef struct _htt_rx_peer_rate_stats_tlv {
      */
     A_UINT32 per_chain_rssi_pkt_type;
     A_INT8   rx_per_chain_rssi_in_dbm[HTT_RX_PEER_STATS_NUM_SPATIAL_STREAMS][HTT_RX_PEER_STATS_NUM_BW_COUNTERS];
-
-    A_UINT32 rx_ulmumimo_non_data_ppdu;   /* ppdu level */
-    A_UINT32 rx_ulmumimo_data_ppdu;       /* ppdu level */
-    A_UINT32 rx_ulmumimo_mpdu_ok;         /* mpdu level */
-    A_UINT32 rx_ulmumimo_mpdu_fail;       /* mpdu level */
 } htt_rx_peer_rate_stats_tlv;
 
 typedef enum {
@@ -3037,7 +2998,6 @@ typedef struct {
 #define HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS 8
 #define HTT_RX_PDEV_STATS_NUM_PREAMBLE_TYPES HTT_STATS_PREAM_COUNT
 #define HTT_RX_PDEV_MAX_OFDMA_NUM_USER 8
-#define HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER 8
 #define HTT_RX_PDEV_STATS_RXEVM_MAX_PILOTS_PER_NSS 16
 #define HTT_RX_PDEV_STATS_NUM_RU_SIZE_COUNTERS 6
 
@@ -3135,11 +3095,6 @@ typedef struct {
     A_UINT32 rx_br_poll;
     A_UINT32 rx_11ax_dl_ofdma_mcs[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS];
     A_UINT32 rx_11ax_dl_ofdma_ru[HTT_RX_PDEV_STATS_NUM_RU_SIZE_COUNTERS];
-
-    A_UINT32 rx_ulmumimo_non_data_ppdu[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER]; /* ppdu level */
-    A_UINT32 rx_ulmumimo_data_ppdu[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];     /* ppdu level */
-    A_UINT32 rx_ulmumimo_mpdu_ok[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];       /* mpdu level */
-    A_UINT32 rx_ulmumimo_mpdu_fail[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];     /* mpdu level */
 } htt_rx_pdev_rate_stats_tlv;
 
 /* STATS_TYPE : HTT_DBG_EXT_STATS_PDEV_RX_RATE
