@@ -41,9 +41,9 @@ if ! grep -q vnswap /proc/swaps; then
   mv "$0".tmp "$0"
   chmod 755 "$0"
   chmod 755 /dev/mkswap
-  # 4GB
-  echo 4294967296 > /sys/devices/virtual/block/vnswap0/disksize
-  echo 130 > /proc/sys/vm/swappiness
+  # 2GB
+  echo 2147483648 > /sys/devices/virtual/block/vnswap0/disksize
+  echo 160 > /proc/sys/vm/swappiness
   # System mkswap behaves incorrectly with vnswap
   /dev/mkswap /dev/block/vnswap0
   swapon /dev/block/vnswap0
