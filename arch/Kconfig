@@ -496,26 +496,28 @@ choice
 	default LD_BFD if !LTO_CLANG
 	default LD_GOLD if LTO_CLANG
 	help
-	  Select the desired kernel linker from a supported list.
+	  This selects the linker that will be used to link the kernel and
+	  its composite objects.
+
+	  Note that using either ld.gold or lld is required for Clang LTO.
+	  ld.bfd will not work.
 
 config LD_BFD
 	bool "bfd"
 	depends on !LTO_CLANG
 	help
-	  This option selects the default ld.bfd linker, which is part of
-	  GNU binutils.
+	  Use the standard ld.bfd linker from binutils, which is usually the
+	  default. This linker does not work with Clang LTO.
 
 config LD_GOLD
 	bool "gold"
 	help
-	  This option selects the ld.gold linker, which is a part of GNU
-	  binutils and required when compiling with Clang LTO.
+	  Use the alternative ld.gold linker from binutils.
 
 config LD_LLD
 	bool "lld"
 	help
-	  This option selects ld.lld as a drop-in replacement for ld.gold
-	  and may optionally be used when compiling with Clang LTO.
+	  Use the alternative lld linker from LLVM.
 
 endchoice
 

@@ -700,7 +700,7 @@ LD		:= $(LDLLD)
 endif
 
 ifdef CONFIG_LTO_CLANG
-# use GNU gold and LD for vmlinux_link, or LLD for LTO linking
+# use GNU gold with LLVMgold or LLD for LTO linking, and LD for vmlinux_link
 ifeq ($(ld-name),gold)
 LDFLAGS		+= -plugin LLVMgold.so
 endif
@@ -711,6 +711,8 @@ LDFLAGS		+= -plugin-opt=-data-sections
 LLVM_AR		:= llvm-ar
 LLVM_DIS	:= llvm-dis
 export LLVM_AR LLVM_DIS
+# Set O3 optimization level for LTO
+LDFLAGS		+= --plugin-opt=O3
 endif
 
 # The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
@@ -760,10 +762,6 @@ endif
 ifdef CONFIG_LTO
 lto-flags	:= $(lto-clang-flags)
 KBUILD_CFLAGS	+= $(lto-flags)
-
-ifeq ($(ld-name),lld)
-LDFLAGS		+= --lto-O3
-endif
 
 DISABLE_LTO	:= $(DISABLE_LTO_CLANG)
 export DISABLE_LTO
