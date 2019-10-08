@@ -161,10 +161,7 @@ int fscrypt_crypt_block(const struct inode *inode, fscrypt_direction_t rw,
 	struct crypto_skcipher *tfm = ci->ci_ctfm;
 	int res = 0;
 
-	if (WARN_ON_ONCE(len <= 0))
-		return -EINVAL;
-	if (WARN_ON_ONCE(len % FS_CRYPTO_BLOCK_SIZE != 0))
-		return -EINVAL;
+	BUG_ON(len == 0);
 
 	fscrypt_generate_iv(&iv, lblk_num, ci);
 
@@ -227,6 +224,8 @@ struct page *fscrypt_encrypt_page(const struct inode *inode,
 	struct page *ciphertext_page = page;
 	int err;
 
+	BUG_ON(len % FS_CRYPTO_BLOCK_SIZE != 0);
+
 	if (inode->i_sb->s_cop->flags & FS_CFLG_OWN_PAGES) {
 		/* with inplace-encryption we just encrypt the page */
 		err = fscrypt_crypt_block(inode, FS_ENCRYPT, lblk_num, page,
@@ -238,8 +237,7 @@ struct page *fscrypt_encrypt_page(const struct inode *inode,
 		return ciphertext_page;
 	}
 
-	if (WARN_ON_ONCE(!PageLocked(page)))
-		return ERR_PTR(-EINVAL);
+	BUG_ON(!PageLocked(page));
 
 	/* The encryption operation will require a bounce page. */
 	ciphertext_page = fscrypt_alloc_bounce_page(gfp_flags);
@@ -276,9 +274,8 @@ EXPORT_SYMBOL(fscrypt_encrypt_page);
 int fscrypt_decrypt_page(const struct inode *inode, struct page *page,
 			unsigned int len, unsigned int offs, u64 lblk_num)
 {
-	if (WARN_ON_ONCE(!PageLocked(page) &&
-			 !(inode->i_sb->s_cop->flags & FS_CFLG_OWN_PAGES)))
-		return -EINVAL;
+	if (!(inode->i_sb->s_cop->flags & FS_CFLG_OWN_PAGES))
+		BUG_ON(!PageLocked(page));
 
 	return fscrypt_crypt_block(inode, FS_DECRYPT, lblk_num, page, page,
 				   len, offs, GFP_NOFS);
