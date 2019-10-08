@@ -110,9 +110,6 @@ extern int fscrypt_encrypt_block_inplace(const struct inode *inode,
 					 gfp_t gfp_flags);
 extern int fscrypt_decrypt_page(const struct inode *, struct page *, unsigned int,
 				unsigned int, u64);
-extern int fscrypt_decrypt_block_inplace(const struct inode *inode,
-					 struct page *page, unsigned int len,
-					 unsigned int offs, u64 lblk_num);
 
 static inline bool fscrypt_is_bounce_page(struct page *page)
 {
@@ -305,14 +302,6 @@ static inline int fscrypt_decrypt_page(const struct inode *inode,
 				       struct page *page,
 				       unsigned int len, unsigned int offs,
 				       u64 lblk_num)
-{
-	return -EOPNOTSUPP;
-}
-
-static inline int fscrypt_decrypt_block_inplace(const struct inode *inode,
-						struct page *page,
-						unsigned int len,
-						unsigned int offs, u64 lblk_num)
 {
 	return -EOPNOTSUPP;
 }
