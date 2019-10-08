@@ -65,7 +65,9 @@ static void ext4_finish_bio(struct bio *bio)
 
 	bio_for_each_segment_all(bvec, bio, i) {
 		struct page *page = bvec->bv_page;
-		struct page *bounce_page = NULL;
+#ifdef CONFIG_FS_ENCRYPTION
+		struct page *data_page = NULL;
+#endif
 		struct buffer_head *bh, *head;
 		unsigned bio_start = bvec->bv_offset;
 		unsigned bio_end = bio_start + bvec->bv_len;
@@ -75,10 +77,13 @@ static void ext4_finish_bio(struct bio *bio)
 		if (!page)
 			continue;
 
-		if (fscrypt_is_bounce_page(page)) {
-			bounce_page = page;
-			page = fscrypt_pagecache_page(bounce_page);
+#ifdef CONFIG_FS_ENCRYPTION
+		if (!page->mapping) {
+			/* The bounce data pages are unmapped. */
+			data_page = page;
+			fscrypt_pullback_bio_page(&page, false);
 		}
+#endif
 
 		if (bio->bi_error) {
 			SetPageError(page);
@@ -105,7 +110,10 @@ static void ext4_finish_bio(struct bio *bio)
 		bit_spin_unlock(BH_Uptodate_Lock, &head->b_state);
 		local_irq_restore(flags);
 		if (!under_io) {
-			fscrypt_free_bounce_page(bounce_page);
+#ifdef CONFIG_FS_ENCRYPTION
+			if (data_page)
+				fscrypt_restore_control_page(data_page);
+#endif
 			end_page_writeback(page);
 		}
 	}
@@ -394,7 +402,7 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 			struct writeback_control *wbc,
 			bool keep_towrite)
 {
-	struct page *bounce_page = NULL;
+	struct page *data_page = NULL;
 	struct inode *inode = page->mapping->host;
 	unsigned block_start;
 	struct buffer_head *bh, *head;
@@ -460,10 +468,10 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 		gfp_t gfp_flags = GFP_NOFS;
 
 	retry_encrypt:
-		bounce_page = fscrypt_encrypt_page(inode, page, PAGE_SIZE, 0,
-						   page->index, gfp_flags);
-		if (IS_ERR(bounce_page)) {
-			ret = PTR_ERR(bounce_page);
+		data_page = fscrypt_encrypt_page(inode, page, PAGE_SIZE, 0,
+						page->index, gfp_flags);
+		if (IS_ERR(data_page)) {
+			ret = PTR_ERR(data_page);
 			if (ret == -ENOMEM && wbc->sync_mode == WB_SYNC_ALL) {
 				if (io->io_bio) {
 					ext4_io_submit(io);
@@ -472,7 +480,7 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 				gfp_flags |= __GFP_NOFAIL;
 				goto retry_encrypt;
 			}
-			bounce_page = NULL;
+			data_page = NULL;
 			goto out;
 		}
 	}
@@ -481,7 +489,8 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 	do {
 		if (!buffer_async_write(bh))
 			continue;
-		ret = io_submit_add_bh(io, inode, bounce_page ?: page, bh);
+		ret = io_submit_add_bh(io, inode,
+				       data_page ? data_page : page, bh);
 		if (ret) {
 			/*
 			 * We only get here on ENOMEM.  Not much else
@@ -497,7 +506,8 @@ int ext4_bio_write_page(struct ext4_io_submit *io,
 	/* Error stopped previous loop? Clean up buffers... */
 	if (ret) {
 	out:
-		fscrypt_free_bounce_page(bounce_page);
+		if (data_page)
+			fscrypt_restore_control_page(data_page);
 		printk_ratelimited(KERN_ERR "%s: ret = %d\n", __func__, ret);
 		redirty_page_for_writepage(wbc, page);
 		do {
