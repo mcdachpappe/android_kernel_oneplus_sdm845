@@ -177,6 +177,7 @@ struct smb_dt_props {
 	bool	hvdcp_disable;
 	bool	auto_recharge_soc;
 	int	wd_bark_time;
+	bool	no_pd;
 };
 
 struct smb2 {
@@ -426,6 +427,9 @@ static int smb2_parse_dt(struct smb2 *chip)
 
 	chip->dt.no_battery = of_property_read_bool(node,
 						"qcom,batteryless-platform");
+
+	chip->dt.no_pd = of_property_read_bool(node,
+						"qcom,pd-not-supported");
 
 	rc = of_property_read_u32(node,
 				"qcom,fcc-max-ua", &chg->batt_profile_fcc_ua);
@@ -1991,6 +1995,8 @@ static int smb2_init_hw(struct smb2 *chip)
 			true, 0);
 	vote(chg->pd_disallowed_votable_indirect, HVDCP_TIMEOUT_VOTER,
 			true, 0);
+	vote(chg->pd_disallowed_votable_indirect, PD_NOT_SUPPORTED_VOTER,
+			chip->dt.no_pd, 0);
 	/* disable HVDCP */
 	rc = smblib_masked_write(chg, USBIN_OPTIONS_1_CFG_REG,
 		HVDCP_EN_BIT, 0);

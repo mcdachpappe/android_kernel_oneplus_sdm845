@@ -68,6 +68,7 @@
 
 
 /* #define EASYWAKE_TSG6 */
+#define CONFIG_TOUCHSCREEN_CYPRESS_CYTTSP5_BINARY_FW_UPGRADE
 
 #define CY_FW_FILE_PREFIX            "cyttsp5_fw"
 #define CY_FW_FILE_SUFFIX            ".bin"
@@ -167,7 +168,7 @@ enum PARADE_DEBUG_LEVEL {
 #else
 #define CY_HID_OUTPUT_TIMEOUT          200
 #endif
-#define CY_HID_OUTPUT_START_BOOTLOADER_TIMEOUT 2000
+#define CY_HID_OUTPUT_START_BOOTLOADER_TIMEOUT 200
 #define CY_HID_OUTPUT_USER_TIMEOUT             8000
 #define CY_HID_OUTPUT_GET_SYSINFO_TIMEOUT      3000
 #define CY_HID_OUTPUT_CALIBRATE_IDAC_TIMEOUT   5000
@@ -990,6 +991,7 @@ struct cyttsp5_core_data {
 	struct notifier_block pm_notifier;
 #endif
 	struct work_struct startup_work;
+	struct work_struct resume_work;
 	struct cyttsp5_sysinfo sysinfo;
 	void *exclusive_dev;
 	int exclusive_waits;
@@ -1026,6 +1028,7 @@ struct cyttsp5_core_data {
 	u8 debug_level;
 	u32 watchdog_interval;
 	u8 show_timestamp;
+	int forbit_bigobject;
 
 };
 struct gd_sensor {
