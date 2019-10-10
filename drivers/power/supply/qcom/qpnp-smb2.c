@@ -1259,6 +1259,7 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_FULL,
 	POWER_SUPPLY_PROP_FORCE_RECHARGE,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
+	POWER_SUPPLY_PROP_OP_DISABLE_CHARGE,
 };
 
 static int smb2_batt_get_prop(struct power_supply *psy,
@@ -1288,6 +1289,9 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
 		rc = smblib_get_prop_batt_capacity(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_OP_DISABLE_CHARGE:
+		val->intval = chg->chg_disabled;
 		break;
 /* david.liu@bsp, 20171023 Battery & Charging porting */
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
@@ -1465,6 +1469,16 @@ static int smb2_batt_set_prop(struct power_supply *psy,
 			|| val->intval == 900000)
 			op_usb_icl_set(chg, val->intval);
 		break;
+	case POWER_SUPPLY_PROP_OP_DISABLE_CHARGE:
+		vote(chg->chg_disable_votable, FORCE_RECHARGE_VOTER,
+					(bool)val->intval, 0);
+		if (val->intval) {
+			switch_mode_to_normal();
+			op_set_fast_chg_allow(chg, false);
+		}
+		chg->chg_disabled = (bool)val->intval;
+		pr_info("user set disable chg %d\n", val->intval);
+		break;
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
 		rc = smblib_set_prop_chg_voltage(chg, val);
 		break;
@@ -1611,6 +1625,7 @@ static int smb2_batt_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_STEP_CHARGING_ENABLED:
 	case POWER_SUPPLY_PROP_SW_JEITA_ENABLED:
 	case POWER_SUPPLY_PROP_DIE_HEALTH:
+	case POWER_SUPPLY_PROP_OP_DISABLE_CHARGE:
 		return 1;
 	default:
 		break;
