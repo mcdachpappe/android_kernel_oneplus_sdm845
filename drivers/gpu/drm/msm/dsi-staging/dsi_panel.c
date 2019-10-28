@@ -4585,6 +4585,7 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 								    adaption_mode);
 			}
 			printk(KERN_ERR "send AOD OFF commd end \n");
+			dsi_panel_set_backlight(panel, panel->bl_config.bl_level);
 
 			aod_complete = false;
 
