@@ -30,7 +30,7 @@ block=/dev/block/bootdevice/by-name/boot
 is_slot_device=1
 ramdisk_compression=lz4-l
 " > kernelzip/props
-	cp -rp ~/android/anykernel/* kernelzip/
+	cp -rp ~/android/anykernel2/* kernelzip/
 	cd kernelzip/
 	7z a -mx0 arter97-kernel-$VERSION-tmp.zip *
 	zipalign -v 4 arter97-kernel-$VERSION-tmp.zip ../arter97-kernel-$VERSION.zip
