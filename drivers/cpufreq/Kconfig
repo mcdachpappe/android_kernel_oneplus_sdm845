@@ -292,6 +292,28 @@ config CPU_FREQ_DEFAULT_BIG_MIN
 
 	  If in doubt, say 0 to use the hardware's minimum frequency.
 
+if CPU_BOOST
+
+config INPUT_BOOST_DURATION_MS
+	int "Input boost duration"
+	default "40"
+	help
+	  Input boost duration in milliseconds.
+
+config INPUT_BOOST_FREQ_LP
+	int "Low-power cluster boost freq"
+	default "0"
+	help
+	  Input boost frequency for the low-power CPU cluster.
+
+config INPUT_BOOST_FREQ_PERF
+	int "Performance cluster boost freq"
+	default "0"
+	help
+	  Input boost frequency for the performance CPU cluster.
+
+endif
+
 comment "CPU frequency scaling drivers"
 
 config CPUFREQ_DT

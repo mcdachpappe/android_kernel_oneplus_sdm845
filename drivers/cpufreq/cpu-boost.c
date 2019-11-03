@@ -23,6 +23,7 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
+#include <linux/binfmts.h>
 
 struct cpu_sync {
 	int cpu;
@@ -36,8 +37,8 @@ static struct kthread_work input_boost_work;
 
 static bool input_boost_enabled;
 
-static unsigned int input_boost_ms = 40;
-module_param(input_boost_ms, uint, 0644);
+static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
+module_param_named(input_boost_duration, input_boost_ms, uint, 0644);
 
 static unsigned int sched_boost_on_input;
 module_param(sched_boost_on_input, uint, 0644);
@@ -56,6 +57,9 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 	unsigned int val, cpu;
 	const char *cp = buf;
 	bool enabled = false;
+
+	if (task_is_booster(current))
+		return 0;
 
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
@@ -101,6 +105,9 @@ static int get_input_boost_freq(char *buf, const struct kernel_param *kp)
 {
 	int cnt = 0, cpu;
 	struct cpu_sync *s;
+
+	if (task_is_booster(current))
+		return cnt;
 
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
@@ -347,6 +354,11 @@ static int cpu_boost_init(void)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
+
+		if (cpu == 0)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LP;
+		if (cpu == 4)
+			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_PERF;
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
