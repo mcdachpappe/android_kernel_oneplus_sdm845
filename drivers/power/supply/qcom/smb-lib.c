@@ -6918,6 +6918,9 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 				POWER_SUPPLY_PROP_UPDATE_LCD_IS_OFF, 1);
 			chip->oem_lcd_is_on = false;
 		}
+		/* add to update fg node value on panel event */
+		panel_flag1 = 1;
+		panel_flag2 = 1;
 	}
 
 	return 0;

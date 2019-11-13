@@ -233,6 +233,8 @@ struct bq27541_device_info {
 	int soc_pre;
 	int  batt_vol_pre;
 	int current_pre;
+	int cap_pre;
+	int remain_pre;
 	int health_pre;
 	int get_over_temp;
 	unsigned long rtc_resume_time;
@@ -265,6 +267,9 @@ struct bq27541_device_info {
 /*add by yangrujin@bsp 2016/3/16, reduce bq resume time*/
 
 #include <linux/workqueue.h>
+/* add to update fg node value on panel event */
+int panel_flag1;
+int panel_flag2;
 
 struct update_pre_capacity_data {
 	struct delayed_work work;
@@ -896,7 +901,11 @@ static int bq27541_remaining_capacity(struct bq27541_device_info *di)
 	int ret;
 	int cap = 0;
 
-	if (di->allow_reading) {
+	/* Add for get right soc when sleep long time */
+	if (atomic_read(&di->suspended) == 1)
+		return di->remain_pre;
+
+	if (di->allow_reading || panel_flag1) {
 #ifdef CONFIG_GAUGE_BQ27411
 		/* david.liu@bsp, 20161004 Add BQ27411 support */
 		ret = bq27541_read(di->cmd_addr.reg_rm,
@@ -908,8 +917,13 @@ static int bq27541_remaining_capacity(struct bq27541_device_info *di)
 			pr_err("error reading capacity.\n");
 			return ret;
 		}
+		if (panel_flag1)
+			panel_flag1 = 0;
+	} else {
+		return di->remain_pre;
 	}
 
+	di->remain_pre = cap;
 	return cap;
 }
 
@@ -918,7 +932,11 @@ static int bq27541_full_chg_capacity(struct bq27541_device_info *di)
 	int ret;
 	int cap = 0;
 
-	if (di->allow_reading) {
+	/* Add for get right soc when sleep long time */
+	if (atomic_read(&di->suspended) == 1)
+		return di->cap_pre;
+
+	if (di->allow_reading || panel_flag2) {
 #ifdef CONFIG_GAUGE_BQ27411
 		/* david.liu@bsp, 20161004 Add BQ27411 support */
 		ret = bq27541_read(BQ27411_REG_FCC,
@@ -930,8 +948,13 @@ static int bq27541_full_chg_capacity(struct bq27541_device_info *di)
 			pr_err("error reading full chg capacity.\n");
 			return ret;
 		}
+		if (panel_flag2)
+			panel_flag2 = 0;
+	} else {
+		return di->cap_pre;
 	}
 
+	di->cap_pre = cap;
 	return cap;
 }
 
