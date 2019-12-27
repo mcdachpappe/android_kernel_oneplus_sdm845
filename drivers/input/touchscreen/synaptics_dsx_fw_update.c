@@ -3853,7 +3853,7 @@ static int fwu_recovery_reset(void)
 
 static int fwu_start_recovery(void)
 {
-	int retval;
+	int retval = 0;
 	const struct firmware *fw_entry = NULL;
 	struct synaptics_rmi4_data *rmi4_data = fwu->rmi4_data;
 
