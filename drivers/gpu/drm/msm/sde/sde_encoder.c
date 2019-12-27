@@ -1689,7 +1689,7 @@ static int _sde_encoder_update_rsc_client(
 	struct drm_crtc *primary_crtc;
 	int pipe = -1;
 	int rc = 0;
-	int wait_refcount;
+	int wait_refcount = 0;
 
 	if (!drm_enc || !drm_enc->dev) {
 		SDE_ERROR("invalid encoder arguments\n");
