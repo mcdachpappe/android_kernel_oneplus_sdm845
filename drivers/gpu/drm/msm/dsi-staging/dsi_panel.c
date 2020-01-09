@@ -4401,6 +4401,15 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	}
 	mutex_unlock(&panel->panel_lock);
 
+	dsi_panel_init_display_modes(panel);
+
+	return rc;
+}
+
+int dsi_panel_init_display_modes(struct dsi_panel *panel)
+{
+	int rc;
+
 /*
 	if (panel->acl_mode)
 		dsi_panel_set_acl_mode(panel, panel->acl_mode);
