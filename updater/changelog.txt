@@ -1,0 +1,14 @@
+Project name: Radioactive_kernel_op6
+  * Add support for FKM OTA kernel updates (acuicultor)
+  * defconfig regenerate (acuicultor) [bdc928ad31dd]
+  * tcp: fastopen: support TCP fast open on all listeners (kdrag0n) [222aa2c090ac]
+  * net: ipv4: enable support for TCP fast open on listeners (kdrag0n) [156a57e0d701]
+  * tcp_westwood : Tune-up (Harsh Shandilya) [753e5bdaf76c]
+  * alarmtimer: Change cpu_delay() in alarm_cancel() to udelay(1). (Miguel de Dios) [6f2dc0a99c29]
+  * timers: Change cpu_relax() in del_timer_sync() to udelay(1) instead (Rick Yiu) [7dbde17b3137]
+  * hrtimer: Change cpu_relax() in hrtimer_cancel() to udelay(1) instead. (Miguel de Dios) [ecded9052c34]
+  * Revert "initramfs: add skip_override parameter" (acuicultor) [0a2c5aed20a4]
+  * wireguard: update fetcher script (acuicultor) [588da81734ae]
+  * Anykernel3: update with latest commits from osmosis (acuicultor)
+  
+
