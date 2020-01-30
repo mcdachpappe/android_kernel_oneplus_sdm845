@@ -4427,8 +4427,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	if (panel->hbm_mode)
 		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
 
-	if (panel->display_mode != DISPLAY_MODE_DEFAULT)
-		dsi_panel_apply_display_mode(panel);
+	dsi_panel_apply_display_mode(panel);
 
 	/* remove print actvie ws */
 	pm_print_active_wakeup_sources_queue(false);
