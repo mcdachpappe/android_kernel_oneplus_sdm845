@@ -4072,6 +4072,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 
 	panel->panel_initialized = true;
 	mutex_unlock(&panel->panel_lock);
+
 	if (panel->aod_mode == 2) {
 		rc = dsi_panel_set_aod_mode(panel, 2);
 		panel->aod_status = 1;
@@ -4104,8 +4105,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
         if (panel->hbm_los_mode)
 	    dsi_panel_apply_hbm_mode(panel);
 
-	if (panel->display_mode != DISPLAY_MODE_DEFAULT)
-		dsi_panel_apply_display_mode(panel);
+	dsi_panel_apply_display_mode(panel);
 
 	if (panel->hbm_mode)
 		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
