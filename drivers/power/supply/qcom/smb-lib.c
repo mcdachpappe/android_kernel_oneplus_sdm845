@@ -7488,7 +7488,7 @@ static void op_heartbeat_work(struct work_struct *work)
 			goto out;
 		}
 		switch_fast_chg(chg);
-		pr_info("fast chg started, usb_switch=%d\n",
+		pr_debug("fast chg started, usb_switch=%d\n",
 				op_is_usb_switch_on(chg));
 		/* add for disable normal charge */
 		fast_charging = op_get_fastchg_ing(chg);
