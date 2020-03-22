@@ -88,15 +88,15 @@ static struct rs_codec *codec_init(int symsize, int gfpoly, int (*gffunc)(int),
 	rs->gffunc = gffunc;
 
 	/* Allocate the arrays */
-	rs->alpha_to = kmalloc(rs->nn + 1, sizeof(uint16_t), gfp);
+	rs->alpha_to = kmalloc_array(rs->nn + 1, sizeof(uint16_t), gfp);
 	if (rs->alpha_to == NULL)
 		goto err;
 
-	rs->index_of = kmalloc(rs->nn + 1, sizeof(uint16_t), gfp);
+	rs->index_of = kmalloc_array(rs->nn + 1, sizeof(uint16_t), gfp);
 	if (rs->index_of == NULL)
 		goto err;
 
-	rs->genpoly = kmalloc(rs->nroots + 1, sizeof(uint16_t),
+	rs->genpoly = kmalloc_array(rs->nroots + 1, sizeof(uint16_t),
 				    gfp);
 	if(rs->genpoly == NULL)
 		goto err;
