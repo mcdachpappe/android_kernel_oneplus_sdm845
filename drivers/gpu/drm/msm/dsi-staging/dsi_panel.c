@@ -930,7 +930,7 @@ extern int op_dimlayer_bl_alpha;
 extern int op_dimlayer_bl_enabled;
 extern int op_dimlayer_bl_enable_real;
 bool HBM_flag;
-static int dsi_panel_update_backlight(struct dsi_panel *panel,
+int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
 	int rc = 0;

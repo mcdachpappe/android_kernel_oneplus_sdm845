@@ -345,6 +345,8 @@ int dsi_panel_apply_display_mode(struct dsi_panel *panel);
 
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl);
 
+int dsi_panel_update_backlight(struct dsi_panel *panel, u32 bl_lvl);
+
 int dsi_panel_update_pps(struct dsi_panel *panel);
 
 int dsi_panel_send_roi_dcs(struct dsi_panel *panel, int ctrl_idx,
