@@ -1302,10 +1302,8 @@ struct sk_buff *inet_gso_segment(struct sk_buff *skb,
 			else
 				tot_len = skb->len - nhoff;
 		} else {
-			if (!fixedid) {
-				iph->id = htons(id);
-				id++;
-                        }
+			if (!fixedid)
+				iph->id = htons(id++);
 			tot_len = skb->len - nhoff;
 		}
 		iph->tot_len = htons(tot_len);
