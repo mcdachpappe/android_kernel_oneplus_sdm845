@@ -12,8 +12,6 @@
 #include <linux/atomic.h>
 #include <linux/page-flags.h>
 #include <asm/page.h>
-/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-#include <oneplus/smartboost/smartboost_helper.h>
 
 struct notifier_block;
 

@@ -1208,9 +1208,6 @@ static ssize_t oom_score_adj_write(struct file *file, const char __user *buf,
 		goto err_unlock;
 	}
 
-	/* CONFIG_MEMPLUS add start by bin.zhong@ATSI */
-	memplus_state_check(false, oom_score_adj, task, 0, 0);
-	/* add end */
 	task->signal->oom_score_adj = (short)oom_score_adj;
 
 	adj_chain_update_oom_score_adj(task);

@@ -92,12 +92,6 @@ static int lmk_fast_run = 1;
 
 static unsigned long lowmem_deathpending_timeout;
 
-/*  bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-unsigned long get_max_minfree(void)
-{
-	return (unsigned long)lowmem_minfree[lowmem_minfree_size - 1];
-}
-
 #define lowmem_print(level, x...)			\
 	do {						\
 		if (lowmem_debug_level >= (level))	\
@@ -936,8 +930,6 @@ static unsigned long lowmem_batch_kill(
 			lowmem_print(1, "batch Killing '%s' (%d) (tgid %d), adj %hd,\n"
 					"to free %ldkB on behalf of '%s' (%d) because\n"
 					"cache %ldkB is below limit %ldkB for oom score %hd\n"
-/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-					"uid_lru_list size %ld pages\n"
 					"Free memory is %ldkB above reserved.\n"
 					"Free CMA is %ldkB\n"
 					"Total reserve is %ldkB\n"
@@ -952,8 +944,6 @@ static unsigned long lowmem_batch_kill(
 					current->comm, current->pid,
 					cache_size, cache_limit,
 					min_score_adj,
-/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-					UID_LRU_SIZE,
 					free,
 					global_page_state(NR_FREE_CMA_PAGES) *
 					(long)(PAGE_SIZE / 1024),
@@ -1294,8 +1284,6 @@ quick_select_fast:
 		lowmem_print(1, "Killing '%s' (%d) (tgid %d), adj %hd,\n"
 			"to free %ldkB on behalf of '%s' (%d) because\n"
 			"cache %ldkB is below limit %ldkB for oom score %hd\n"
-/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-			"uid_lru_list size %ld pages\n"
 			"Free memory is %ldkB above reserved.\n"
 			"Free CMA is %ldkB\n"
 			"Total reserve is %ldkB\n"
@@ -1310,8 +1298,6 @@ quick_select_fast:
 			current->comm, current->pid,
 			cache_size, cache_limit,
 			min_score_adj,
-/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-			UID_LRU_SIZE,
 			free,
 			global_page_state(NR_FREE_CMA_PAGES) *
 			(long)(PAGE_SIZE / 1024),
