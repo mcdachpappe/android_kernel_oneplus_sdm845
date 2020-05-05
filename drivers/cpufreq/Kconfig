@@ -291,6 +291,23 @@ config CPU_FREQ_GOV_BLU_SCHEDUTIL
 	  be called cpufreq_blu_schedutil.
 
 	  If in doubt, say N.
+
+if CPU_FREQ_GOV_BLU_SCHEDUTIL
+	config BLU_SCHEDUTIL_UP_RATE_LIMIT
+	int "Default up rate-limit for schedutil"
+	default 0
+	help
+	  This sets schedutil's default frequency up rate-limit in
+	  microseconds.
+
+config BLU_SCHEDUTIL_DOWN_RATE_LIMIT
+	int "Default down rate-limit for schedutil"
+	default 20000
+	help
+	  This sets schedutil's default frequency down rate-limit in
+	  microseconds.
+
+endif
 	  
 config CPU_BOOST
 	tristate "Event base short term CPU freq boost"
