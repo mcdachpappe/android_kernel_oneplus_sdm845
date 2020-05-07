@@ -45,7 +45,6 @@
 #include <linux/syscalls.h>
 #include <linux/timer.h>
 #include <linux/time.h>
-#include <linux/pm_wakeup.h>
 
 /*modify by morgan.gu for sdm845 */
 #define CONFIG_MSM_RDM_NOTIFY
@@ -60,9 +59,6 @@
 #endif
 
 #include <linux/input/mt.h>
-
-#include <linux/project_info.h>
-#include <linux/oneplus/boot_mode.h>
 
 #include <linux/moduleparam.h>
 /*------------------------------------------------Global Define--------------------------------------------*/
@@ -203,9 +199,6 @@ struct fp_underscreen_info {
 	uint16_t x;
 	uint16_t y;
 };
-
-#define PM_QOS_VALUE_TP 400
-struct pm_qos_request pm_qos_req_tp;
 
 /******************for Red function*****************/
 //#define CONFIG_SYNAPTIC_RED
@@ -1474,7 +1467,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		    (gesture_buffer[2] == 0x6d) ? Mgestrue :
 		    (gesture_buffer[2] == 0x73) ? Sgestrue : UnkownGestrue;
 		break;
-		//#endif, ruanbanmao@bsp 2015-05-06, end.
 	default:
 		gesture = UnkownGestrue;
 		break;
@@ -1893,9 +1885,6 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 	uint8_t status = 0;
 	uint8_t inte = 0;
 
-	pm_qos_add_request(&pm_qos_req_tp, PM_QOS_CPU_DMA_LATENCY,
-				PM_QOS_VALUE_TP);
-
 	if (unlikely(atomic_read(&ts->is_stop) == 1)) {
 		touch_disable(ts);
 		return IRQ_HANDLED;
@@ -2070,7 +2059,6 @@ static ssize_t tp_gesture_write_func(struct file *file,
 	} else {
 		ts->gesture_enable = 0;
 	}
-    //ruanbanmao@BSP add for tp gesture 2015-05-06, end
 	return count;
 }
 
@@ -2123,7 +2111,6 @@ static ssize_t gesture_switch_write_func(struct file *file,
 		TPD_ERR("%s: read proc input error.\n", __func__);
 		return count;
 	}
-	__pm_stay_awake(&ts->source);	//avoid system enter suspend lead to i2c error
 	mutex_lock(&ts->mutex);
 	ret = sscanf(buf, "%d", &write_flag);
 	gesture_switch = write_flag;
@@ -3189,7 +3176,6 @@ static ssize_t synaptics_rmi4_baseline_show_s3706(struct device *dev, char *buf,
 	    ((buf[4] << 24) | (buf[5] << 16) | (buf[6] << 8) | buf[7]);
 	TPD_ERR("[sk]CURRENT_FIRMWARE_ID = 0x%lx\n", CURRENT_FIRMWARE_ID);
 	snprintf(ts->fw_id, 20, "0x%lx", CURRENT_FIRMWARE_ID);
-	push_component_info(TP, ts->fw_id, ts->manu_name);
  READDATA_AGAIN:
 	msleep(30);
 	mutex_lock(&ts->mutex);
@@ -3974,16 +3960,6 @@ static ssize_t synaptics_update_fw_store(struct device *dev,
 	struct synaptics_ts_data *ts = dev_get_drvdata(dev);
 	unsigned long val;
 	int rc;
-	int bootmode;
-
-	bootmode = get_boot_mode();
-	TPD_ERR("synaptics bootmode %d  !\n", bootmode);
-	if ((bootmode == MSM_BOOT_MODE__FACTORY)
-		|| (bootmode == MSM_BOOT_MODE__RF)
-		|| (bootmode == MSM_BOOT_MODE__WLAN)) {
-		TPD_ERR("synaptics disable tp update firmware update\n");
-		return size;
-	}
 
 	if (ts->is_suspended && ts->support_hw_poweroff) {
 		TPD_ERR("power off firmware abort!\n");
@@ -6112,7 +6088,6 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	uint8_t buf[8];
 	unsigned long int CURRENT_FIRMWARE_ID = 0;
 	uint32_t bootloader_mode;
-	uint32_t bootmode;
 
 	TPD_ERR("%s  is called\n", __func__);
 
@@ -6260,9 +6235,6 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	TP_FW = CURRENT_FIRMWARE_ID;
 	snprintf(ts->fw_id, 20, "0x%lx", TP_FW);
 
-	push_component_info(TOUCH_KEY, ts->fw_id, ts->manu_name);
-	push_component_info(TP, ts->fw_id, ts->manu_name);
-
 	synaptics_wq = create_singlethread_workqueue("synaptics_wq");
 	if (!synaptics_wq) {
 		ret = -ENOMEM;
@@ -6277,7 +6249,6 @@ static int synaptics_ts_probe(struct i2c_client *client,
 		goto exit_createworkqueue_failed;
 	}
 	INIT_DELAYED_WORK(&ts->base_work, tp_baseline_get_work);
-	wakeup_source_init(&ts->source, "tp_syna");
 
 	ret = synaptics_init_panel(ts);	/* will also switch back to page 0x04 */
 	if (ret < 0) {
@@ -6415,16 +6386,6 @@ static int synaptics_ts_probe(struct i2c_client *client,
 	init_synaptics_proc();
 
 	TPDTM_DMESG("synaptics_ts_probe 3203: normal end\n");
-
-	bootmode = get_boot_mode();
-	TPD_ERR("synaptics bootmode %d  !\n", bootmode);
-	if ((bootmode == MSM_BOOT_MODE__FACTORY)
-		|| (bootmode == MSM_BOOT_MODE__RF)
-		|| (bootmode == MSM_BOOT_MODE__WLAN)) {
-		touch_disable(ts);
-		TPD_ERR("synaptics ftm mode disable int \n");
-		return 0;
-	}
 
 	return 0;
 
