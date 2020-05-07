@@ -11,7 +11,6 @@
  **
  ** --------------------------- Revision History: --------------------------------
  ** 	<author>	<data>			<desc>
- **  morgan.gu@BSP.TP modified for oem 2017-10-30 s3706 tp_driver
  ************************************************************************************/
 #include <linux/of_gpio.h>
 #include <linux/irq.h>
@@ -67,7 +66,6 @@
 #include "synaptics_baseline.h"
 #include "synaptics_dsx_core.h"
 #include <linux/oneplus/boot_mode.h>
-#include <linux/pm_qos.h>
 /*------------------------------------------------Global Define--------------------------------------------*/
 
 #define TP_UNKNOWN 0
@@ -197,7 +195,6 @@ static int Sgestrue_gesture = 0;	//"(S)"
 static int Single_gesture = 0;		//"(SingleTap)"
 static int Enable_gesture = 0;
 static int gesture_switch = 0;
-//ruanbanmao@BSP add for tp gesture 2015-05-06, end
 #endif
 
 /*********************for Debug LOG switch*******************/
@@ -367,7 +364,7 @@ static int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
 					 unsigned short data);
 static int synaptics_mode_change(int mode);
 int tp_single_tap_en(struct synaptics_ts_data *ts, bool enable);
-int opticalfp_irq_handler(struct fp_underscreen_info* tp_info);
+int opticalfp_irq_handler(struct fp_underscreen_info *tp_info);
 int gf_opticalfp_irq_handler(int event);
 
 #ifdef TPD_USE_EINT
@@ -422,7 +419,6 @@ static const struct dev_pm_ops synaptic_pm_ops = {
 #endif
 };
 
-//add by jiachenghui for boot time optimize 2015-5-13
 static int probe_ret;
 struct synaptics_optimize_data {
 	struct delayed_work work;
@@ -460,7 +456,6 @@ static int oem_synaptics_ts_probe(struct i2c_client *client,
 
 	return probe_ret;
 }
-//end add by jiachenghui for boot time optimize 2015-5-13
 
 static struct i2c_driver tpd_i2c_driver = {
 	.probe = oem_synaptics_ts_probe,
@@ -812,7 +807,6 @@ static int synaptics_enable_interrupt_for_gesture(struct synaptics_ts_data *ts,
 {
 	int ret;
 	unsigned char reportbuf[4];
-	//chenggang.li@BSP.TP modified for gesture
 	TPD_DEBUG("%s is called\n", __func__);
 	ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x0);
 	if (ret < 0) {
@@ -1174,7 +1168,6 @@ static int synaptics_rmi4_i2c_write_word(struct i2c_client *client,
 	return retval;
 }
 
-//chenggang.li@BSP.TP modified for oem 2014-08-05 gesture_judge
 /***************start****************/
 #ifdef SUPPORT_GESTURE
 static void synaptics_get_coordinate_point(struct synaptics_ts_data *ts)
@@ -1515,6 +1508,7 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 				  ts->fp_up_down);
 			/*update tp info */
 			set_tp_info(ts, 1);
+			gf_opticalfp_irq_handler(1);
 			not_getbase = 1;
 			need_reset = 0;
 		}
@@ -1628,7 +1622,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		input_report_key(ts->input_dev, keyCode, 0);
 		input_sync(ts->input_dev);
 	} else {
-		mutex_lock(&ts->mutex);
 		ret =
 		    i2c_smbus_read_i2c_block_data(ts->client, F12_2D_CTRL20, 3,
 						  &(reportbuf[0x0]));
@@ -1639,9 +1632,8 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		if (ret < 0)
 			TPD_ERR("%s :Failed to write report buffer\n",
 				__func__);
-		mutex_unlock(&ts->mutex);
 	}
-    TPD_DEBUG("%s end!\n",__func__);
+	TPD_DEBUG("%s end!\n", __func__);
 }
 #endif
 /***************end****************/
@@ -1858,11 +1850,6 @@ static inline void int_touch(void)
 
 	last_status = current_status & 0x02;
 
-	if (ts->project_version == 0x03) {
-		if (ts->en_up_down && ts->in_gesture_mode == 0)
-			fp_detect(ts);
-	}
-
 	if (finger_num == 0 /* && last_status && (check_key <= 1) */ ) {
 		if (ts->project_version == 0x03) {
 			if ((ts->unlock_succes == 1) && (need_reset == 1)
@@ -1891,11 +1878,6 @@ static inline void int_touch(void)
 		if (!ts->en_up_down)
 			tp_baseline_get(ts, false);
 	}
-#ifdef SUPPORT_GESTURE
-	if (ts->in_gesture_mode == 1 && ts->is_suspended == 1) {
-		gesture_judge(ts);
-	}
-#endif
 }
 
 static char log_count = 0;
@@ -2061,7 +2043,7 @@ static irqreturn_t synaptics_irq_thread_fn(int irq, void *dev_id)
 			int_touch();
 		}
 	}
-	if( inte & 0x10 ){
+	if (inte & 0x10) {
 		int_key_report_s3508(ts);
 	}
 
@@ -2089,7 +2071,6 @@ static ssize_t tp_baseline_test_read_func(struct file *file,
 	}
 	return baseline_ret;
 }
-//wangwenxue@BSP add for change baseline_test to "proc\touchpanel\baseline_test"  end
 
 static ssize_t i2c_device_test_read_func(struct file *file,
 					 char __user * user_buf, size_t count,
@@ -2238,12 +2219,10 @@ static ssize_t gesture_switch_write_func(struct file *file,
 		}
 	}
 	mutex_unlock(&ts->mutex);
-	__pm_relax(&ts->source);
 
 	return count;
 }
 
-// chenggang.li@BSP.TP modified for oem 2014-08-08 create node
 /******************************start****************************/
 static const struct file_operations tp_gesture_proc_fops = {
 	.write = tp_gesture_write_func,
@@ -2663,7 +2642,6 @@ static ssize_t tp_baseline_show(struct device_driver *ddri, char *buf)
 		TPD_ERR("%s faile to reset device\n", __func__);
 	}
 	mutex_unlock(&ts->mutex);
-//modify by zhouwenping 20160225 end
 	return num_read_chars;
 
 }
@@ -4294,7 +4272,9 @@ static ssize_t tp_gesture_touch_hold_store(struct device *dev,
 {
 	int tmp = 0;
 	int touch_hold_enable = 0;
+	int touchhold_tmp = 0;
 	int ret = 0;
+	int touch_hold_retry = 0;
 	struct synaptics_ts_data *ts = dev_get_drvdata(dev);
 
 	ret = kstrtoint(buf, 10, &tmp);
@@ -4317,23 +4297,40 @@ static ssize_t tp_gesture_touch_hold_store(struct device *dev,
 
 	mutex_lock(&ts->mutex);
 	/* SYNA_F51_CUSTOM_CTRL20_00 0x0428 */
-	ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x04);
-	if (ret < 0)
-		TPD_ERR("%s: set page 0x04 fail!\n", __func__);
-	touch_hold_enable = i2c_smbus_read_byte_data(ts->client, 0x2c);
+	while (1) {
+		if ((tmp != 1) && (tmp != 0))
+			break;
+		touch_hold_retry++;
+		ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x04);
+		if (ret < 0)
+			TPD_ERR("set page first fail!\n");
 
 		touch_hold_enable = i2c_smbus_read_byte_data(ts->client, 0x2c);
-		TPDTM_DMESG("%s:read reg 0x%x\n",
-			__func__, touch_hold_enable);
+		TPDTM_DMESG("%s:read reg 0x%x\n", __func__, touch_hold_enable);
 
-	ret = synaptics_rmi4_i2c_write_byte(ts->client,
-					    0x2c, touch_hold_enable);
-	if (ret < 0)
-		TPD_ERR("%s: set reg fail!\n", __func__);
-
-	ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x00);
-	if (ret < 0)
-		TPD_ERR("%s: set page 00 fail!\n", __func__);
+		if (tmp == 1) {
+			touch_hold_enable = touch_hold_enable | 0x01;
+			ts->en_up_down = 1;
+		} else if (tmp == 0) {
+			touch_hold_enable = touch_hold_enable & 0xfe;
+			ts->en_up_down = 0;
+		}
+		ret = synaptics_rmi4_i2c_write_byte(ts->client,
+						    0x2c, touch_hold_enable);
+		if (ret < 0)
+			TPD_ERR("set first fail!\n");
+		touchhold_tmp = i2c_smbus_read_byte_data(ts->client, 0x2c);
+		TPDTM_DMESG("%s:read reg again 0x%x,0x%x,%d\n", __func__,
+			    touch_hold_enable, touchhold_tmp, touch_hold_retry);
+		ret = synaptics_rmi4_i2c_write_byte(ts->client, 0xff, 0x00);
+		if (ret < 0)
+			TPD_ERR("set page 00 fail!\n");
+		if (touch_hold_enable == touchhold_tmp)
+			break;
+		if (touch_hold_retry == 5)
+			break;
+		msleep(10);
+	}
 	mutex_unlock(&ts->mutex);
 
 	return size;
@@ -4473,13 +4470,11 @@ static const struct file_operations i2c_device_test_fops = {
 	.owner = THIS_MODULE,
 };
 
-//wangwenxue@BSP add for change baseline_test to "proc\touchpanel\baseline_test"  begin
 static const struct file_operations tp_baseline_test_proc_fops = {
 	.read = tp_baseline_test_read_func,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
-//wangwenxue@BSP add for change baseline_test to "proc\touchpanel\baseline_test"  end
 
 #ifdef SUPPORT_GLOVES_MODE
 static const struct file_operations glove_mode_enable_proc_fops = {
@@ -6595,8 +6590,7 @@ static int synaptics_ts_suspend(struct device *dev)
 			mutex_unlock(&ts->mutex);
 			TPD_ERR("enter gesture mode\n");
 		}
-		//set_doze_time(2);	/*change dozeinterval by firmware*/
-		//just for fajita
+		// set_doze_time(2);
 		if (ts->project_version == 0x03) {
 			mutex_lock(&ts->mutex);
 			tp_single_tap_en(ts, true);
@@ -6699,6 +6693,7 @@ static int synaptics_i2c_suspend(struct device *dev)
 						   ts->pinctrl_state_suspend);
 		}
 	}
+//#endif
 	return 0;
 }
 
@@ -6829,9 +6824,6 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 	    container_of(self, struct synaptics_ts_data, msm_drm_notif);
 
 	if (event != MSM_DRM_EARLY_EVENT_BLANK && MSM_DRM_EVENT_BLANK != event)
-		return 0;
-	/*add for morgan for EID447 */
-	if (evdata->id != MSM_DRM_PRIMARY_DISPLAY)
 		return 0;
 	if ((evdata) && (evdata->data) && (ts) && (ts->client)) {
 		blank = evdata->data;
