@@ -238,18 +238,6 @@ struct fp_underscreen_info {
 #define Sgestrue            14	// S
 #define SingleTap           15	// single tap
 
-#ifdef VENDOR_EDIT_OXYGEN
-#define KEY_GESTURE_W          	246	//w
-#define KEY_GESTURE_M      		247	//m
-#define KEY_GESTURE_S			248	//s
-#define KEY_DOUBLE_TAP          249	// double tap to wake
-#define KEY_GESTURE_CIRCLE      250	// draw circle to lunch camera
-#define KEY_GESTURE_TWO_SWIPE	251	// swipe two finger vertically to play/pause
-#define KEY_GESTURE_V           252	// draw v to toggle flashlight
-#define KEY_GESTURE_LEFT_V      253	// draw left arrow for previous track
-#define KEY_GESTURE_RIGHT_V     254	// draw right arrow for next track
-#endif
-
 #define BIT0 (0x1 << 0)
 #define BIT1 (0x1 << 1)
 #define BIT2 (0x1 << 2)
@@ -264,13 +252,7 @@ static int RightVee_gesture __read_mostly;	//"<"
 static int DouSwip_gesture __read_mostly;	// "||"
 static int Circle_gesture __read_mostly;		// "O"
 static int UpVee_gesture __read_mostly;		//"V"
-static int DownVee_gesture __read_mostly;	//"^"
 static int DouTap_gesture __read_mostly;		//"double tap"
-
-static int Left2RightSwip_gesture __read_mostly;	//"(-->)"
-static int Right2LeftSwip_gesture __read_mostly;	//"(<--)"
-static int Up2DownSwip_gesture __read_mostly;	//"up to down |"
-static int Down2UpSwip_gesture __read_mostly;	//"down to up |"
 
 static int Wgestrue_gesture __read_mostly;	//"(W)"
 static int Mgestrue_gesture __read_mostly;	//"(M)"
@@ -1472,45 +1454,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		break;
 	}
 
-#ifdef VENDOR_EDIT_OXYGEN
-	keyCode = UnkownGestrue;
-	// Get key code based on registered gesture.
-	switch (gesture) {
-	case DouTap:
-		keyCode = KEY_DOUBLE_TAP;
-		break;
-	case UpVee:
-		keyCode = KEY_GESTURE_V;
-		break;
-	case DownVee:
-		keyCode = KEY_GESTURE_V;
-		break;
-	case LeftVee:
-		keyCode = KEY_GESTURE_RIGHT_V;
-		break;
-	case RightVee:
-		keyCode = KEY_GESTURE_LEFT_V;
-		break;
-	case Circle:
-		keyCode = KEY_GESTURE_CIRCLE;
-		break;
-	case DouSwip:
-		keyCode = KEY_GESTURE_TWO_SWIPE;
-		break;
-	case Wgestrue:
-		keyCode = KEY_GESTURE_W;
-		break;
-	case Mgestrue:
-		keyCode = KEY_GESTURE_M;
-		break;
-	case Sgestrue:
-		keyCode = KEY_GESTURE_S;
-		break;
-	default:
-		break;
-	}
-#endif
-
 	TPD_ERR("detect %s gesture\n", gesture == DouTap ? "(double tap)" :
 		gesture == UpVee ? "(V)" :
 		gesture == DownVee ? "(^)" :
@@ -2342,36 +2285,6 @@ static ssize_t tp_sleep_write_func(struct file *file, const char *buffer,
 	return count;
 }
 #endif
-
-static ssize_t tp_show(struct device_driver *ddri, char *buf)
-{
-	// uint8_t ret = 0;
-	struct synaptics_ts_data *ts = ts_g;
-	int a;
-	int b, c;
-	if (!ts)
-		return 0;
-	a = synaptics_rmi4_i2c_read_word(ts->client, F01_RMI_DATA_BASE);
-	if (a < 0)
-		TPD_ERR("tp_show read i2c err\n");
-	b = synaptics_rmi4_i2c_read_byte(ts->client, F01_RMI_DATA01);
-	if (b < 0)
-		TPD_ERR("tp_show read i2c err\n");
-	c = synaptics_rmi4_i2c_read_byte(ts->client, F12_2D_DATA_BASE);
-	if (c < 0)
-		TPD_ERR("tp_show read i2c err\n");
-
-	return sprintf(buf,
-		       "F01_RMI_DATA_BASE[0x%x]=0x%x;F01_RMI_DATA01[0x%x]=0x%x;F12_2D_DATA_BASE[0x%x]=0x%x;\n",
-		       F01_RMI_DATA_BASE, a, F01_RMI_DATA01, b,
-		       F12_2D_DATA_BASE, c);
-}
-
-static ssize_t store_tp(struct device_driver *ddri, const char *buf,
-			size_t count)
-{
-	return count;
-}
 
 static ssize_t vendor_id_read_func(struct file *file, char __user * user_buf,
 				   size_t count, loff_t * ppos)
@@ -3735,14 +3648,6 @@ static int synaptics_input_init(struct synaptics_ts_data *ts)
 	set_bit(BTN_TOOL_FINGER, ts->input_dev->keybit);
 #ifdef SUPPORT_GESTURE
 	set_bit(KEY_F4, ts->input_dev->keybit);	//doulbe-tap resume
-#ifdef VENDOR_EDIT_OXYGEN
-	set_bit(KEY_DOUBLE_TAP, ts->input_dev->keybit);
-	set_bit(KEY_GESTURE_CIRCLE, ts->input_dev->keybit);
-	set_bit(KEY_GESTURE_V, ts->input_dev->keybit);
-	set_bit(KEY_GESTURE_TWO_SWIPE, ts->input_dev->keybit);
-	set_bit(KEY_GESTURE_LEFT_V, ts->input_dev->keybit);
-	set_bit(KEY_GESTURE_RIGHT_V, ts->input_dev->keybit);
-#endif
 	set_bit(KEY_APPSELECT, ts->input_dev->keybit);
 	set_bit(KEY_BACK, ts->input_dev->keybit);
 #endif
