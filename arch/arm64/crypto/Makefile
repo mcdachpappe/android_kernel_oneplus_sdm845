@@ -21,9 +21,10 @@ obj-$(CONFIG_CRYPTO_AES_ARM64_CE) += aes-ce-cipher.o
 aes-ce-cipher-y := aes-ce-cipher-glue.o aes-ce-cipher-core.o
 CFLAGS_aes-ce-cipher-core.o += -march=armv8.2-a+crypto -Wa,-march=armv8.2-a+crypto $(call cc-option,-no-integrated-as) $(DISABLE_LTO)
 ifeq ($(cc-name),gcc)
-CFLAGS_aes-ce-cipher-core.o += -mcpu=cortex-a75.cortex-a55 -mtune=cortex-a75.cortex-a55
+    CFLAGS_aes-ce-cipher-core.o += $(call cc-ifversion, -lt, 0800, -mcpu=cortex-a73.cortex-a53 -mtune=cortex-a73.cortex-a53)
+    CFLAGS_aes-ce-cipher-core.o += $(call cc-ifversion, -ge, 0800, -mcpu=cortex-a75.cortex-a55 -mtune=cortex-a75.cortex-a55)
 else
-CFLAGS_aes-ce-cipher-core.o += -mcpu=cortex-a55+crypto -mtune=cortex-a55+crypto
+    CFLAGS_aes-ce-cipher-core.o += -mcpu=cortex-a55+crypto -mtune=cortex-a55+crypto
 endif
 
 obj-$(CONFIG_CRYPTO_AES_ARM64_CE_CCM) += aes-ce-ccm.o
@@ -42,7 +43,7 @@ CFLAGS_aes-glue-ce.o	:= -DUSE_V8_CRYPTO_EXTENSIONS
 
 obj-$(CONFIG_CRYPTO_CRC32_ARM64) += crc32-arm64.o
 
-CFLAGS_crc32-arm64.o	:= -mcpu=generic+crc
+CFLAGS_crc32-arm64.o    += $(call cc-ifversion, -lt, 0700, -mcpu=generic+crc)
 
 $(obj)/aes-glue-%.o: $(src)/aes-glue.c FORCE
 	$(call if_changed_rule,cc_o_c)
