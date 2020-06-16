@@ -250,7 +250,7 @@ static int msm_drm_notifier_cb(struct notifier_block *nb,
 		return NOTIFY_OK;
 
 	/* Boost when the screen turns on and unboost when it turns off */
-	d->screen_awake = *blank == MSM_DRM_BLANK_UNBLANK_CUST;
+	d->screen_awake = *blank == MSM_DRM_BLANK_UNBLANK;
 	if (d->screen_awake) {
 		int i;
 
