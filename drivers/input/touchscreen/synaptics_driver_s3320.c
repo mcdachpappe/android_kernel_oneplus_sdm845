@@ -4820,7 +4820,7 @@ static const struct file_operations key_disable_proc_fops = {
 #define CREATE_GESTURE_NODE(NAME)\
 	CREATE_PROC_NODE(touchpanel, NAME##_enable, 0666)
 
-static int init_synaptics_proc(void)
+static int init_synaptics_proc(struct synaptics_ts_data *ts)
 {
 	int ret = 0;
 	struct proc_dir_entry *node = NULL;
@@ -4835,7 +4835,10 @@ static int init_synaptics_proc(void)
 	CREATE_PROC_NODE(touchpanel, coordinate, 0444);
 
 #ifdef SUPPORT_GESTURE
-	CREATE_GESTURE_NODE(single_tap);
+	// single_tap is only available on fajita
+	if (ts->project_version == 0x03) {
+		CREATE_GESTURE_NODE(single_tap);
+	}
 	CREATE_GESTURE_NODE(double_tap);
 	CREATE_GESTURE_NODE(up_arrow);
 	CREATE_GESTURE_NODE(down_arrow);
@@ -6048,7 +6051,7 @@ static int synaptics_ts_probe(struct i2c_client *client, const struct i2c_device
 
 	}
 #endif
-	init_synaptics_proc();
+	init_synaptics_proc(ts);
 	TPDTM_DMESG("synaptics_ts_probe 3203: normal end\n");
 
 	bootmode = get_boot_mode();
