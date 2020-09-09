@@ -27,7 +27,6 @@
 #include <linux/extcon.h>
 #include <linux/usb/class-dual-role.h>
 #include <linux/usb/usbpd.h>
-#include <linux/set_os.h>
 #include "usbpd.h"
 
 /* To start USB stack for USB3.1 complaince testing */
@@ -426,7 +425,6 @@ struct usbpd {
 	bool			peer_usb_comm;
 	bool			peer_pr_swap;
 	bool			peer_dr_swap;
-	bool			oem_bypass;
 
 	u32			sink_caps[7];
 	int			num_sink_caps;
@@ -887,14 +885,6 @@ static void kick_sm(struct usbpd *pd, int ms)
 static void phy_sig_received(struct usbpd *pd, enum pd_sig_type sig)
 {
 	union power_supply_propval val = {1};
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		usbpd_info(&pd->dev, "%s return by oem\n", __func__);
-		return;
-#ifdef CONFIG_UNIFIED
-	}	
-#endif
 
 	if (sig != HARD_RESET_SIG) {
 		usbpd_err(&pd->dev, "invalid signal (%d) received\n", sig);
@@ -1253,10 +1243,7 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 			pd->ss_lane_svid = 0x0;
 		}
 
-#ifdef CONFIG_UNIFIED
-		if (!is_oos())
-			dual_role_instance_changed(pd->dual_role);
-#endif
+		dual_role_instance_changed(pd->dual_role);
 
 		/* Set CC back to DRP toggle for the next disconnect */
 		val.intval = POWER_SUPPLY_TYPEC_PR_DUAL;
@@ -1329,38 +1316,16 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 
 			usbpd_err(&pd->dev, "Invalid request: %08x\n", pd->rdo);
 
-/*2018/06/21 handle pixel-sink connect failed issue*/
-#ifdef CONFIG_UNIFIED
-			if (is_oos()) {
-#endif
-				if (pd->oem_bypass) {
-					usbpd_info(&pd->dev, "oem bypass invalid request!\n");
-				} else {
-					if (pd->in_explicit_contract)
-						usbpd_set_state(pd, PE_SRC_READY);
-					else
-						/*
-						 * bypass PE_SRC_Capability_Response and
-						 * PE_SRC_Wait_New_Capabilities in this
-						 * implementation for simplicity.
-						 */
-						usbpd_set_state(pd, PE_SRC_SEND_CAPABILITIES);
-					break;
-				}
-#ifdef CONFIG_UNIFIED
-			} else {
-				if (pd->in_explicit_contract)
-					usbpd_set_state(pd, PE_SRC_READY);
-				else
-					/*
-					 * bypass PE_SRC_Capability_Response and
-					 * PE_SRC_Wait_New_Capabilities in this
-					 * implementation for simplicity.
-					 */
-					usbpd_set_state(pd, PE_SRC_SEND_CAPABILITIES);
-				break;
-			}
-#endif
+			if (pd->in_explicit_contract)
+				usbpd_set_state(pd, PE_SRC_READY);
+			else
+				/*
+				 * bypass PE_SRC_Capability_Response and
+				 * PE_SRC_Wait_New_Capabilities in this
+				 * implementation for simplicity.
+				 */
+				usbpd_set_state(pd, PE_SRC_SEND_CAPABILITIES);
+			break;
 		}
 
 		/* PE_SRC_TRANSITION_SUPPLY pseudo-state */
@@ -1440,10 +1405,7 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 				start_usb_peripheral(pd);
 		}
 
-#ifdef CONFIG_UNIFIED
-		if (!is_oos())
-			dual_role_instance_changed(pd->dual_role);
-#endif
+		dual_role_instance_changed(pd->dual_role);
 
 		ret = power_supply_get_property(pd->usb_psy,
 				POWER_SUPPLY_PROP_PD_ALLOWED, &val);
@@ -2074,25 +2036,21 @@ enable_reg:
 	else
 		pd->vbus_enabled = true;
 
-#ifdef CONFIG_UNIFIED
-	if (!is_oos()) {
-		count = 10;
-		/*
-		 * Check to make sure VBUS voltage reaches above Vsafe5Vmin (4.75v)
-		 * before proceeding.
-		 */
-		while (count--) {
-			ret = power_supply_get_property(pd->usb_psy,
-					POWER_SUPPLY_PROP_VOLTAGE_NOW, &val);
-			if (ret || val.intval >= 4750000) /*vsafe5Vmin*/
-				break;
-			usleep_range(10000, 12000); /* Delay between two reads */
-		}
-
-		if (ret)
-			msleep(100); /* Delay to wait for VBUS ramp up if read fails */
+	count = 10;
+	/*
+	 * Check to make sure VBUS voltage reaches above Vsafe5Vmin (4.75v)
+	 * before proceeding.
+	 */
+	while (count--) {
+		ret = power_supply_get_property(pd->usb_psy,
+				POWER_SUPPLY_PROP_VOLTAGE_NOW, &val);
+		if (ret || val.intval >= 4750000) /*vsafe5Vmin*/
+			break;
+		usleep_range(10000, 12000); /* Delay between two reads */
 	}
-#endif
+
+	if (ret)
+		msleep(100); /* Delay to wait for VBUS ramp up if read fails */
 
 	return ret;
 }
@@ -2316,41 +2274,20 @@ static void usbpd_sm(struct work_struct *w)
 				ARRAY_SIZE(default_src_caps), SOP_MSG);
 		if (ret) {
 			pd->caps_count++;
+			if (pd->caps_count >= PD_CAPS_COUNT) {
+				usbpd_dbg(&pd->dev, "Src CapsCounter exceeded, disabling PD\n");
+				usbpd_set_state(pd, PE_SRC_DISABLED);
 
-#ifdef CONFIG_UNIFIED
-			if (is_oos()) {
-#endif
-/* david.liu@bsp, 201710523 Fix C2C swap failed with Pixel */
-				if (pd->caps_count < 10 && pd->current_dr == DR_DFP) {
-					start_usb_host(pd, true);
-				} else if (pd->caps_count >= 10) {
-					usbpd_set_state(pd, PE_SRC_DISABLED);
-					break;
-				}
-#ifdef CONFIG_UNIFIED
-			} else {
-				if (pd->caps_count >= PD_CAPS_COUNT) {
-					usbpd_dbg(&pd->dev, "Src CapsCounter exceeded, disabling PD\n");
-					usbpd_set_state(pd, PE_SRC_DISABLED);
-
-					val.intval = POWER_SUPPLY_PD_INACTIVE;
-					power_supply_set_property(pd->usb_psy,
-							POWER_SUPPLY_PROP_PD_ACTIVE,
-							&val);
-					break;
-				}
+				val.intval = POWER_SUPPLY_PD_INACTIVE;
+				power_supply_set_property(pd->usb_psy,
+						POWER_SUPPLY_PROP_PD_ACTIVE,
+						&val);
+				break;
 			}
-#endif
+
 			kick_sm(pd, SRC_CAP_TIME);
 			break;
 		}
-
-/* david.liu@bsp, 201710523 Fix C2C swap failed with Pixel */
-/*		usbpd_info(&pd->dev, "Start host snd msg ok\n");
-		if (pd->current_dr == DR_DFP)
-			start_usb_host(pd, true);
-		break;
-#else */
 
 		/* transmit was successful if GoodCRC was received */
 		pd->caps_count = 0;
@@ -2365,7 +2302,6 @@ static void usbpd_sm(struct work_struct *w)
 		power_supply_set_property(pd->usb_psy,
 				POWER_SUPPLY_PROP_PD_ACTIVE, &val);
 		break;
-/*#endif*/
 
 	case PE_SRC_SEND_CAPABILITIES_WAIT:
 		if (IS_DATA(rx_msg, MSG_REQUEST)) {
@@ -3141,22 +3077,6 @@ static int psy_changed(struct notifier_block *nb, unsigned long evt, void *ptr)
 
 	if (pd->typec_mode == typec_mode)
 		return 0;
-
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		if ((typec_mode == POWER_SUPPLY_TYPEC_SOURCE_DEFAULT) ||
-			(typec_mode == POWER_SUPPLY_TYPEC_SOURCE_MEDIUM) ||
-			(typec_mode == POWER_SUPPLY_TYPEC_SOURCE_HIGH)) {
-			if (pd->psy_type == POWER_SUPPLY_TYPE_UNKNOWN) {
-				usbpd_err(&pd->dev, "typec_mode:%d, psy_type:%d\n",
-					typec_mode, pd->psy_type);
-				return 0;
-			}
-		}
-#ifdef CONFIG_UNIFIED
-	}
-#endif
 
 	pd->typec_mode = typec_mode;
 
@@ -4004,82 +3924,88 @@ MODULE_PARM_DESC(pd_vbus_ctrl, "PD VBUS CONTROL");
 
 void pd_vbus_reset(struct usbpd *pd)
 {
-	if (!pd) {
-		pr_err("pd_vbus_reset, pd is null\n");
-		return;
-	}
-	if (pd->vbus_enabled) {
-		pr_err("pd_vbus_reset execute\n");
-		regulator_disable(pd->vbus);
-		pd->vbus_enabled = false;
-		stop_usb_host(pd);
-		pd_vbus_ctrl = 500;
-		msleep(pd_vbus_ctrl);
-		start_usb_host(pd, true);
-		enable_vbus(pd);
-	} else {
-		pr_err("pd_vbus is not enabled yet\n");
-	}
+       if (!pd) {
+               pr_err("pd_vbus_reset, pd is null\n");
+               return;
+       }
+       if (pd->vbus_enabled) {
+               pr_err("pd_vbus_reset execute\n");
+               regulator_disable(pd->vbus);
+               pd->vbus_enabled = false;
+               stop_usb_host(pd);
+               pd_vbus_ctrl = 500;
+               msleep(pd_vbus_ctrl);
+               start_usb_host(pd, true);
+               pd->vbus_enabled = false;
+               stop_usb_host(pd);
+               pd_vbus_ctrl = 500;
+               msleep(pd_vbus_ctrl);
+               start_usb_host(pd, true);
+               enable_vbus(pd);
+       } else {
+               pr_err("pd_vbus is not enabled yet\n");
+       }
 }
 
 /* Handles VBUS off on */
 void usbpd_vbus_sm(struct work_struct *w)
 {
-	struct usbpd *pd = pd_lobal;
-	/* container_of(w, struct usbpd, vbus_work) */
+       struct usbpd *pd = pd_lobal;
+       /* container_of(w, struct usbpd, vbus_work) */
 
-	pr_err("usbpd_vbus_sm handle state %s, vbus %d\n",
-			usbpd_state_strings[pd->current_state],
-			pd->vbus_enabled);
+       pr_err("usbpd_vbus_sm handle state %s, vbus %d\n",
+                       usbpd_state_strings[pd->current_state],
+                       pd->vbus_enabled);
 
-	/* to be done, pd->sm_queued = false; */
-	pd_vbus_reset(pd);
+       /* to be done, pd->sm_queued = false; */
+       pd_vbus_reset(pd);
 }
 
 void kick_usbpd_vbus_sm(void)
 {
-	pm_stay_awake(&pd_lobal->dev);
+       pm_stay_awake(&pd_lobal->dev);
 
-	/* to be done pd_lobal->sm_queued = true;*/
-	pr_err("kick_usbpd_vbus_sm handle state %s, vbus %d\n",
-			usbpd_state_strings[pd_lobal->current_state],
-			pd_lobal->vbus_enabled);
+       /* to be done pd_lobal->sm_queued = true;*/
+       pr_err("kick_usbpd_vbus_sm handle state %s, vbus %d\n",
+                       usbpd_state_strings[pd_lobal->current_state],
+                       pd_lobal->vbus_enabled);
 
-	queue_delayed_work(pd_lobal->wq, &(pd_lobal->vbus_work),
+       queue_delayed_work(pd_lobal->wq, &(pd_lobal->vbus_work),
                                                 msecs_to_jiffies(200));
 }
 
 static ssize_t pd_vbus_show(struct device *dev, struct device_attribute *attr,
                char *buf)
 {
-	struct usbpd *pd = dev_get_drvdata(dev);
+       struct usbpd *pd = dev_get_drvdata(dev);
 
-	pr_err("pd_vbus_show handle state %s, vbus %d\n",
-			usbpd_state_strings[pd_lobal->current_state],
-			pd_lobal->vbus_enabled);
+       pr_err("pd_vbus_show handle state %s, vbus %d\n",
+                       usbpd_state_strings[pd_lobal->current_state],
+                       pd_lobal->vbus_enabled);
 
-	pd_vbus_reset(pd);
+       pd_vbus_reset(pd);
 
-	return 0;
+       return 0;
 }
 
 
 static ssize_t pd_vbus_store(struct device *dev,
                struct device_attribute *attr, const char *buf, size_t size)
 {
-	int val = 0;
+       int val = 0;
 
-	if (sscanf(buf, "%d\n", &val) != 0)
-		pr_err("pd_vbus_store input err\n");
-	pr_err("pd_vbus_store handle state %s, vbus %d,val %d\n",
-			usbpd_state_strings[pd_lobal->current_state],
-			pd_lobal->vbus_enabled, val);
-	kick_usbpd_vbus_sm();
+       if (sscanf(buf, "%d\n", &val) != 0)
+               pr_err("pd_vbus_store input err\n");
+       pr_err("pd_vbus_store handle state %s, vbus %d,val %d\n",
+                       usbpd_state_strings[pd_lobal->current_state],
+                       pd_lobal->vbus_enabled, val);
+       kick_usbpd_vbus_sm();
 
-	return size;
+       return size;
 }
 
 static DEVICE_ATTR_RW(pd_vbus);
+
 
 static struct attribute *usbpd_attrs[] = {
 	&dev_attr_contract.attr,
@@ -4106,7 +4032,7 @@ static struct attribute *usbpd_attrs[] = {
 	&dev_attr_get_battery_cap.attr,
 	&dev_attr_get_battery_status.attr,
 /*2018/03/19 handle xiaomi typec headset dsp crash issue*/
-	&dev_attr_pd_vbus.attr,
+        &dev_attr_pd_vbus.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(usbpd);
@@ -4229,12 +4155,6 @@ struct usbpd *usbpd_create(struct device *parent)
 		goto del_pd;
 	}
 	INIT_WORK(&pd->sm_work, usbpd_sm);
-/*2018/03/19 handle xiaomi typec headset dsp crash issue*/
-#ifdef CONFIG_UNIFIED
-	if (is_oos())
-#endif
-		INIT_DELAYED_WORK(&pd->vbus_work, usbpd_vbus_sm);
-
 	hrtimer_init(&pd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	pd->timer.function = pd_timeout;
 	mutex_init(&pd->swap_lock);
@@ -4359,11 +4279,6 @@ struct usbpd *usbpd_create(struct device *parent)
 		pd->dual_role->drv_data = pd;
 	}
 
-/*2018/06/21 handle pixel-sink connect failed issue*/
-#ifdef CONFIG_UNIFIED
-	if (is_oos())
-#endif
-		pd->oem_bypass = true;
 	pd->current_pr = PR_NONE;
 	pd->current_dr = DR_NONE;
 	list_add_tail(&pd->instance, &_usbpd);
@@ -4381,12 +4296,6 @@ struct usbpd *usbpd_create(struct device *parent)
 
 	/* force read initial power_supply values */
 	psy_changed(&pd->psy_nb, PSY_EVENT_PROP_CHANGED, pd->usb_psy);
-
-	/*2018/03/19 handle xiaomi typec headset dsp crash issue*/
-#ifdef CONFIG_UNIFIED
-	if (is_oos())
-#endif
-		pd_lobal = pd;
 
 	return pd;
 

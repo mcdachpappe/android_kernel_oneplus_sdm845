@@ -29,7 +29,6 @@
 #include <linux/interrupt.h>
 #include <linux/regulator/consumer.h>
 #include <linux/firmware.h>
-#include <linux/set_os.h>
 
 #include <linux/pinctrl/consumer.h>
 #include <linux/pinctrl/pinctrl.h>
@@ -285,7 +284,6 @@ static int Wgestrue_gesture __read_mostly;	//"(W)"
 static int Mgestrue_gesture __read_mostly;	//"(M)"
 static int Sgestrue_gesture __read_mostly;	//"(S)"
 static int SingleTap_gesture __read_mostly;	//"(SingleTap)"
-static int Enable_gesture __read_mostly;
 static int gesture_switch __read_mostly;
 #endif
 
@@ -1481,8 +1479,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 		break;
 	}
 
-#ifdef CONFIG_UNIFIED	
-if (!is_oos()) {
 	keyCode = UnkownGestrue;
 	// Get key code based on registered gesture.
 	switch (gesture) {
@@ -1534,8 +1530,6 @@ if (!is_oos()) {
 		default:
 			break;
 	}
-}	
-#endif
 
 	TPD_ERR("detect %s gesture\n", gesture == DouTap ? "(double tap)" :
 		gesture == UpVee ? "(V)" :
@@ -2025,7 +2019,6 @@ static ssize_t i2c_device_test_read_func(struct file *file,
 }
 
 #ifdef SUPPORT_GESTURE
-#ifdef CONFIG_UNIFIED
 static void tp_gesture_set_enable(void) {
 	struct synaptics_ts_data *ts = ts_g;
 
@@ -2042,7 +2035,6 @@ static void tp_gesture_set_enable(void) {
 		ts->gesture_enable = 0;
 	}
 }
-#endif
 
 static ssize_t tp_gesture_read_func(struct file *file, char __user * user_buf,
 				    size_t count, loff_t * ppos)
@@ -2086,30 +2078,12 @@ static ssize_t tp_gesture_write_func(struct file *file,
 	Mgestrue_gesture = (buf[1] & BIT1) ? 1 : 0;	//"M"
 	Wgestrue_gesture = (buf[1] & BIT2) ? 1 : 0;	//"W"
 	SingleTap_gesture = (buf[1] & BIT3) ? 1 : 0;	//"Single_gesture"
-	//enable gesture
-	Enable_gesture = (buf[1] & BIT7) ? 1 : 0;
 
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		if (DouTap_gesture || Circle_gesture || UpVee_gesture
-		    || LeftVee_gesture || RightVee_gesture || DouSwip_gesture
-		    || Sgestrue_gesture || Mgestrue_gesture || Wgestrue_gesture
-		    || Enable_gesture || SingleTap_gesture) {
-			ts->gesture_enable = 1;
-		} else {
-			ts->gesture_enable = 0;
-		}
-#ifdef CONFIG_UNIFIED
-	} else {
-		tp_gesture_set_enable();
-	}
-#endif
+	tp_gesture_set_enable();
 
 	return count;
 }
 
-#ifdef CONFIG_UNIFIED
 #define GESTURE_ATTR(name, flag)\
 static ssize_t name##_enable_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)\
 {\
@@ -2130,7 +2104,7 @@ static ssize_t name##_enable_write_func(struct file *file, const char __user *us
 	} else {\
 		flag = 0;\
 	}\
-	tp_gesture_set_enable();\
+	tp_gesture_set_enable(); \
 	return count;\
 }\
 static const struct file_operations name##_enable_proc_fops = {\
@@ -2165,8 +2139,6 @@ if (prEntry_tmp == NULL) {\
 
 #define CREATE_GESTURE_NODE(NAME)\
 	CREATE_PROC_NODE(prEntry_tp, NAME##_enable, 0666)
-
-#endif
 
 static ssize_t coordinate_proc_read_func(struct file *file,
 					 char __user * user_buf, size_t count,
@@ -3810,29 +3782,22 @@ static int synaptics_input_init(struct synaptics_ts_data *ts)
 	set_bit(INPUT_PROP_DIRECT, ts->input_dev->propbit);
 	set_bit(BTN_TOOL_FINGER, ts->input_dev->keybit);
 #ifdef SUPPORT_GESTURE
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		set_bit(KEY_F4, ts->input_dev->keybit);	//doulbe-tap resume
-#ifdef CONFIG_UNIFIED
-	} else {
-		set_bit(KEY_DOUBLE_TAP, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_CIRCLE, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_V, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_A, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_TWO_SWIPE, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_LEFT_V, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_RIGHT_V, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_W, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_M, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_S, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_SWIPE_UP, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_SWIPE_LEFT, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_SWIPE_RIGHT, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_SWIPE_DOWN, ts->input_dev->keybit);
-		set_bit(KEY_GESTURE_SINGLE_TAP, ts->input_dev->keybit);
-	}
-#endif
+	set_bit(KEY_F4, ts->input_dev->keybit);	//doulbe-tap resume
+	set_bit(KEY_DOUBLE_TAP, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_CIRCLE, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_V, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_A, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_TWO_SWIPE, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_LEFT_V, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_RIGHT_V, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_W, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_M, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_S, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_SWIPE_UP, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_SWIPE_LEFT, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_SWIPE_RIGHT, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_SWIPE_DOWN, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_SINGLE_TAP, ts->input_dev->keybit);
 #endif
 	set_bit(KEY_APPSELECT, ts->input_dev->keybit);
 	set_bit(KEY_BACK, ts->input_dev->keybit);
@@ -5022,55 +4987,28 @@ static int init_synaptics_proc(struct synaptics_ts_data *ts)
 		TPD_ERR("Couldn't create touchpanel\n");
 	}
 #ifdef SUPPORT_GESTURE
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		prEntry_tmp =
-		    proc_create("gesture_enable", 0666, prEntry_tp,
-				&tp_gesture_proc_fops);
-		if (prEntry_tmp == NULL) {
-			ret = -ENOMEM;
-			TPD_ERR("Couldn't create gesture_enable\n");
-		}
-		prEntry_tmp =
-		    proc_create("gesture_switch", 0666, prEntry_tp,
-				&gesture_switch_proc_fops);
-		if (prEntry_tmp == NULL) {
-			ret = -ENOMEM;
-			TPD_ERR("Couldn't create gesture_switch\n");
-		}
-		prEntry_tmp =
-		    proc_create("coordinate", 0444, prEntry_tp, &coordinate_proc_fops);
-		if (prEntry_tmp == NULL) {
-			ret = -ENOMEM;
-			TPD_ERR("Couldn't create coordinate\n");
-		}
-#ifdef CONFIG_UNIFIED
-	} else {
-		CREATE_PROC_NODE(prEntry_tp, tp_gesture, 0666);
-		CREATE_PROC_NODE(prEntry_tp, gesture_switch, 0666);
-		CREATE_PROC_NODE(prEntry_tp, coordinate, 0444);
+	CREATE_PROC_NODE(prEntry_tp, tp_gesture, 0666);
+	CREATE_PROC_NODE(prEntry_tp, gesture_switch, 0666);
+	CREATE_PROC_NODE(prEntry_tp, coordinate, 0444);
 
-		CREATE_GESTURE_NODE(double_tap);
-		CREATE_GESTURE_NODE(up_arrow);
-		CREATE_GESTURE_NODE(down_arrow);
-		CREATE_GESTURE_NODE(left_arrow);
-		CREATE_GESTURE_NODE(right_arrow);
-		CREATE_GESTURE_NODE(double_swipe);
-		CREATE_GESTURE_NODE(up_swipe);
-		CREATE_GESTURE_NODE(down_swipe);
-		CREATE_GESTURE_NODE(left_swipe);
-		CREATE_GESTURE_NODE(right_swipe);
-		CREATE_GESTURE_NODE(letter_o);
-		CREATE_GESTURE_NODE(letter_w);
-		CREATE_GESTURE_NODE(letter_m);
-		CREATE_GESTURE_NODE(letter_s);
-		// single_tap is only available on fajita
-		if (ts->project_version == 0x03) {
-			CREATE_GESTURE_NODE(single_tap);
-		}
+	CREATE_GESTURE_NODE(double_tap);
+	CREATE_GESTURE_NODE(up_arrow);
+	CREATE_GESTURE_NODE(down_arrow);
+	CREATE_GESTURE_NODE(left_arrow);
+	CREATE_GESTURE_NODE(right_arrow);
+	CREATE_GESTURE_NODE(double_swipe);
+	CREATE_GESTURE_NODE(up_swipe);
+	CREATE_GESTURE_NODE(down_swipe);
+	CREATE_GESTURE_NODE(left_swipe);
+	CREATE_GESTURE_NODE(right_swipe);
+	CREATE_GESTURE_NODE(letter_o);
+	CREATE_GESTURE_NODE(letter_w);
+	CREATE_GESTURE_NODE(letter_m);
+	CREATE_GESTURE_NODE(letter_s);
+	// single_tap is only available on fajita
+	if (ts->project_version == 0x03) {
+		CREATE_GESTURE_NODE(single_tap);
 	}
-#endif
 #endif
 
 #ifdef SUPPORT_GLOVES_MODE

@@ -1,7 +1,0 @@
-config SET_OS
-	bool "Set the OS with anykernel"
-	default y
-
-config UNIFIED
-	bool "Make source UNIFIED"
-	default y

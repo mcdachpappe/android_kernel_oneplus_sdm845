@@ -64,7 +64,6 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <drm/drm_mipi_dsi.h>
-#include <linux/set_os.h>
 
 extern int msm_drm_notifier_call_chain(unsigned long val, void *v);
 
@@ -5423,19 +5422,15 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 	if (fp_index < 0 && !dim_backlight)
 		cstate->fingerprint_dim_layer = NULL;
 
-#ifdef CONFIG_UNIFIED
-	if (!is_oos()) {
-		if (fp_mode == 1) {
-			display->panel->dim_status = true;
-			cstate->fingerprint_pressed = true;
-			return 0;
-		} else if (fp_mode == 0) {
-			display->panel->dim_status = false;
-			cstate->fingerprint_pressed = false;
-			return 0;
-		}
+	if (fp_mode == 1) {
+		display->panel->dim_status = true;
+		cstate->fingerprint_pressed = true;
+		return 0;
+	} else if (fp_mode == 0) {
+		display->panel->dim_status = false;
+		cstate->fingerprint_pressed = false;
+		return 0;
 	}
-#endif
 
 	return 0;
 }
