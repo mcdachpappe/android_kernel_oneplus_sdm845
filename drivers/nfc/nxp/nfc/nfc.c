@@ -46,7 +46,6 @@
 #include <linux/ioctl.h>
 #include <linux/miscdevice.h>
 #include <linux/i2c.h>
-#include <linux/project_info.h>
 #include "nfc.h"
 #include "sn1xx.h"
 #include "pn8xt.h"
@@ -444,7 +443,6 @@ static int nfc_probe(struct i2c_client *client,
     pr_info("%s: probing NXP NFC exited successfully\n", __func__);
     pr_info("%s: Name of nfcc: %s.\n", __func__, dev_name(&client->dev));
 
-    push_component_info(NFC, "NQ330", "NXP");
     return 0;
 
 err_request_irq_failed:

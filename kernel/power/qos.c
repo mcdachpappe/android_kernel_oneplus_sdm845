@@ -114,7 +114,6 @@ static struct pm_qos_object network_throughput_pm_qos = {
 	.name = "network_throughput",
 };
 
-
 static BLOCKING_NOTIFIER_HEAD(memory_bandwidth_notifier);
 static struct pm_qos_constraints memory_bw_constraints = {
 	.list = PLIST_HEAD_INIT(memory_bw_constraints.list),
@@ -144,7 +143,6 @@ static struct pm_qos_object c0_cpufreq_max_pm_qos = {
        .constraints = &c0_cpufreq_max_constraints,
        .name = "c0_cpufreq_max",
 };
-
 
 static BLOCKING_NOTIFIER_HEAD(c0_cpufreq_min_notifier);
 static struct pm_qos_constraints c0_cpufreq_min_constraints = {
@@ -731,6 +729,8 @@ void pm_qos_add_request(struct pm_qos_request *req,
 	trace_pm_qos_add_request(pm_qos_class, value);
 	pm_qos_update_target(pm_qos_array[pm_qos_class]->constraints,
 			     req, PM_QOS_ADD_REQ, value);
+	/* Fixes rare panic */
+	req->pm_qos_class = pm_qos_class;
 
 #ifdef CONFIG_SMP
 	if (req->type == PM_QOS_REQ_AFFINE_IRQ &&
@@ -749,9 +749,6 @@ void pm_qos_add_request(struct pm_qos_request *req,
 		}
 	}
 #endif
-
-	/* Fixes rare panic */
-	req->pm_qos_class = pm_qos_class;
 }
 EXPORT_SYMBOL_GPL(pm_qos_add_request);
 

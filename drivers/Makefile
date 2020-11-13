@@ -181,5 +181,4 @@ obj-$(CONFIG_ESOC)              += esoc/
 obj-$(CONFIG_FPGA)		+= fpga/
 obj-$(CONFIG_SENSORS_SSC)		+= sensors/
 obj-$(CONFIG_TEE)		+= tee/
-obj-y				+= oneplus/
 obj-$(CONFIG_UNIFIED)		+= set_os/

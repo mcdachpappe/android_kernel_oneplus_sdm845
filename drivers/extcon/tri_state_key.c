@@ -26,7 +26,6 @@
 
 #include <linux/timer.h>
 #include <linux/delay.h>
-#include <linux/project_info.h>
 
 #define DRV_NAME	"tri-state-key"
 
@@ -83,40 +82,7 @@ static int set_gpio_by_pinctrl(void)
 
 static void extcon_dev_work(struct work_struct *work)
 {
-    int key[3]={0,0,0};
-    int hw_version=0; 
-    /*hw 13 use special tri state key no use key2*/
-    hw_version=get_hw_version();
-    pr_err("%s ,hw_version=%d\n",__func__, hw_version);
-    if (hw_version == 13)
-    {
-        key[0] = gpio_get_value(extcon_data->key1_gpio);
-        key[2] = gpio_get_value(extcon_data->key3_gpio);
-
-        pr_err("%s ,key[0]=%d,key[1]=%d,key[2]=%d\n",
-        __func__, key[0], key[1], key[2]);
-        if(key[0]==1 && key[2]==1 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 1);
-            extcon_set_state_sync(extcon_data->edev,2, 0);
-            extcon_set_state_sync(extcon_data->edev,3, 1);
-        }
-        else if(key[0]==0 && key[2]==1 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 0);
-            extcon_set_state_sync(extcon_data->edev,2, 1);
-            extcon_set_state_sync(extcon_data->edev,3, 1);
-        }
-        else if(key[0]==1 && key[2]==0 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 1);
-            extcon_set_state_sync(extcon_data->edev,2, 1);
-            extcon_set_state_sync(extcon_data->edev,3, 0);
-        }
-
-    }
-    else
-    {
+        int key[3]={0,0,0};
 
         key[0] = gpio_get_value(extcon_data->key1_gpio);
         key[1] = gpio_get_value(extcon_data->key2_gpio);
@@ -133,8 +99,6 @@ static void extcon_dev_work(struct work_struct *work)
         extcon_set_state_sync(
                     extcon_data->edev,
                     3, key[2]);
-    }
-
 }
 
 

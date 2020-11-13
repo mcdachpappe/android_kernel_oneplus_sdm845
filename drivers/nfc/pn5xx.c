@@ -66,7 +66,6 @@
 #ifndef HiKey_620_COMPILATION_FIX
 #include <linux/wakelock.h>
 #endif
-#include <linux/project_info.h>
 #include <linux/timer.h>
 #include <linux/clk.h>
 #include "pn5xx.h"
@@ -1497,31 +1496,6 @@ static void check_hw_info() {
         memcpy(hw_info.data, tmp, ret);
         hw_info.len = ret;
         pr_info("%s :Hardware Version  : %d\n", __func__,hw_info.data[3]);
-
-        switch (hw_info.data[3]) {
-        case NFCC_NQ_210:
-            push_component_info(NFC, "NQ210", "NXP");
-            break;
-        case NFCC_NQ_220:
-            push_component_info(NFC, "NQ220", "NXP");
-            break;
-        case NFCC_NQ_310:
-            push_component_info(NFC, "NQ310", "NXP");
-            break;
-        case NFCC_NQ_310_V2:
-            push_component_info(NFC, "NQ310", "NXP");
-            break;
-        case NFCC_NQ_330:
-            push_component_info(NFC, "NQ330", "NXP");
-            break;
-        case NFCC_PN66T:
-            push_component_info(NFC, "PN66T", "NXP");
-            break;
-        default:
-            pr_err("%s: spurious interrupt detected\n", __func__);
-            break;
-        }
-
     } else {
         pr_err("%s :Read Failed\n", __func__);
     }

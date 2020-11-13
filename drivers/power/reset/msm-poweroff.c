@@ -107,12 +107,6 @@ struct reset_attribute {
 module_param_call(download_mode, dload_set, param_get_int,
 			&download_mode, 0644);
 
-int oem_get_download_mode(void)
-{
-	return download_mode && (dload_type & SCM_DLOAD_FULLDUMP);
-}
-
-
 static int panic_prep_restart(struct notifier_block *this,
 			      unsigned long event, void *ptr)
 {
@@ -150,8 +144,6 @@ static int scm_set_dload_mode(int arg1, int arg2)
 static void set_dload_mode(int on)
 {
 	int ret;
-
-	pr_info("set_dload_mode %s\n", on ? "ON" : "OFF");
 
 	if (dload_mode_addr) {
 		__raw_writel(on ? 0xE47B337D : 0, dload_mode_addr);

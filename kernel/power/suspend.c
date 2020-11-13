@@ -30,11 +30,11 @@
 #include <linux/compiler.h>
 #include <linux/moduleparam.h>
 #include <linux/wakeup_reason.h>
-#include <linux/gpio.h>
 
 #include "power.h"
 
-
+#include <linux/gpio.h>
+extern int slst_gpio_base_id;
 #define PROC_AWAKE_ID 12 /* 12th bit */
 
 const char *pm_labels[] = { "mem", "standby", "freeze", NULL };

@@ -6,7 +6,6 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
-#include <linux/project_info.h>
 
 #include "fingerprint_detect.h"
 int fp_version;
@@ -236,58 +235,34 @@ static int fingerprint_detect_probe(struct platform_device *pdev)
 
 	if (fp_detect->project_version < 0x03) {
 		if (id0 && id1 && id2) {
-			push_component_info(FINGERPRINTS,
-				"fpc1228", "FPC");
 			fp_detect->sensor_version = 0x01;
 		} else if (id0 && !id1 && !id2) {
-			push_component_info(FINGERPRINTS,
-				"fpc1245", "FPC(Primax)");
 			fp_detect->sensor_version = 0x01;
 		} else if (!id0 && !id1 && id2) {
-			push_component_info(FINGERPRINTS, "gf5228", "goodix");
 			fp_detect->sensor_version = 0x03;
 		} else if (id0 && id1 && !id2) {
 			if (fp_detect->project_version == 0x02) {
-				push_component_info(FINGERPRINTS,
-				"goodix5228", "goodix");
 				fp_detect->sensor_version = 0x03;
 			} else {
-				push_component_info(FINGERPRINTS,
-				"goodix5228", "goodix");
 				fp_detect->sensor_version = 0x03;
 			}
 		} else if (!id0 && !id1 && !id2) {
-			push_component_info(FINGERPRINTS,
-				"fpc1263", "FPC(Primax)");
 			fp_detect->sensor_version = 0x02;
 		} else if (!id0 && id1 && id2) {
 			if (fp_detect->project_version == 0x02) {
-				push_component_info(FINGERPRINTS,
-					"gfp5288", "Goodix");
 				fp_detect->sensor_version = 0x03;
 			} else {
-				push_component_info(FINGERPRINTS,
-					"fpc1263", "FPC(truly)");
 				fp_detect->sensor_version = 0x02;
 			}
 		} else if (!id0 && id1 && !id2) {
-			push_component_info(FINGERPRINTS,
-				"fpc1263", "FPC(f/p)");
 			fp_detect->sensor_version = 0x02;
 		} else if (id0 && !id1 && id2) {
-			push_component_info(FINGERPRINTS, "gfp5288", "Goodix");
 			fp_detect->sensor_version = 0x03;
-		} else {
-			push_component_info(FINGERPRINTS, "goodix", "goodix");
 		}
 	} else {
 		if (id0) {
-			push_component_info(FINGERPRINTS,
-				"goodix9508", "goodix");
 			fp_detect->sensor_version = 0x04;
 		} else {
-			push_component_info(FINGERPRINTS,
-				"sileadgsl7000", "silead");
 			fp_detect->sensor_version = 0x05;
 		}
 	}

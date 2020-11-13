@@ -105,11 +105,6 @@ struct scan_control {
 	/* One of the zones is ready for compaction */
 	unsigned int compaction_ready:1;
 
-#ifdef CONFIG_MEMPLUS
-	/* 1: swap to zram, 0: swap to file */
-	unsigned int swp_bdv_type:1;
-#endif
-
 	/* Incremented by the number of inactive pages that were scanned */
 	unsigned long nr_scanned;
 
@@ -156,16 +151,6 @@ struct scan_control {
  * From 0 .. 100.  Higher means more swappy.
  */
 int vm_swappiness = 60;
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-/*
- * time for kswapd to breath between each scanning loop
- */
-unsigned int vm_breath_period __read_mostly = 4000;
-/*
- * default adj for kswapd to perform lazy-reclaim
- */
-int vm_breath_priority __read_mostly = 500;
-#endif
 /*
  * The total number of pages which are beyond the high watermark within all
  * zones.
@@ -1140,11 +1125,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		if (PageAnon(page) && !PageSwapCache(page)) {
 			if (!(sc->gfp_mask & __GFP_IO))
 				goto keep_locked;
-#ifdef CONFIG_MEMPLUS
-			if (!add_to_swap(page, page_list, sc->swp_bdv_type?FAST_BDV:SLOW_BDV))
-#else
 			if (!add_to_swap(page, page_list))
-#endif
 				goto activate_locked;
 			lazyfree = true;
 			may_enter_fs = 1;
@@ -1355,7 +1336,6 @@ keep:
 	return nr_reclaimed;
 }
 
-/* bin.zhong@ASTI add for CONFIG_MEMPLUS */
 unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 					    struct list_head *page_list)
 {
@@ -1366,10 +1346,9 @@ unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 		/* Doesn't allow to write out dirty page */
 		.may_writepage = 0,
 	};
-	unsigned long ret;
+	unsigned long ret, dummy1, dummy2, dummy3, dummy4, dummy5;
 	struct page *page, *next;
 	LIST_HEAD(clean_pages);
-	unsigned long dummy1, dummy2, dummy3, dummy4, dummy5;
 
 	list_for_each_entry_safe(page, next, page_list, lru) {
 		if (page_is_file_cache(page) && !PageDirty(page) &&
@@ -1380,46 +1359,12 @@ unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 	}
 
 	ret = shrink_page_list(&clean_pages, zone->zone_pgdat, &sc,
-			TTU_IGNORE_ACCESS, &dummy1, &dummy2, &dummy3,
-			&dummy4, &dummy5, true);
+			TTU_UNMAP|TTU_IGNORE_ACCESS,
+			&dummy1, &dummy2, &dummy3, &dummy4, &dummy5, true);
 	list_splice(&clean_pages, page_list);
 	mod_node_page_state(zone->zone_pgdat, NR_ISOLATED_FILE, -ret);
 	return ret;
 }
-
-#ifdef CONFIG_MEMPLUS
-unsigned long swapout_to_zram(struct list_head *page_list,
-	struct vm_area_struct *vma)
-{
-	struct scan_control sc = {
-		.gfp_mask = GFP_KERNEL,
-		.priority = DEF_PRIORITY,
-		.may_writepage = 1,
-		.may_unmap = 1,
-		.may_swap = 1,
-		.target_vma = vma,
-		.swp_bdv_type = 1,
-	};
-
-	return coretech_reclaim_pagelist(page_list, vma, &sc);
-}
-
-unsigned long swapout_to_disk(struct list_head *page_list,
-	struct vm_area_struct *vma)
-{
-	struct scan_control sc = {
-		.gfp_mask = GFP_KERNEL,
-		.priority = DEF_PRIORITY,
-		.may_writepage = 1,
-		.may_unmap = 1,
-		.may_swap = 1,
-		.target_vma = vma,
-		.swp_bdv_type = 0,
-	};
-
-	return coretech_reclaim_pagelist(page_list, vma, &sc);
-}
-#endif
 
 #ifdef CONFIG_PROCESS_RECLAIM
 unsigned long reclaim_pages_from_list(struct list_head *page_list,
@@ -1613,7 +1558,6 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		 * pages, triggering a premature OOM.
 		 */
 		scan++;
-
 		switch (__isolate_lru_page(page, mode)) {
 		case 0:
 			nr_pages = hpage_nr_pages(page);
@@ -3344,19 +3288,6 @@ static bool kswapd_shrink_node(pg_data_t *pgdat,
 	return sc->nr_scanned >= sc->nr_to_reclaim;
 }
 
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-void __sched usleep_range_interruptible(unsigned long min, unsigned long max)
-{
-	ktime_t kmin;
-	u64 delta;
-
-	__set_current_state(TASK_INTERRUPTIBLE);
-
-	kmin = ktime_set(0, min * NSEC_PER_USEC);
-	delta = (u64)(max - min) * NSEC_PER_USEC;
-	schedule_hrtimeout_range(&kmin, delta, HRTIMER_MODE_REL);
-}
-#endif
 /*
  * For kswapd, balance_pgdat() will reclaim pages across a node from zones
  * that are eligible for use by the caller until at least one zone is
@@ -3473,19 +3404,8 @@ static int balance_pgdat(pg_data_t *pgdat, int order, int classzone_idx)
 		 * progress in reclaiming pages
 		 */
 		nr_reclaimed = sc.nr_reclaimed - nr_reclaimed;
-#ifndef CONFIG_KSWAPD_LAZY_RECLAIM
 		if (raise_priority || !nr_reclaimed)
 			sc.priority--;
-#else
-		if (raise_priority || !nr_reclaimed) {
-			sc.priority--;
-
-			if (vm_breath_period && nr_reclaimed && !atomic_read(&alloc_ongoing)) {
-				sc.priority++;
-				usleep_range_interruptible(vm_breath_period, vm_breath_period << 1);
-			}
-		}
-#endif
 	} while (sc.priority >= 1);
 
 	if (!sc.nr_reclaimed)

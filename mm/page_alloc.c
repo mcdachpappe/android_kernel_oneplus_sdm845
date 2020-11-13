@@ -274,9 +274,6 @@ int watermark_scale_factor;
  */
 int extra_free_kbytes;
 
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-atomic_t alloc_ongoing = ATOMIC_INIT(0);
-#endif
 static unsigned long __meminitdata nr_kernel_pages;
 static unsigned long __meminitdata nr_all_pages;
 static unsigned long __meminitdata dma_reserve;
@@ -3514,22 +3511,12 @@ static void wake_all_kswapds(unsigned int order, const struct alloc_context *ac)
 	struct zoneref *z;
 	struct zone *zone;
 	pg_data_t *last_pgdat = NULL;
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-	struct task_struct *kswapd;
-#endif
 
 	for_each_zone_zonelist_nodemask(zone, z, ac->zonelist,
 					ac->high_zoneidx, ac->nodemask) {
 		if (last_pgdat != zone->zone_pgdat)
 			wakeup_kswapd(zone, order, ac->high_zoneidx);
 		last_pgdat = zone->zone_pgdat;
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-		kswapd = zone->zone_pgdat->kswapd;
-
-		/* early state check to prevent memory barrier and spinlock */
-		if (ac->lr_handle && kswapd->state == TASK_INTERRUPTIBLE)
-			wake_up_state(kswapd, TASK_INTERRUPTIBLE);
-#endif
 	}
 }
 
@@ -3947,9 +3934,6 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 		.zonelist = zonelist,
 		.nodemask = nodemask,
 		.migratetype = gfpflags_to_migratetype(gfp_mask),
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-		.lr_handle = false,
-#endif
 	};
 
 	if (cpusets_enabled()) {
@@ -3975,12 +3959,6 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	 */
 	if (unlikely(!zonelist->_zonerefs->zone))
 		return NULL;
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-	if (current->signal->oom_score_adj <= vm_breath_priority) {
-		ac.lr_handle = true;
-		atomic_inc(&alloc_ongoing);
-	}
-#endif
 
 	if (IS_ENABLED(CONFIG_CMA) && ac.migratetype == MIGRATE_MOVABLE)
 		alloc_flags |= ALLOC_CMA;
@@ -4038,10 +4016,6 @@ out:
 		kmemcheck_pagealloc_alloc(page, order, gfp_mask);
 
 	trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-	if (ac.lr_handle)
-		atomic_dec(&alloc_ongoing);
-#endif
 
 	return page;
 }

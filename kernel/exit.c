@@ -55,8 +55,6 @@
 #include <linux/shm.h>
 #include <linux/kcov.h>
 
-#include <linux/adj_chain.h>
-
 #include "sched/tune.h"
 
 #include <asm/uaccess.h>
@@ -72,7 +70,6 @@ static void __unhash_process(struct task_struct *p, bool group_dead)
 		detach_pid(p, PIDTYPE_PGID);
 		detach_pid(p, PIDTYPE_SID);
 
-		adj_chain_detach(p);
 		list_del_rcu(&p->tasks);
 		list_del_init(&p->sibling);
 		__this_cpu_dec(process_counts);
@@ -192,8 +189,6 @@ repeat:
 	 * group, and the leader is zombie, then notify the
 	 * group leader's parent process. (if it wants notification.)
 	 */
-	if (p && p->nn && p->nn->is_valid)
-		p->nn->is_valid = false;
 	zap_leader = 0;
 	leader = p->group_leader;
 	if (leader != p && thread_group_empty(leader)

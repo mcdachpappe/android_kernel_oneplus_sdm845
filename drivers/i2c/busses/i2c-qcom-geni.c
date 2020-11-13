@@ -31,6 +31,7 @@
 #include <linux/gpio.h>
 #define AP_BAT_SCL 56
 #define AP_BAT_SDA 55
+
 #define SE_I2C_TX_TRANS_LEN		(0x26C)
 #define SE_I2C_RX_TRANS_LEN		(0x270)
 #define SE_I2C_SCL_COUNTERS		(0x278)

@@ -156,11 +156,6 @@ enum {
 	SWP_SCANNING	= (1 << 12),	/* refcount in scan_swap_map */
 };
 
-#ifdef CONFIG_MEMPLUS
-#define SLOW_BDV 0
-#define FAST_BDV SWP_FAST
-#endif
-
 #define SWAP_CLUSTER_MAX 32UL
 #define COMPACT_CLUSTER_MAX SWAP_CLUSTER_MAX
 #define SWAPFILE_CLUSTER	256
@@ -348,11 +343,6 @@ extern int sysctl_swap_ratio_enable;
 extern int remove_mapping(struct address_space *mapping, struct page *page);
 extern unsigned long vm_total_pages;
 
-#ifdef CONFIG_KSWAPD_LAZY_RECLAIM
-extern unsigned int vm_breath_period;
-extern int vm_breath_priority;
-#endif
-
 #ifdef CONFIG_NUMA
 extern int node_reclaim_mode;
 extern int sysctl_min_unmapped_ratio;
@@ -386,11 +376,7 @@ extern struct address_space swapper_spaces[];
 #define swap_address_space(entry) (&swapper_spaces[swp_type(entry)])
 extern unsigned long total_swapcache_pages(void);
 extern void show_swap_cache_info(void);
-#ifdef CONFIG_MEMPLUS
-extern int add_to_swap(struct page *, struct list_head *list, unsigned long swap_bdv);
-#else
 extern int add_to_swap(struct page *, struct list_head *list);
-#endif
 extern int add_to_swap_cache(struct page *, swp_entry_t, gfp_t);
 extern int __add_to_swap_cache(struct page *page, swp_entry_t entry);
 extern void __delete_from_swap_cache(struct page *);
@@ -415,13 +401,6 @@ extern bool is_swap_fast(swp_entry_t entry);
 static inline bool vm_swap_full(struct swap_info_struct *si)
 {
 	/*
-	 * CONFIG_MEMPLUS add start by bin.zhong@ASTI
-	 * don't bother replace any swapcache only entries
-	 */
-	if (__memplus_enabled())
-		return false;
-	/* add end */
-	/*
 	 * If the swap device is fast, return true
 	 * not to delay swap free.
 	 */
@@ -433,19 +412,11 @@ static inline bool vm_swap_full(struct swap_info_struct *si)
 
 static inline long get_nr_swap_pages(void)
 {
-    /* CONFIG_MEMPLUS add start by bin.zhong@ASTI */
-	if (__memplus_enabled())
-		return 0;
-	/* add end */
 	return atomic_long_read(&nr_swap_pages);
 }
 
 extern void si_swapinfo(struct sysinfo *);
-#ifdef CONFIG_MEMPLUS
-extern swp_entry_t get_swap_page(unsigned long swap_bdv);
-#else
 extern swp_entry_t get_swap_page(void);
-#endif
 extern swp_entry_t get_swap_page_of_type(int);
 extern int add_swap_count_continuation(swp_entry_t, gfp_t);
 extern void swap_shmem_alloc(swp_entry_t);
@@ -526,11 +497,7 @@ static inline struct page *lookup_swap_cache(swp_entry_t swp)
 {
 	return NULL;
 }
-#ifdef CONFIG_MEMPLUS
-static inline int add_to_swap(struct page *page, struct list_head *list, unsigned long swap_bdv)
-#else
 static inline int add_to_swap(struct page *page, struct list_head *list)
-#endif
 {
 	return 0;
 }

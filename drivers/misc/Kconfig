@@ -813,13 +813,6 @@ config QPNP_MISC
 	  and the driver provides an API to check if this interrupt
 	  is available on the current PMIC chip.
 
-#add by xcb
-config BOOTLOADER_LOG
-	tristate "show bootloader log"
-	depends on OF
-	help
-	  show bootloader log in kernel
-
 config FORCE_FAST_CHARGE
 	bool "Force faster charge rate for USB"
 	default y

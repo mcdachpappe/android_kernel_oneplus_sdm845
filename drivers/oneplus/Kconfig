@@ -1,3 +1,0 @@
-source "drivers/oneplus/coretech/Kconfig"
-source "drivers/oneplus/drivers/Kconfig"
-source "drivers/oneplus/fs/Kconfig"

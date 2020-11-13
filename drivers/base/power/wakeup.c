@@ -25,7 +25,6 @@
 #include <linux/pm_wakeup.h>
 static int resume_wakeup_flag = 0;
 
-
 #ifdef CONFIG_BOEFFLA_WL_BLOCKER
 #include "boeffla_wl_blocker.h"
 
@@ -85,7 +84,6 @@ static struct wakeup_source deleted_ws = {
 	.lock =  __SPIN_LOCK_UNLOCKED(deleted_ws.lock),
 };
 
-//wujialong@BSP, 2016/05/4, add for sleep debug
 #define WORK_TIMEOUT	(60*1000)
 static void ws_printk(struct work_struct *work);
 static DECLARE_DELAYED_WORK(ws_printk_work, ws_printk);
@@ -1053,7 +1051,7 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 	struct irq_desc *desc;
 	const char *name = "null";
 
-        init_resume_wakeup_flag();
+	init_resume_wakeup_flag();
 
 	if (pm_wakeup_irq == 0) {
 		if (msm_show_resume_irq_mask) {

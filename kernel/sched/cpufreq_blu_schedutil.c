@@ -20,7 +20,6 @@
 #include <linux/sched/sysctl.h>
 #include "sched.h"
 #include "tune.h"
-#include <../drivers/oneplus/coretech/uxcore/opchain_helper.h>
 
 /* Stub out fast switch routines present on mainline to reduce the backport
  * overhead. */
