@@ -37,7 +37,7 @@ static struct workqueue_struct *cpu_boost_wq;
 
 static struct work_struct input_boost_work;
 
-static bool input_boost_enabled = true;
+static bool input_boost_enabled = false;
 module_param(input_boost_enabled, bool, 0644);
 
 static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
