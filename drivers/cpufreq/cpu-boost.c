@@ -37,7 +37,7 @@ static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 
 static struct kthread_work input_boost_work;
 
-static bool input_boost_enabled = true;
+static bool input_boost_enabled = false;
 module_param(input_boost_enabled, bool, 0644);
 
 static unsigned int input_boost_ms = CONFIG_INPUT_BOOST_DURATION_MS;
