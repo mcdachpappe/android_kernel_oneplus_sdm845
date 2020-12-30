@@ -112,13 +112,10 @@ static struct sde_crtc_custom_events custom_events[] = {
  * Time period for fps calculation in micro seconds.
  * Default value is set to 1 sec.
  */
-#define CRTC_TIME_PERIOD_CALC_FPS_US	1000000
-#ifdef CONFIG_UNIFIED
 #define DEFAULT_FPS_PERIOD_1_SEC	1000000
 #define MAX_FPS_PERIOD_5_SECONDS	5000000
 #define MAX_FRAME_COUNT			1000
 #define MILI_TO_MICRO			1000
-#endif
 
 static inline struct sde_kms *_sde_crtc_get_kms(struct drm_crtc *crtc)
 {
@@ -185,49 +182,33 @@ static void sde_crtc_calc_fps(struct sde_crtc *sde_crtc)
 			sde_crtc->fps_info.last_sampled_time_us);
 	sde_crtc->fps_info.frame_count++;
 
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		if (diff_us >= CRTC_TIME_PERIOD_CALC_FPS_US) {
-			fps = ((u64)sde_crtc->fps_info.frame_count) * 10000000;
-#ifdef CONFIG_UNIFIED
-	} else {
-		if (diff_us >= DEFAULT_FPS_PERIOD_1_SEC) {
+	if (diff_us >= DEFAULT_FPS_PERIOD_1_SEC) {
 
-			 /* Multiplying with 10 to get fps in floating point */
-			fps = ((u64)sde_crtc->fps_info.frame_count)
-							* DEFAULT_FPS_PERIOD_1_SEC * 10;
-#endif
-			do_div(fps, diff_us);
-			sde_crtc->fps_info.measured_fps = (unsigned int)fps;
-			SDE_DEBUG(" FPS for crtc%d is %d.%d\n",
-					sde_crtc->base.base.id, (unsigned int)fps/10,
-					(unsigned int)fps%10);
-			sde_crtc->fps_info.last_sampled_time_us = current_time_us;
-			sde_crtc->fps_info.frame_count = 0;
-		}
-#ifdef CONFIG_UNIFIED
-		}
+		 /* Multiplying with 10 to get fps in floating point */
+		fps = ((u64)sde_crtc->fps_info.frame_count)
+						* DEFAULT_FPS_PERIOD_1_SEC * 10;
+		do_div(fps, diff_us);
+		sde_crtc->fps_info.measured_fps = (unsigned int)fps;
+		SDE_DEBUG(" FPS for crtc%d is %d.%d\n",
+				sde_crtc->base.base.id, (unsigned int)fps/10,
+				(unsigned int)fps%10);
+		sde_crtc->fps_info.last_sampled_time_us = current_time_us;
+		sde_crtc->fps_info.frame_count = 0;
 	}
-#endif
 
-#ifdef CONFIG_UNIFIED
-	if (!is_oos()) {
-		if (!sde_crtc->fps_info.time_buf)
-			return;
+	if (!sde_crtc->fps_info.time_buf)
+		return;
 
-		/**
-		 * Array indexing is based on sliding window algorithm.
-		 * sde_crtc->time_buf has a maximum capacity of MAX_FRAME_COUNT
-		 * time slots. As the count increases to MAX_FRAME_COUNT + 1, the
-		 * counter loops around and comes back to the first index to store
-		 * the next ktime.
-		 */
-		sde_crtc->fps_info.time_buf[sde_crtc->fps_info.next_time_index++] =
-									ktime_get();
-		sde_crtc->fps_info.next_time_index %= MAX_FRAME_COUNT;
-	}
-#endif
+	/**
+	 * Array indexing is based on sliding window algorithm.
+	 * sde_crtc->time_buf has a maximum capacity of MAX_FRAME_COUNT
+	 * time slots. As the count increases to MAX_FRAME_COUNT + 1, the
+	 * counter loops around and comes back to the first index to store
+	 * the next ktime.
+	 */
+	sde_crtc->fps_info.time_buf[sde_crtc->fps_info.next_time_index++] =
+								ktime_get();
+	sde_crtc->fps_info.next_time_index %= MAX_FRAME_COUNT;
 }
 
 /**
@@ -724,31 +705,19 @@ static int _sde_debugfs_fps_status_show(struct seq_file *s, void *data)
 	diff_us = (u64)ktime_us_delta(current_time_us,
 			sde_crtc->fps_info.last_sampled_time_us);
 
-#ifdef CONFIG_UNIFIED
-	if (is_oos()) {
-#endif
-		if (diff_us >= CRTC_TIME_PERIOD_CALC_FPS_US) {
-			fps = ((u64)sde_crtc->fps_info.frame_count) * 10000000;
-#ifdef CONFIG_UNIFIED
-	} else {
-		if (diff_us >= DEFAULT_FPS_PERIOD_1_SEC) {
+	if (diff_us >= DEFAULT_FPS_PERIOD_1_SEC) {
 
-			 /* Multiplying with 10 to get fps in floating point */
-			fps = ((u64)sde_crtc->fps_info.frame_count)
-							* DEFAULT_FPS_PERIOD_1_SEC * 10;
-#endif
-			do_div(fps, diff_us);
-			sde_crtc->fps_info.measured_fps = (unsigned int)fps;
-			sde_crtc->fps_info.last_sampled_time_us = current_time_us;
-			sde_crtc->fps_info.frame_count = 0;
-			SDE_DEBUG("Measured FPS for crtc%d is %d.%d\n",
-					sde_crtc->base.base.id, (unsigned int)fps/10,
-					(unsigned int)fps%10);
-		}
-#ifdef CONFIG_UNIFIED
-		}
+		 /* Multiplying with 10 to get fps in floating point */
+		fps = ((u64)sde_crtc->fps_info.frame_count)
+						* DEFAULT_FPS_PERIOD_1_SEC * 10;
+		do_div(fps, diff_us);
+		sde_crtc->fps_info.measured_fps = (unsigned int)fps;
+		sde_crtc->fps_info.last_sampled_time_us = current_time_us;
+		sde_crtc->fps_info.frame_count = 0;
+		SDE_DEBUG("Measured FPS for crtc%d is %d.%d\n",
+				sde_crtc->base.base.id, (unsigned int)fps/10,
+				(unsigned int)fps%10);
 	}
-#endif
 
 	fps_int = (unsigned int) sde_crtc->fps_info.measured_fps;
 	fps_float = do_div(fps_int, 10);
@@ -765,11 +734,9 @@ static int _sde_debugfs_fps_status(struct inode *inode, struct file *file)
 			inode->i_private);
 }
 
-#ifdef CONFIG_UNIFIED
 static ssize_t set_fps_periodicity(struct device *device,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-if (!is_oos()) {
 	struct drm_crtc *crtc;
 	struct sde_crtc *sde_crtc;
 	int res;
@@ -803,15 +770,11 @@ if (!is_oos()) {
 		sde_crtc->fps_info.fps_periodic_duration *= MILI_TO_MICRO;
 
 	return count;
-} else {
-	return 0;
-}
 }
 
 static ssize_t fps_periodicity_show(struct device *device,
 		struct device_attribute *attr, char *buf)
 {
-if (!is_oos()) {
 	struct drm_crtc *crtc;
 	struct sde_crtc *sde_crtc;
 
@@ -828,15 +791,11 @@ if (!is_oos()) {
 
 	return scnprintf(buf, PAGE_SIZE, "%d\n",
 		(sde_crtc->fps_info.fps_periodic_duration)/MILI_TO_MICRO);
-} else {
-	return 0;
-}
 }
 
 static ssize_t measured_fps_show(struct device *device,
 		struct device_attribute *attr, char *buf)
 {
-if (!is_oos()) {
 	struct drm_crtc *crtc;
 	struct sde_crtc *sde_crtc;
 	unsigned int fps_int, fps_decimal;
@@ -921,11 +880,7 @@ if (!is_oos()) {
 	return scnprintf(buf, PAGE_SIZE,
 		"fps: %d.%d duration:%d frame_count:%d", fps_int, fps_decimal,
 			sde_crtc->fps_info.fps_periodic_duration, frame_count);
-} else {
-	return 0;
 }
-}
-#endif
 
 static ssize_t vsync_event_show(struct device *device,
 	struct device_attribute *attr, char *buf)
@@ -945,18 +900,13 @@ static ssize_t vsync_event_show(struct device *device,
 }
 
 static DEVICE_ATTR_RO(vsync_event);
-#ifdef CONFIG_UNIFIED
 static DEVICE_ATTR(measured_fps, 0444, measured_fps_show, NULL);
 static DEVICE_ATTR(fps_periodicity_ms, 0644, fps_periodicity_show,
 							set_fps_periodicity);
-#endif
-
 static struct attribute *sde_crtc_dev_attrs[] = {
 	&dev_attr_vsync_event.attr,
-#ifdef CONFIG_UNIFIED
 	&dev_attr_measured_fps.attr,
 	&dev_attr_fps_periodicity_ms.attr,
-#endif
 	NULL
 };
 
@@ -7027,20 +6977,16 @@ struct drm_crtc *sde_crtc_init(struct drm_device *dev, struct drm_plane *plane)
 
 	sde_crtc->enabled = false;
 
-#ifdef CONFIG_UNIFIED
-	if (!is_oos()) {
-		/* Below parameters are for fps calculation for sysfs node */
-		sde_crtc->fps_info.fps_periodic_duration = DEFAULT_FPS_PERIOD_1_SEC;
-		sde_crtc->fps_info.time_buf = kmalloc_array(MAX_FRAME_COUNT,
-				sizeof(sde_crtc->fps_info.time_buf), GFP_KERNEL);
+	/* Below parameters are for fps calculation for sysfs node */
+	sde_crtc->fps_info.fps_periodic_duration = DEFAULT_FPS_PERIOD_1_SEC;
+	sde_crtc->fps_info.time_buf = kmalloc_array(MAX_FRAME_COUNT,
+			sizeof(sde_crtc->fps_info.time_buf), GFP_KERNEL);
 
-		if (!sde_crtc->fps_info.time_buf)
-			SDE_ERROR("invalid buffer\n");
-		else
-			memset(sde_crtc->fps_info.time_buf, 0,
-				sizeof(*(sde_crtc->fps_info.time_buf)));
-	}
-#endif
+	if (!sde_crtc->fps_info.time_buf)
+		SDE_ERROR("invalid buffer\n");
+	else
+		memset(sde_crtc->fps_info.time_buf, 0,
+			sizeof(*(sde_crtc->fps_info.time_buf)));
 
 	INIT_LIST_HEAD(&sde_crtc->frame_event_list);
 	INIT_LIST_HEAD(&sde_crtc->user_event_list);
