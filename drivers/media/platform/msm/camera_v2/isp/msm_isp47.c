@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -310,6 +310,9 @@ int msm_vfe47_init_hardware(struct vfe_device *vfe_dev)
 {
 	int rc = -1;
 	enum cam_ahb_clk_client id;
+
+	if (vfe_used_by_adsp(vfe_dev))
+		return msecs_to_jiffies(50);
 
 	if (vfe_dev->pdev->id == 0)
 		id = CAM_AHB_CLIENT_VFE0;
@@ -709,8 +712,10 @@ void msm_isp47_preprocess_camif_irq(struct vfe_device *vfe_dev,
 {
 	if (irq_status0 & BIT(3))
 		vfe_dev->axi_data.src_info[VFE_PIX_0].accept_frame = false;
-	if (irq_status0 & BIT(0))
+	if (irq_status0 & BIT(0)) {
 		vfe_dev->axi_data.src_info[VFE_PIX_0].accept_frame = true;
+		vfe_dev->irq_sof_id++;
+	}
 }
 
 void msm_vfe47_reg_update(struct vfe_device *vfe_dev,

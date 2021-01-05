@@ -72,12 +72,12 @@
 	do { \
 		SDEROT_DBG("SDEREG.W:[%s:0x%X] <= 0x%X\n", #off, (off),\
 				(u32)(data));\
-		writel_relaxed( \
+		writel_relaxed_no_log( \
 				(REGDMA_OP_REGWRITE | \
 				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
 				p); \
 		p += sizeof(u32); \
-		writel_relaxed(data, p); \
+		writel_relaxed_no_log(data, p); \
 		p += sizeof(u32); \
 	} while (0)
 
@@ -85,14 +85,14 @@
 	do { \
 		SDEROT_DBG("SDEREG.M:[%s:0x%X] <= 0x%X\n", #off, (off),\
 				(u32)(data));\
-		writel_relaxed( \
+		writel_relaxed_no_log( \
 				(REGDMA_OP_REGMODIFY | \
 				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
 				p); \
 		p += sizeof(u32); \
-		writel_relaxed(mask, p); \
+		writel_relaxed_no_log(mask, p); \
 		p += sizeof(u32); \
-		writel_relaxed(data, p); \
+		writel_relaxed_no_log(data, p); \
 		p += sizeof(u32); \
 	} while (0)
 
@@ -100,25 +100,25 @@
 	do { \
 		SDEROT_DBG("SDEREG.B:[%s:0x%X:0x%X]\n", #off, (off),\
 				(u32)(len));\
-		writel_relaxed( \
+		writel_relaxed_no_log( \
 				(REGDMA_OP_BLKWRITE_INC | \
 				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
 				p); \
 		p += sizeof(u32); \
-		writel_relaxed(len, p); \
+		writel_relaxed_no_log(len, p); \
 		p += sizeof(u32); \
 	} while (0)
 
 #define SDE_REGDMA_BLKWRITE_DATA(p, data) \
 	do { \
 		SDEROT_DBG("SDEREG.I:[:] <= 0x%X\n", (u32)(data));\
-		writel_relaxed(data, p); \
+		writel_relaxed_no_log(data, p); \
 		p += sizeof(u32); \
 	} while (0)
 
 #define SDE_REGDMA_READ(p, data) \
 	do { \
-		data = readl_relaxed(p); \
+		data = readl_relaxed_no_log(p); \
 		p += sizeof(u32); \
 	} while (0)
 
@@ -680,10 +680,9 @@ static void sde_hw_rotator_disable_irq(struct sde_hw_rotator *rot)
 	}
 }
 
-static int sde_hw_rotator_halt_vbif_xin_client(void)
+static void sde_hw_rotator_halt_vbif_xin_client(void)
 {
 	struct sde_mdp_vbif_halt_params halt_params;
-	int rc = 0;
 
 	memset(&halt_params, 0, sizeof(struct sde_mdp_vbif_halt_params));
 	halt_params.xin_id = XIN_SSPP;
@@ -691,7 +690,6 @@ static int sde_hw_rotator_halt_vbif_xin_client(void)
 	halt_params.bit_off_mdp_clk_ctrl =
 		MMSS_VBIF_NRT_VBIF_CLK_FORCE_CTRL0_XIN0;
 	sde_mdp_halt_vbif_xin(&halt_params);
-	rc |=  halt_params.xin_timeout;
 
 	memset(&halt_params, 0, sizeof(struct sde_mdp_vbif_halt_params));
 	halt_params.xin_id = XIN_WRITEBACK;
@@ -699,10 +697,6 @@ static int sde_hw_rotator_halt_vbif_xin_client(void)
 	halt_params.bit_off_mdp_clk_ctrl =
 		MMSS_VBIF_NRT_VBIF_CLK_FORCE_CTRL0_XIN1;
 	sde_mdp_halt_vbif_xin(&halt_params);
-	rc |=  halt_params.xin_timeout;
-
-	return rc;
-
 }
 
 /**
@@ -1710,7 +1704,7 @@ static u32 sde_hw_rotator_start_no_regdma(struct sde_hw_rotator_context *ctx,
 	/* Write all command stream to Rotator blocks */
 	/* Rotator will start right away after command stream finish writing */
 	while (mem_rdptr < wrptr) {
-		u32 op = REGDMA_OP_MASK & readl_relaxed(mem_rdptr);
+		u32 op = REGDMA_OP_MASK & readl_relaxed_no_log(mem_rdptr);
 
 		switch (op) {
 		case REGDMA_OP_NOP:
@@ -2010,10 +2004,7 @@ static u32 sde_hw_rotator_wait_done_regdma(
 
 			_sde_hw_rotator_dump_status(rot, &ubwcerr);
 
-			spin_unlock_irqrestore(&rot->rotisr_lock, flags);
-
-			if (ubwcerr || abort ||
-					sde_hw_rotator_halt_vbif_xin_client()) {
+			if (ubwcerr || abort) {
 				/*
 				 * Perform recovery for ROT SSPP UBWC decode
 				 * error.
@@ -2021,15 +2012,16 @@ static u32 sde_hw_rotator_wait_done_regdma(
 				 * - reset TS logic so all pending rotation
 				 *   in hw queue got done signalled
 				 */
+				spin_unlock_irqrestore(&rot->rotisr_lock,
+						flags);
 				if (!sde_hw_rotator_reset(rot, ctx))
 					status = REGDMA_INCOMPLETE_CMD;
 				else
 					status = ROT_ERROR_BIT;
+				spin_lock_irqsave(&rot->rotisr_lock, flags);
 			} else {
 				status = ROT_ERROR_BIT;
 			}
-
-			spin_lock_irqsave(&rot->rotisr_lock, flags);
 		} else {
 			if (rc == 1)
 				SDEROT_WARN(

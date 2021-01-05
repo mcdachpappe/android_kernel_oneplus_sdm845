@@ -83,25 +83,6 @@ static inline int msm_vidc_get_mbs_per_frame(struct msm_vidc_inst *inst)
 	return NUM_MBS_PER_FRAME(height, width);
 }
 
-static int msm_vidc_get_fps(struct msm_vidc_inst *inst)
-{
-	int fps = 0;
-
-	if (!inst) {
-		dprintk(VIDC_ERR, "%s: invalid params\n", __func__);
-		goto exit;
-	}
-
-	if ((inst->clk_data.operating_rate >> 16) > inst->prop.fps)
-		fps = (inst->clk_data.operating_rate >> 16) ?
-			(inst->clk_data.operating_rate >> 16) : 1;
-	else
-		fps = inst->prop.fps;
-
-exit:
-	return fps;
-}
-
 void update_recon_stats(struct msm_vidc_inst *inst,
 	struct recon_stats_type *recon_stats)
 {
@@ -196,7 +177,6 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	struct hfi_device *hdev;
 	struct msm_vidc_inst *inst = NULL;
 	struct vidc_bus_vote_data *vote_data = NULL;
-	struct vidc_bus_vote_data vote_data_onstack[1] __aligned(8);
 	bool is_turbo = false;
 
 	if (!core || !core->device) {
@@ -210,20 +190,15 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 	list_for_each_entry(inst, &core->instances, list)
 		++vote_data_count;
 
-	if (vote_data_count > 1) {
-		vote_data = kcalloc(vote_data_count, sizeof(*vote_data),
-				GFP_TEMPORARY);
-		if (!vote_data) {
-			dprintk(VIDC_ERR, "%s: failed to allocate memory\n", __func__);
-			mutex_unlock(&core->lock);
-			rc = -ENOMEM;
-			return rc;
-		}
-	} else {
-		memset(vote_data_onstack, 0, sizeof(struct vidc_bus_vote_data));
-		vote_data = vote_data_onstack;
-	}
+	vote_data = kcalloc(vote_data_count, sizeof(*vote_data),
+			GFP_TEMPORARY);
 	vote_data_count = 0;
+	if (!vote_data) {
+		dprintk(VIDC_ERR, "%s: failed to allocate memory\n", __func__);
+		mutex_unlock(&core->lock);
+		rc = -ENOMEM;
+		return rc;
+	}
 
 	list_for_each_entry(inst, &core->instances, list) {
 		int codec = 0;
@@ -285,7 +260,12 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 			msm_comm_g_ctrl_for_id(inst,
 				V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES) != 0;
 
-		vote_data[i].fps = msm_vidc_get_fps(inst);
+		if (inst->clk_data.operating_rate)
+			vote_data[i].fps =
+				(inst->clk_data.operating_rate >> 16) ?
+				inst->clk_data.operating_rate >> 16 : 1;
+		else
+			vote_data[i].fps = inst->prop.fps;
 
 		if (inst->session_type == MSM_VIDC_ENCODER) {
 			vote_data[i].bitrate = inst->clk_data.bitrate;
@@ -330,8 +310,7 @@ int msm_comm_vote_bus(struct msm_vidc_core *core)
 		rc = call_hfi_op(hdev, vote_bus, hdev->hfi_device_data,
 			vote_data, vote_data_count);
 
-	if (vote_data != vote_data_onstack)
-		kfree(vote_data);
+	kfree(vote_data);
 	return rc;
 }
 
@@ -646,7 +625,7 @@ static unsigned long msm_vidc_calc_freq(struct msm_vidc_inst *inst,
 	struct msm_vidc_core *core = NULL;
 	int i = 0;
 	struct allowed_clock_rates_table *allowed_clks_tbl = NULL;
-	u64 rate = 0, fps;
+	u64 rate = 0;
 	struct clock_data *dcvs = NULL;
 	u32 operating_rate, vsp_factor_num = 10, vsp_factor_den = 7;
 
@@ -655,8 +634,6 @@ static unsigned long msm_vidc_calc_freq(struct msm_vidc_inst *inst,
 
 	mbs_per_second = msm_comm_get_inst_load_per_core(inst,
 		LOAD_CALC_NO_QUIRKS);
-
-	fps = msm_vidc_get_fps(inst);
 
 	/*
 	 * Calculate vpp, vsp cycles separately for encoder and decoder.
@@ -691,7 +668,7 @@ static unsigned long msm_vidc_calc_freq(struct msm_vidc_inst *inst,
 
 		vsp_cycles = mbs_per_second * inst->clk_data.entry->vsp_cycles;
 		/* 10 / 7 is overhead factor */
-		vsp_cycles += ((fps * filled_len * 8) * 10) / 7;
+		vsp_cycles += ((inst->prop.fps * filled_len * 8) * 10) / 7;
 
 	} else {
 		dprintk(VIDC_ERR, "Unknown session type = %s\n", __func__);
@@ -1163,7 +1140,7 @@ static inline int msm_vidc_power_save_mode_enable(struct msm_vidc_inst *inst,
 	}
 	mbs_per_frame = msm_vidc_get_mbs_per_frame(inst);
 	if (mbs_per_frame > inst->core->resources.max_hq_mbs_per_frame ||
-		msm_vidc_get_fps(inst) > inst->core->resources.max_hq_fps) {
+		inst->prop.fps > inst->core->resources.max_hq_fps) {
 		enable = true;
 	}
 

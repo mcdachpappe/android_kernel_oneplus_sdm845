@@ -23,8 +23,6 @@
 #include "msm_vidc_debug.h"
 #include "msm_vidc_clocks.h"
 
-static struct kmem_cache *kmem_buf_pool;
-
 #define IS_ALREADY_IN_STATE(__p, __d) (\
 	(__p >= __d)\
 )
@@ -665,12 +663,6 @@ int msm_comm_ctrl_init(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	kmem_buf_pool = KMEM_CACHE(msm_vidc_buffer, SLAB_HWCACHE_ALIGN);
-	if (!kmem_buf_pool) {
-		dprintk(VIDC_ERR, "%s - failed to allocate kmem pool\n", __func__);
-		return -ENOMEM;
-	}
-
 	inst->ctrls = kcalloc(num_ctrls, sizeof(struct v4l2_ctrl *),
 				GFP_KERNEL);
 	if (!inst->ctrls) {
@@ -767,7 +759,6 @@ int msm_comm_ctrl_deinit(struct msm_vidc_inst *inst)
 	kfree(inst->ctrls);
 	kfree(inst->cluster);
 	v4l2_ctrl_handler_free(&inst->ctrl_handler);
-	kmem_cache_destroy(kmem_buf_pool);
 
 	return 0;
 }
@@ -798,13 +789,18 @@ static int msm_comm_get_mbs_per_sec(struct msm_vidc_inst *inst)
 	capture_port_mbs = NUM_MBS_PER_FRAME(inst->prop.width[CAPTURE_PORT],
 		inst->prop.height[CAPTURE_PORT]);
 
-	if ((inst->clk_data.operating_rate >> 16) > inst->prop.fps)
+	if (inst->clk_data.operating_rate) {
 		fps = (inst->clk_data.operating_rate >> 16) ?
 			inst->clk_data.operating_rate >> 16 : 1;
-	else
-		fps = inst->prop.fps;
-
-	return max(output_port_mbs, capture_port_mbs) * fps;
+		/*
+		 * Check if operating rate is less than fps.
+		 * If Yes, then use fps to scale clocks
+		 */
+		fps = fps > inst->prop.fps ? fps : inst->prop.fps;
+		return max(output_port_mbs, capture_port_mbs) * fps;
+	} else {
+		return max(output_port_mbs, capture_port_mbs) * inst->prop.fps;
+	}
 }
 
 int msm_comm_get_inst_load(struct msm_vidc_inst *inst,
@@ -6561,7 +6557,7 @@ struct msm_vidc_buffer *msm_comm_get_vidc_buffer(struct msm_vidc_inst *inst,
 
 	if (!found) {
 		/* this is new vb2_buffer */
-		mbuf = kmem_cache_zalloc(kmem_buf_pool, GFP_KERNEL);
+		mbuf = kzalloc(sizeof(struct msm_vidc_buffer), GFP_KERNEL);
 		if (!mbuf) {
 			dprintk(VIDC_ERR, "%s: alloc msm_vidc_buffer failed\n",
 				__func__);
@@ -6813,7 +6809,7 @@ static void kref_free_mbuf(struct kref *kref)
 	struct msm_vidc_buffer *mbuf = container_of(kref,
 			struct msm_vidc_buffer, kref);
 
-	kmem_cache_free(kmem_buf_pool, mbuf);
+	kfree(mbuf);
 }
 
 void kref_put_mbuf(struct msm_vidc_buffer *mbuf)
