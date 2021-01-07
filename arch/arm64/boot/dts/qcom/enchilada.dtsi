@@ -157,7 +157,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -174,7 +174,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -191,7 +191,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -208,7 +208,7 @@ dsi_samsung_sofeg01_s_cmd_display: qcom,dsi-display@20 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -224,7 +224,7 @@ dsi_samsung_s6e3fc2x01_cmd_display: qcom,dsi-display@21 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -241,7 +241,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -618,14 +618,14 @@ status = "disabled";
 
 &qupv3_se10_i2c {
 	qcom,clk-freq-out = <100000>;
-	bq27541_battery:bq27541-battery@55 {
+	bq27541-battery@55 {
 		status = "ok";
 		compatible = "ti,bq27541-battery";
 		reg = <0x55>;
 		qcom,modify-soc-smooth;
 	};
 
-	oneplus_fastchg:oneplus_fastchg@26{
+	oneplus_fastchg@26{
 		status = "ok";
 		compatible = "microchip,oneplus_fastchg";
 		reg = <0x26>;
@@ -676,18 +676,6 @@ status = "disabled";
 	vbatmax-pre-normal-mv = <4400>;
 	vbatmax-normal-mv = <4400>;
 	vbatmax-warm-mv = <4080>;
-	little-cool-vbat-thr-mv = <4180>;
-
-	/*ffc temp region*/
-	ffc-pre-normal-decidegc = <160>;
-	ffc-normal-decidegc = <350>;
-	ffc-warm-decidegc = <400>;
-	ffc-normal-fcc-ma = <650>;
-	ffc-warm-fcc-ma = <750>;
-	ffc-normal-cutoff-ma = <550>;
-	ffc-warm-cutoff-ma = <650>;
-	ffc-full-vbat-mv = <4400>;
-
 	/* vbatdet setting for different temp regions */
 	vbatdet-little-cold-mv = <3700>;
 	vbatdet-cool-mv = <4150>;
@@ -2087,6 +2075,7 @@ status = "disabled";
         compatible = "nxp,p61";
         reg = <0>;
         spi-max-frequency = <8000000>;
+        nxp,nfcc = "1-0028";
     };
 };
 

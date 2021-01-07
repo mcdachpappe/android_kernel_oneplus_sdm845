@@ -72,10 +72,10 @@ reserved-memory {
 };
 
 &wcd934x_cdc {
-		qcom,cdc-micbias1-mv = <1800>;
+		qcom,cdc-micbias1-mv = <2700>;
 		qcom,cdc-micbias2-mv = <2700>;
 		qcom,cdc-micbias3-mv = <2700>;
-		qcom,cdc-micbias4-mv = <1800>;
+		qcom,cdc-micbias4-mv = <2700>;
 };
 
 &soc {
@@ -145,6 +145,7 @@ reserved-memory {
 		status = "okay";
 	};
 
+	//add tri_state_key support
 	tri_state_key {
 		compatible = "oneplus,tri-state-key";
 		status = "okay";
@@ -158,6 +159,8 @@ reserved-memory {
 		pinctrl-1 = <&tri_state_key_suspend>;
 	};
 
+
+/*#endif*/
 	dsi_panel_pwr_supply_no_labibb_2: dsi_panel_pwr_supply_no_labibb_2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -180,7 +183,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -197,7 +200,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -214,7 +217,7 @@ reserved-memory {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -231,7 +234,7 @@ dsi_samsung_sofeg01_s_cmd_display: qcom,dsi-display@20 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -248,7 +251,7 @@ dsi_samsung_s6e3fc2x01_cmd_display: qcom,dsi-display@21 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -265,7 +268,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 		qcom,dsi-phy = <&mdss_dsi_phy0>;
 		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
 			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
-		clock-names = "src_byte_clk", "src_pixel_clk";
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
 		pinctrl-names = "panel_active", "panel_suspend";
 		pinctrl-0 = <&sde_dsi_active &sde_te_active &esd_check_active>;
 		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &esd_check_suspend>;
@@ -316,6 +319,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 		vol_up {
 			/delete-property/ gpio-key,wakeup;
 		};
+		//add volume down support , shankai @bsp .
 	vol_down {
 		label = "volume_down";
 		gpios = <&pm8998_gpios 5 GPIO_ACTIVE_LOW>;
@@ -324,6 +328,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 		debounce-interval = <15>;
 		linux,can-disable;
 		};
+	//add end.
 	//disable cam_snapshot,and cam_focus
 	cam_snapshot {
 		status = "disabled";
@@ -336,6 +341,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 };
 
 &pm8998_gpios {
+	//VENDOR_EIDT
 	key_vol_down {
 		key_vol_down_default: key_vol_down_default {
 			pins = "gpio5";
@@ -347,6 +353,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 	};
 };
 
+//add for volume down function ,and we do not use qbt1000 fingerprint sensor.
 &soc{
 	qcom,qbt1000 {
 		compatible = "qcom,qbt1000";
@@ -408,6 +415,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 };
 
 
+//suzhiguang,add for fsa4480
 &qupv3_se7_i2c {
 	status = "ok";
 	fsa4480@42 {
@@ -417,7 +425,7 @@ dsi_samsung_dsc_cmd_display: qcom,dsi-display@22 {
 		status = "ok";
 	};
 };
-
+//suzhiguang,add for switch
 &slim_aud {
 	tavil_codec {
 		op,usb_sw;
@@ -602,6 +610,7 @@ status = "disabled";
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb_2>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-brightness-max-level = <1023>;
+	qcom,mdss-brightness-default-val = <200>;
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <1023>;
 	qcom,platform-reset-gpio = <&tlmm 6 0>;
@@ -662,7 +671,9 @@ status = "disabled";
 	};
 };
 
-
+/* Infi@bsp,20171130 usb-phy0 usb eye-diagram tunning */
+/* modify 0x240:0x45->0x47, 0x244:0x29->0x2b, 0x198:0x20->0x12*/
+/* add op host mode phy init parameters modify 0x198:0x20->0x21*/
 &qusb_phy0 {
 		qcom,usb-oe-exist;
 		qcom,overwrite-bias2-disable;
@@ -713,6 +724,7 @@ status = "disabled";
 	vbus-supply = <&smb2_vbus>;
 };
 
+/* david@bsp, 20171023 Battery & Charging porting STRAT */
 &qupv3_se10_i2c {
 	qcom,clk-freq-out = <100000>;
 	bq27541_battery:bq27541-battery@55 {
@@ -784,6 +796,7 @@ status = "disabled";
 	ibatmax-little-cold-ma = <325>;
 	ibatmax-cool-ma = <500>;
 	ibatmax-little-cool-ma = <875>;
+	ibatmax-little-cool-low_ma = <450>;
 	ibatmax-pre-normal-ma = <1625>;
 	ibatmax-normal-ma = <1950>;
 	ibatmax-warm-ma = <875>;
@@ -811,7 +824,7 @@ status = "disabled";
 	ffc-warm-fcc-ma = <750>;
 	ffc-normal-cutoff-ma = <550>;
 	ffc-warm-cutoff-ma = <650>;
-	ffc-full-vbat-mv = <4400>;
+	ffc-full-vbat-mv = <4430>;
 
 	/* temp region settings */
 	cold-bat-decidegc = <30>;
@@ -1053,7 +1066,7 @@ status = "disabled";
 &pcie1 {
 	status = "disabled";
 };
-
+/* david@bsp, 20171023 Battery & Charging porting END */
 
 &qupv3_se3_i2c {
 	status = "ok";
@@ -1356,7 +1369,10 @@ status = "disabled";
 			};
 		};
 };
+/*#endif*/
 
+
+//overlay for camera start
 &tlmm {
 	cam_sensor_rear_0_mclk_active: cam_sensor_rear_0_mclk_active {
 		/* MCLK0 */
@@ -2153,7 +2169,12 @@ status = "disabled";
 
 };
 
+
+
+//overlay for camera end.
+
 &tlmm {
+		//add by gu qicai begin
 		ts_mux {
 			ts_active: ts_active {
 				mux {
@@ -2194,8 +2215,10 @@ status = "disabled";
 				};
 			};
 		};
+		//add by gu qicai end
 };
 
+/* OnePlus add thermistor, by rio.zhao*/
 &pm8998_vadc {
 	chan@50 {
 		label = "pa1_therm";
@@ -2248,6 +2271,7 @@ status = "disabled";
     };
 };
 
+/* add for rf cable support ,shankai@bsp*/
 
 &tlmm {
 	   oem_rf_cable_mux {
@@ -2323,7 +2347,7 @@ status = "disabled";
 	};
 
 };
-
+/*shankai add for rf cable end shankai@bsp*/
 
 &spss_utils {
        status = "disabled";
@@ -2337,6 +2361,7 @@ status = "disabled";
         compatible = "nxp,p61";
         reg = <0>;
         spi-max-frequency = <8000000>;
+        nxp,nfcc = "1-0028";
     };
 };
 

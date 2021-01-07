@@ -202,7 +202,6 @@ struct sde_crtc_fps_info {
  * @frame_events  : static allocation of in-flight frame events
  * @frame_event_list : available frame event list
  * @spin_lock     : spin lock for frame event, transaction status, etc...
- * @frame_done_comp    : for frame_event_done synchronization
  * @event_thread  : Pointer to event handler thread
  * @event_worker  : Event worker queue
  * @event_cache   : Local cache of event worker structures
@@ -426,10 +425,9 @@ struct sde_crtc_state {
 	u32 sbuf_prefill_line;
 	u64 sbuf_clk_rate[2];
 	bool sbuf_clk_shifted;
-
-		bool fingerprint_mode;
-		bool fingerprint_pressed;
-		struct sde_hw_dim_layer *fingerprint_dim_layer;
+	bool fingerprint_mode;
+	bool fingerprint_pressed;
+	struct sde_hw_dim_layer *fingerprint_dim_layer;
 
 	struct sde_crtc_respool rp;
 };
@@ -571,11 +569,11 @@ struct drm_crtc *sde_crtc_init(struct drm_device *dev, struct drm_plane *plane);
 int sde_crtc_post_init(struct drm_device *dev, struct drm_crtc *crtc);
 
 /**
- * sde_crtc_complete_flip - complete flip for clients
+ * sde_crtc_cancel_pending_flip - complete flip for clients on lastclose
  * @crtc: Pointer to drm crtc object
  * @file: client to cancel's file handle
  */
-void sde_crtc_complete_flip(struct drm_crtc *crtc, struct drm_file *file);
+void sde_crtc_cancel_pending_flip(struct drm_crtc *crtc, struct drm_file *file);
 
 /**
  * sde_crtc_register_custom_event - api for enabling/disabling crtc event
