@@ -2950,7 +2950,6 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
-	struct drm_connector *drm_conn = NULL;
 	enum sde_intf_mode intf_mode;
 	int i = 0;
 
@@ -2978,10 +2977,6 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	intf_mode = sde_encoder_get_intf_mode(drm_enc);
 
 	SDE_EVT32(DRMID(drm_enc));
-	/* Disable ESD thread */
-	drm_conn = sde_enc->cur_master->connector;
-	sde_connector_schedule_status_work(drm_conn, false);
-
 
 	if (sde_enc->input_handler && sde_enc->input_handler_registered) {
 		input_unregister_handler(sde_enc->input_handler);
@@ -3447,8 +3442,8 @@ void sde_encoder_helper_hw_reset(struct sde_encoder_phys *phys_enc)
 			if (rc) {
 				SDE_ERROR_ENC(sde_enc,
 						"connector soft reset failure\n");
-			//	SDE_DBG_DUMP("all", "dbg_bus", "vbif_dbg_bus",
-			//					"panic");
+				SDE_DBG_DUMP("all", "dbg_bus", "vbif_dbg_bus",
+								"panic");
 			}
 		}
 	}
@@ -3737,9 +3732,9 @@ void sde_encoder_trigger_kickoff_pending(struct drm_encoder *drm_enc)
 	}
 }
 
+/*force enable dither on Fingerprint scene */
 extern int op_dimlayer_bl_enable;
 extern bool sde_crtc_get_dimlayer_mode(struct drm_crtc_state *crtc_state);
-
 static bool
 _sde_encoder_setup_dither_for_onscreenfingerprint(struct sde_encoder_phys *phys,
 						  void *dither_cfg, int len)
@@ -3811,15 +3806,18 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 
 	if (TOPOLOGY_DUALPIPE_MERGE_MODE(topology)) {
 		for (i = 0; i < MAX_CHANNELS_PER_ENC; i++) {
-			hw_pp = sde_enc->hw_pp[i];
-			if (hw_pp) {
-				phys->hw_pp->ops.setup_dither(hw_pp, dither_cfg,
-								len);
+		hw_pp = sde_enc->hw_pp[i];
+		if (hw_pp && _sde_encoder_setup_dither_for_onscreenfingerprint(phys,
+							 dither_cfg, len)) {
+		phys->hw_pp->ops.setup_dither(hw_pp, dither_cfg, len);
 			}
 		}
 	} else {
-		if (_sde_encoder_setup_dither_for_onscreenfingerprint(phys, dither_cfg, len))
-            phys->hw_pp->ops.setup_dither(phys->hw_pp, dither_cfg, len);
+		/*force enable dither on Fingerprint scene */
+		if (_sde_encoder_setup_dither_for_onscreenfingerprint(phys,
+							dither_cfg, len))
+			phys->hw_pp->ops.setup_dither(phys->hw_pp, dither_cfg,
+									len);
 	}
 }
 
@@ -4092,9 +4090,9 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 				sde_enc->cur_master);
 	else
 		ln_cnt1 = -EINVAL;
-	
 	if (sde_enc->cur_master)
 		sde_connector_update_backlight(sde_enc->cur_master->connector);
+
 
 	/* prepare for next kickoff, may include waiting on previous kickoff */
 	SDE_ATRACE_BEGIN("enc_prepare_for_kickoff");

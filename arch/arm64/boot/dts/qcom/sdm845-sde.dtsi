@@ -204,7 +204,7 @@
 		qcom,sde-cdp-setting = <1 1>, <1 0>;
 
 		qcom,sde-qos-cpu-mask = <0x3>;
-		qcom,sde-qos-cpu-dma-latency = <44>;
+		qcom,sde-qos-cpu-dma-latency = <300>;
 
 		qcom,sde-inline-rotator = <&mdss_rotator 0>;
 		qcom,sde-inline-rot-xin = <10 11>;
@@ -447,7 +447,7 @@
 				qcom,supply-min-voltage = <1200000>;
 				qcom,supply-max-voltage = <1200000>;
 				qcom,supply-enable-load = <21800>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <4>;
 			};
 		};
 	};
@@ -481,7 +481,7 @@
 				qcom,supply-min-voltage = <1200000>;
 				qcom,supply-max-voltage = <1200000>;
 				qcom,supply-enable-load = <21800>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <4>;
 			};
 		};
 	};
@@ -514,7 +514,7 @@
 				qcom,supply-min-voltage = <880000>;
 				qcom,supply-max-voltage = <880000>;
 				qcom,supply-enable-load = <36000>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <32>;
 			};
 		};
 	};
@@ -547,7 +547,7 @@
 				qcom,supply-min-voltage = <880000>;
 				qcom,supply-max-voltage = <880000>;
 				qcom,supply-enable-load = <36000>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <32>;
 			};
 		};
 	};
@@ -621,7 +621,7 @@
 				qcom,supply-min-voltage = <1200000>;
 				qcom,supply-max-voltage = <1200000>;
 				qcom,supply-enable-load = <21800>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <4>;
 			};
 		};
 
@@ -635,7 +635,7 @@
 				qcom,supply-min-voltage = <880000>;
 				qcom,supply-max-voltage = <880000>;
 				qcom,supply-enable-load = <36000>;
-				qcom,supply-disable-load = <0>;
+				qcom,supply-disable-load = <32>;
 			};
 		};
 	};

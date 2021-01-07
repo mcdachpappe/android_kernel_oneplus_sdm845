@@ -105,7 +105,7 @@
 
 #define MAX_ESE_ACCESS_TIME_OUT_MS 200 /*100 milliseconds*/
 
-typedef enum p61_access_state{
+typedef enum p61_access_state {
     P61_STATE_INVALID = 0x0000,
     P61_STATE_IDLE = 0x0100, /* p61 is free to use */
     P61_STATE_WIRED = 0x0200,  /* p61 is being accessed by DWP (NFCC)*/
@@ -119,16 +119,22 @@ typedef enum p61_access_state{
     P61_STATE_SPI_SVDD_SYNC_START = 0x0001, /*ESE_VDD Low req by SPI*/
     P61_STATE_SPI_SVDD_SYNC_END = 0x0002, /*ESE_VDD is Low by SPI*/
     P61_STATE_DWP_SVDD_SYNC_START = 0x0004, /*ESE_VDD  Low req by Nfc*/
-    P61_STATE_DWP_SVDD_SYNC_END = 0x0008 /*ESE_VDD is Low by Nfc*/
-}p61_access_state_t;
+    P61_STATE_DWP_SVDD_SYNC_END = 0x0008, /*ESE_VDD is Low by Nfc*/
+    P61_STATE_SPI_FAILED = 0x0010 /*SPI open/close failed*/
+} p61_access_state_t;
 
-typedef enum chip_type_pwr_scheme{
+typedef enum chip_type_pwr_scheme {
     PN67T_PWR_SCHEME = 0x01,
     PN80T_LEGACY_PWR_SCHEME,
     PN80T_EXT_PMU_SCHEME,
-}chip_pwr_scheme_t;
+} chip_pwr_scheme_t;
 
-typedef enum jcop_dwnld_state{
+typedef enum {
+    STATUS_FAILED = -1,
+    STATUS_SUCCESS = (0x0000),
+} STATUS;
+
+typedef enum jcop_dwnld_state {
     JCP_DWNLD_IDLE = P61_STATE_JCP_DWNLD,   /* jcop dwnld is ongoing*/
     JCP_DWNLD_INIT=0x8010,                         /* jcop dwonload init state*/
     JCP_DWNLD_START=0x8020,                        /* download started */
@@ -140,7 +146,9 @@ struct pn544_i2c_platform_data {
     unsigned int irq_gpio;
     unsigned int ven_gpio;
     unsigned int firm_gpio;
+    unsigned int clkreq_gpio;
     unsigned int ese_pwr_gpio; /* gpio to give power to p61, only TEE should use this */
+    const char *clk_src_name;
 };
 
 struct hw_type_info {
@@ -159,5 +167,15 @@ struct hw_type_info {
      * */
     char data[20];
     int len;
+};
+
+enum nfcc_chip_variant {
+    NFCC_NQ_210			= 0x48,	/**< NFCC NQ210 */
+    NFCC_NQ_220			= 0x58,	/**< NFCC NQ220 */
+    NFCC_NQ_310			= 0x40,	/**< NFCC NQ310 */
+    NFCC_NQ_310_V2			= 0x41,	/**< NFCC NQ310 */
+    NFCC_NQ_330			= 0x51,	/**< NFCC NQ330 */
+    NFCC_PN66T			= 0x18,	/**< NFCC PN66T */
+    NFCC_NOT_SUPPORTED	        = 0xFF	/**< NFCC is not supported */
 };
 #endif

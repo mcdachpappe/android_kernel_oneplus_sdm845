@@ -30,3 +30,7 @@
 &bq27541_battery {
 		op,mcl_verion;
 };
+
+&pmi8998_charger {
+	ibatmax-little-cool-low_ma = <480>;
+};

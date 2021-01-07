@@ -35,7 +35,7 @@ struct msm_commit {
 	struct kthread_work commit_work;
 };
 
-static BLOCKING_NOTIFIER_HEAD(msm_drm_notifier_list);
+BLOCKING_NOTIFIER_HEAD(msm_drm_notifier_list);
 
 int connector_state_crtc_index;
 
