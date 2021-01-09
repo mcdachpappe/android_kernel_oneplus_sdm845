@@ -902,7 +902,6 @@ static struct usb_request *dwc3_gadget_ep_alloc_request(struct usb_ep *ep,
 
 	req->epnum	= dep->number;
 	req->dep	= dep;
-	req->request.dma = DMA_ERROR_CODE;
 
 	dep->allocated_requests++;
 
@@ -1962,17 +1961,12 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 	} else {
 		dbg_event(0xFF, "Pullup_disable", is_on);
 		dwc3_gadget_disable_irq(dwc);
-		/* Mask all interrupts */
-		reg1 = dwc3_readl(dwc->regs, DWC3_GEVNTSIZ(0));
-		reg1 |= DWC3_GEVNTSIZ_INTMASK;
-		dwc3_writel(dwc->regs, DWC3_GEVNTSIZ(0), reg1);
 
 		/*
 		 * Reset the err_evt_seen so that the interrupts on
 		 * next connect/session is processed correctly.
 		 */
 		dwc->err_evt_seen = false;
-		dwc->pullups_connected = false;
 
 		__dwc3_gadget_ep_disable(dwc->eps[0]);
 		__dwc3_gadget_ep_disable(dwc->eps[1]);
@@ -3920,7 +3914,6 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 	dwc->gadget.speed		= USB_SPEED_UNKNOWN;
 	dwc->gadget.sg_supported	= true;
 	dwc->gadget.name		= "dwc3-gadget";
-	dwc->gadget.is_otg		= dwc->dr_mode == USB_DR_MODE_OTG;
 	dwc->gadget.l1_supported	= !dwc->usb2_l1_disable;
 
 	/*

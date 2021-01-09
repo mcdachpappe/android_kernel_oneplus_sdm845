@@ -1385,7 +1385,7 @@ static int follow_dotdot_rcu(struct nameidata *nd)
 			nd->path.dentry = parent;
 			nd->seq = seq;
 			if (unlikely(!path_connected(&nd->path)))
-				return -ENOENT;
+				return -ECHILD;
 			break;
 		} else {
 			struct mount *mnt = real_mount(nd->path.mnt);
@@ -3441,7 +3441,7 @@ finish_open:
 		if (d_is_dir(nd->path.dentry))
 			goto out;
 		error = may_create_in_sticky(dir_mode, dir_uid,
-					d_backing_inode(nd->path.dentry));
+					     d_backing_inode(nd->path.dentry));
 		if (unlikely(error))
 			goto out;
 	}
