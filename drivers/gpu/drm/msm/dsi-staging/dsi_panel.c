@@ -3764,7 +3764,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 	if (rc)
 		pr_err("[%s] failed to send DSI_CMD_SET_LP1 cmd, rc=%d\n",
 		       panel->name, rc);
-	pr_info("dsi_panel_set_lp1 aod_mode %d aod_status %d", panel->aod_mode,
+	pr_debug("dsi_panel_set_lp1 aod_mode %d aod_status %d", panel->aod_mode,
 			 panel->aod_status);
 	mutex_unlock(&panel->panel_lock);
 	return rc;
@@ -4263,7 +4263,7 @@ int dsi_panel_set_acl_mode(struct dsi_panel *panel, int level)
 		tx[panel->acl_mode_index] = level;
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ACL_MODE);
-	pr_info("Set ACL Mode = %d\n", level);
+	pr_debug("Set ACL Mode = %d\n", level);
 
 error:
 	mutex_unlock(&panel->panel_lock);
@@ -4354,7 +4354,7 @@ int dsi_panel_set_hbm_mode(struct dsi_panel *panel, int level)
 		break;
 
 	}
-	pr_info("Set HBM Mode = %d\n", level);
+	pr_debug("Set HBM Mode = %d\n", level);
 
 error:
 	mutex_unlock(&panel->panel_lock);
@@ -4630,7 +4630,7 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 		}
 	}
 	panel->aod_curr_mode = level;
-	pr_err("AOD MODE = %d\n", level);
+	pr_debug("AOD MODE = %d\n", level);
 	return rc;
 }
 int dsi_panel_send_dsi_panel_command(struct dsi_panel *panel)
