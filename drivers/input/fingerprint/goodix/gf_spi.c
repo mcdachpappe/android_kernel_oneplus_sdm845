@@ -375,8 +375,6 @@ static void gf_kernel_key_input(struct gf_dev *gf_dev, struct gf_key *gf_key)
 		/* add special key define */
 		key_input = gf_key->key;
 	}
-	pr_info("%s: received key event[%d], key=%d, value=%d\n",
-			__func__, key_input, gf_key->key, gf_key->value);
 
 	if ((GF_KEY_POWER == gf_key->key || GF_KEY_LONGPRESS == gf_key->key)
 			&& (gf_key->value == 1)) {
@@ -747,8 +745,6 @@ static int goodix_fb_state_chg_callback(
 	if (evdata->id != MSM_DRM_PRIMARY_DISPLAY)
 	    return 0;
 
-	pr_info("[info] %s go to the msm_drm_notifier_callback value = %d\n",
-			__func__, (int)val);
 	blank = *(int *)(evdata->data);
 	if (val == MSM_DRM_ONSCREENFINGERPRINT_EVENT) {
 		pr_info("[%s] UI ready enter\n", __func__);
@@ -809,7 +805,7 @@ static int goodix_fb_state_chg_callback(
 				NULL, dev_attr_screen_state.attr.name);
 			break;
 		default:
-			pr_info("%s defalut\n", __func__);
+			pr_debug("%s default\n", __func__);
 			break;
 		}
 	}
