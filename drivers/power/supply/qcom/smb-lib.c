@@ -584,6 +584,21 @@ static int smblib_set_usb_pd_allowed_voltage(struct smb_charger *chg,
 /********************
  * HELPER FUNCTIONS *
  ********************/
+ 
+int smblib_get_prop_from_bms(struct smb_charger *chg,
+				enum power_supply_property psp,
+				union power_supply_propval *val)
+{
+	int rc;
+
+	if (!chg->bms_psy)
+		return -EINVAL;
+
+	rc = power_supply_get_property(chg->bms_psy, psp, val);
+
+	return rc;
+}
+
 static int smblib_request_dpdm(struct smb_charger *chg, bool enable)
 {
 	int rc = 0;
@@ -825,7 +840,7 @@ void smblib_suspend_on_debug_battery(struct smb_charger *chg)
 	if (!chg->suspend_input_on_debug_batt)
 		return;
 
-	rc = power_supply_get_property(chg->bms_psy,
+	rc = smblib_get_prop_from_bms(chg,
 			POWER_SUPPLY_PROP_DEBUG_BATTERY, &val);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't get debug battery prop rc=%d\n", rc);
@@ -1938,9 +1953,7 @@ int smblib_get_prop_batt_capacity(struct smb_charger *chg,
 		return 0;
 	}
 
-	if (chg->bms_psy)
-		rc = power_supply_get_property(chg->bms_psy,
-				POWER_SUPPLY_PROP_CAPACITY, val);
+	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_CAPACITY, val);
 	return rc;
 }
 
@@ -2144,51 +2157,6 @@ int smblib_get_prop_input_current_limited(struct smb_charger *chg,
 	return 0;
 }
 
-int smblib_get_prop_batt_voltage_now(struct smb_charger *chg,
-				     union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_VOLTAGE_NOW, val);
-	return rc;
-}
-
-int smblib_get_prop_batt_current_now(struct smb_charger *chg,
-				     union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_CURRENT_NOW, val);
-	return rc;
-}
-
-int smblib_get_prop_batt_temp(struct smb_charger *chg,
-			      union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-/* david.liu@bsp, 20171122 Fix fake battery temperature */
-	if (chg->use_fake_temp) {
-		val->intval = chg->fake_temp;
-		return 0;
-	}
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_TEMP, val);
-	return rc;
-}
-
 int smblib_get_prop_batt_charge_done(struct smb_charger *chg,
 					union power_supply_propval *val)
 {
@@ -2222,20 +2190,6 @@ int smblib_get_prop_charge_qnovo_enable(struct smb_charger *chg,
 
 	val->intval = (bool)(stat & QNOVO_PT_ENABLE_CMD_BIT);
 	return 0;
-}
-
-int smblib_get_prop_from_bms(struct smb_charger *chg,
-				enum power_supply_property psp,
-				union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy, psp, val);
-
-	return rc;
 }
 
 /***********************
@@ -5426,6 +5380,12 @@ static int op_charging_en(struct smb_charger *chg, bool en)
 	int rc;
 
 	pr_err("enable=%d\n", en);
+
+	if (chg->chg_disabled && en) {
+		pr_info("chg_disabled just return\n");
+		return 0;
+	}
+
 	rc = smblib_masked_write(chg, CHARGING_ENABLE_CMD_REG,
 				 CHARGING_ENABLE_CMD_BIT,
 				 en ? CHARGING_ENABLE_CMD_BIT : 0);
@@ -5487,6 +5447,8 @@ bool is_fastchg_allowed(struct smb_charger *chg)
 	low_temp_full = op_get_fast_low_temp_full(chg);
 	fw_updated = get_fastchg_firmware_updated_status(chg);
 
+	if (chg->chg_disabled)
+		return false;
 	if (!fw_updated)
 		return false;
 	if (chg->usb_enum_status)
@@ -5563,9 +5525,12 @@ static void op_handle_usb_removal(struct smb_charger *chg)
 	chg->recovery_boost_count = 0;
 	chg->dash_check_count = 0;
 	chg->ffc_count = 0;
+	chg->chg_disabled = 0;
 	vote(chg->fcc_votable,
 	DEFAULT_VOTER, true, SDP_CURRENT_UA);
 	set_sdp_current(chg, USBIN_500MA);
+	vote(chg->chg_disable_votable,
+		FORCE_RECHARGE_VOTER, false, 0);
 	op_battery_temp_region_set(chg, BATT_TEMP_INVALID);
 }
 
@@ -5947,6 +5912,10 @@ static void retrigger_dash_work(struct work_struct *work)
 		return;
 	}
 	if (!chg->vbus_present) {
+		chg->ck_dash_count = 0;
+		return;
+	}
+	if (chg->chg_disabled) {
 		chg->ck_dash_count = 0;
 		return;
 	}
@@ -6337,7 +6306,8 @@ static void op_temp_region_charging_en(struct smb_charger *chg, int vbatmax)
 	int vbat_mv = 0;
 	union power_supply_propval pval;
 
-	smblib_get_prop_batt_voltage_now(chg, &pval);
+	smblib_get_prop_from_bms(chg,
+				POWER_SUPPLY_PROP_VOLTAGE_NOW, &pval);
 	vbat_mv = pval.intval/1000;
 	pr_info("%s vbat_mv =%d\n",__func__, vbat_mv);
 	if (vbat_mv < vbatmax)
@@ -6917,6 +6887,9 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 				POWER_SUPPLY_PROP_UPDATE_LCD_IS_OFF, 1);
 			chip->oem_lcd_is_on = false;
 		}
+		/* add to update fg node value on panel event */
+		panel_flag1 = 1;
+		panel_flag2 = 1;
 	}
 
 	return 0;
@@ -7479,6 +7452,10 @@ static void op_heartbeat_work(struct work_struct *work)
 	power_supply_changed(chg->batt_psy);
 	chg->dash_on = get_prop_fast_chg_started(chg);
 	if (chg->dash_on) {
+		if (chg->chg_disabled) {
+			set_usb_switch(chg, false);
+			goto out;
+		}
 		switch_fast_chg(chg);
 		pr_debug("fast chg started, usb_switch=%d\n",
 				op_is_usb_switch_on(chg));

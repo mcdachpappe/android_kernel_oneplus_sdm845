@@ -95,6 +95,7 @@ enum print_reason {
 #define FG_ESR_VOTER			"FG_ESR_VOTER"
 #define FCC_STEPPER_VOTER		"FCC_STEPPER_VOTER"
 #define PD_NOT_SUPPORTED_VOTER		"PD_NOT_SUPPORTED_VOTER"
+#define FORCE_RECHARGE_VOTER		"FORCE_RECHARGE_VOTER"
 
 #define VCONN_MAX_ATTEMPTS	3
 #define OTG_MAX_ATTEMPTS	3
@@ -425,6 +426,7 @@ struct smb_charger {
 	bool				disable_normal_chg_for_dash;
 	bool				ship_mode;
 	bool				dash_on;
+	bool				chg_disabled;
 	bool				chg_ovp;
 	bool				is_power_changed;
 	bool				recharge_pending;
@@ -633,6 +635,9 @@ bool op_get_fastchg_ing(struct smb_charger *chg);
 bool get_prop_fastchg_status(struct smb_charger *chg);
 int op_usb_icl_set(struct smb_charger *chg, int icl_ua);
 int op_get_aicl_result(struct smb_charger *chg);
+/* add to update fg node value on panel event */
+extern int panel_flag1;
+extern int panel_flag2;
 void op_disconnect_vbus(struct smb_charger *chg, bool enable);
 int plugin_update(struct smb_charger *chg);
 int smblib_set_prop_input_current_limited(struct smb_charger *chg,
@@ -726,8 +731,6 @@ int smblib_set_prop_pr_swap_in_progress(struct smb_charger *chg,
 int smblib_stat_sw_override_cfg(struct smb_charger *chg, bool override);
 void smblib_usb_typec_change(struct smb_charger *chg);
 int smblib_toggle_stat(struct smb_charger *chg, int reset);
-int smblib_get_prop_batt_temp(struct smb_charger *chg,
-			      union power_supply_propval *val);
 
 
 int smblib_init(struct smb_charger *chg);
