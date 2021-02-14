@@ -96,6 +96,7 @@ enum print_reason {
 #define FG_ESR_VOTER			"FG_ESR_VOTER"
 #define FCC_STEPPER_VOTER		"FCC_STEPPER_VOTER"
 #define PD_NOT_SUPPORTED_VOTER		"PD_NOT_SUPPORTED_VOTER"
+#define FORCE_RECHARGE_VOTER		"FORCE_RECHARGE_VOTER"
 
 #define VCONN_MAX_ATTEMPTS	3
 #define OTG_MAX_ATTEMPTS	3
@@ -633,6 +634,9 @@ bool op_get_fastchg_ing(struct smb_charger *chg);
 bool get_prop_fastchg_status(struct smb_charger *chg);
 int op_usb_icl_set(struct smb_charger *chg, int icl_ua);
 int op_get_aicl_result(struct smb_charger *chg);
+/* add to update fg node value on panel event */
+extern int panel_flag1;
+extern int panel_flag2;
 int plugin_update(struct smb_charger *chg);
 void op_disconnect_vbus(struct smb_charger *chg, bool enable);
 int smblib_set_prop_input_current_limited(struct smb_charger *chg,
