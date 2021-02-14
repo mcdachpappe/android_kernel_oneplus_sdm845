@@ -2190,51 +2190,6 @@ int smblib_get_prop_input_current_limited(struct smb_charger *chg,
 	return 0;
 }
 
-int smblib_get_prop_batt_voltage_now(struct smb_charger *chg,
-				     union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_VOLTAGE_NOW, val);
-	return rc;
-}
-
-int smblib_get_prop_batt_current_now(struct smb_charger *chg,
-				     union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_CURRENT_NOW, val);
-	return rc;
-}
-
-int smblib_get_prop_batt_temp(struct smb_charger *chg,
-			      union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-/* david.liu@bsp, 20171122 Fix fake battery temperature */
-	if (chg->use_fake_temp) {
-		val->intval = chg->fake_temp;
-		return 0;
-	}
-
-	rc = power_supply_get_property(chg->bms_psy,
-				       POWER_SUPPLY_PROP_TEMP, val);
-	return rc;
-}
-
 int smblib_get_prop_batt_charge_done(struct smb_charger *chg,
 					union power_supply_propval *val)
 {
@@ -6456,7 +6411,8 @@ static void op_temp_region_charging_en(struct smb_charger *chg, int vbatmax)
 	int vbat_mv = 0;
 	union power_supply_propval pval;
 
-	smblib_get_prop_batt_voltage_now(chg, &pval);
+	smblib_get_prop_from_bms(chg,
+				POWER_SUPPLY_PROP_VOLTAGE_NOW, &pval);
 	vbat_mv = pval.intval/1000;
 	pr_info("%s vbat_mv =%d\n",__func__, vbat_mv);
 	if (vbat_mv < vbatmax)
@@ -7039,6 +6995,9 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 				POWER_SUPPLY_PROP_UPDATE_LCD_IS_OFF, 1);
 			chip->oem_lcd_is_on = false;
 		}
+		/* add to update fg node value on panel event */
+		panel_flag1 = 1;
+		panel_flag2 = 1;
 	}
 
 	return 0;
