@@ -643,11 +643,12 @@ static struct msm_soc_info cpu_of_id[] = {
 	/* QM215 ID */
 	[386] = {MSM_CPU_QM215, "QM215"},
 
+	/* SDM429W IDs*/
+	[416] = {MSM_CPU_SDM429W, "SDM429W"},
+
 	/* QCM2150 ID */
 	[436] = {MSM_CPU_QCM2150, "QCM2150"},
 
-	/* SDM429W IDs*/
-	[416] = {MSM_CPU_SDM429W, "SDM429W"},
 	/* Uninitialized IDs are not known to run Linux.
 	 * MSM_CPU_UNKNOWN is set to 0 to ensure these IDs are
 	 * considered as unknown CPU.
