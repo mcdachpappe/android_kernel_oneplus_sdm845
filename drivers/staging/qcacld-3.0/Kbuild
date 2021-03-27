@@ -54,7 +54,7 @@ include $(WLAN_CFG_OVERRIDE_FILE)
 $(warning "Overriding WLAN config with: $(shell cat $(WLAN_CFG_OVERRIDE_FILE))")
 endif
 
-include $(WLAN_ROOT)/configs/default_defconfig
+include $(WLAN_ROOT)/configs/$(patsubst "%",%,$(CONFIG_QCA_CLD_WLAN_PROFILE))_defconfig
 
 ############ UAPI ############
 UAPI_DIR :=	uapi
@@ -2194,7 +2194,9 @@ OBJS +=		$(TDLS_OBJS)
 OBJS +=		$(PMO_OBJS)
 OBJS +=		$(P2P_OBJS)
 OBJS +=		$(POLICY_MGR_OBJS)
-OBJS +=		$(WLAN_LOGGING_OBJS)
+ifeq ($(BUILD_DEBUG_VERSION), 1)
+OBJS +=		$(WLAN_LOGGING_OBJS) $(FWLOG_OBJS)
+endif
 OBJS +=		$(NLINK_OBJS)
 OBJS +=		$(PTT_OBJS)
 OBJS +=		$(UMAC_SER_OBJS)
@@ -3287,16 +3289,6 @@ cppflags-$(CONFIG_IPA_SET_RESET_TX_DB_PA) += -DIPA_SET_RESET_TX_DB_PA
 
 KBUILD_CPPFLAGS += $(cppflags-y)
 
-# Currently, for versions of gcc which support it, the kernel Makefile
-# is disabling the maybe-uninitialized warning.  Re-enable it for the
-# WLAN driver.  Note that we must use ccflags-y here so that it
-# will override the kernel settings.
-ifeq ($(call cc-option-yn, -Wmaybe-uninitialized), y)
-ccflags-y += -Wmaybe-uninitialized
-ifneq (y,$(CONFIG_ARCH_MSM))
-ccflags-y += -Wframe-larger-than=4096
-endif
-endif
 ccflags-y += -Wmissing-prototypes
 
 ifeq ($(call cc-option-yn, -Wheader-guard), y)
