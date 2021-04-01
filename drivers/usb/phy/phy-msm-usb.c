@@ -3359,8 +3359,6 @@ static int msm_otg_dpdm_regulator_enable(struct regulator_dev *rdev)
 					      motg->rm_pulldown, 0);
 	}
 
-	msm_otg_set_mode_nondriving(motg, true);
-
 	return ret;
 }
 
@@ -3369,8 +3367,6 @@ static int msm_otg_dpdm_regulator_disable(struct regulator_dev *rdev)
 	int ret = 0;
 	struct msm_otg *motg = rdev_get_drvdata(rdev);
 	struct usb_phy *phy = &motg->phy;
-
-	msm_otg_set_mode_nondriving(motg, false);
 
 	if (motg->rm_pulldown) {
 		/* Let sm_work handle it if USB core is active */
