@@ -241,7 +241,7 @@ nxpTfaProfileList_t *tfaContGet1stProfList(nxpTfaContainer_t *cont);
  * @param prof is the pointer to the profile list
  * @return profile list pointer
  */
-nxpTfaProfileList_t* tfaContNextProfile(nxpTfaProfileList_t *prof);
+nxpTfaProfileList_t *tfaContNextProfile(nxpTfaProfileList_t *prof);
 
 /**
  * Return the pointer to the first livedata in a list from the tfaContainer
@@ -255,7 +255,7 @@ nxpTfaLiveDataList_t *tfaContGet1stLiveDataList(nxpTfaContainer_t *cont);
  * @param livedata_idx is the pointer to the livedata list
  * @return livedata list pointer
  */
-nxpTfaLiveDataList_t* tfaContNextLiveData(nxpTfaLiveDataList_t *livedata_idx);
+nxpTfaLiveDataList_t *tfaContNextLiveData(nxpTfaLiveDataList_t *livedata_idx);
 
 /**
  * Write a bit field

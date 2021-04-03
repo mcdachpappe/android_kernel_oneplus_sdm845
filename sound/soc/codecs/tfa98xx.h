@@ -66,8 +66,8 @@ struct tfa98xx_baseprofile {
 	struct list_head list;              /* list of all profiles */
 };
 enum tfa_reset_polarity{
-	LOW=0,
-	HIGH=1
+	LOW = 0,
+	HIGH = 1
 };
 struct tfa98xx {
 	struct regmap *regmap;
@@ -106,7 +106,7 @@ struct tfa98xx {
 	int reset_gpio;
 	int power_gpio;
 	int irq_gpio;
-	enum tfa_reset_polarity reset_polarity; 
+	enum tfa_reset_polarity reset_polarity;
 	struct list_head list;
 	struct tfa_device *tfa;
 	int vstep;

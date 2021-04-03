@@ -8,9 +8,9 @@
  */
 
 /*
-	Linux kernel specific definitions used by code shared with
-	Linux/Windows user space.
-*/
+ * Linux kernel specific definitions used by code shared with
+ * Linux/Windows user space.
+ */
 
 #ifndef __CONFIG_LINUX_KERNEL_INC__
 #define __CONFIG_LINUX_KERNEL_INC__
@@ -22,8 +22,13 @@
 #include <linux/ftrace.h>
 
 #define _ASSERT(e)
-#define PRINT_ASSERT(e)if ((e)) printk(KERN_ERR "PrintAssert:%s (%s:%d) error code:%d\n",__FUNCTION__,__FILE__,__LINE__, e)
-
+#ifndef PRINT_ASSERT
+#define PRINT_ASSERT(e) {\
+	(if ((e))\
+		printk(KERN_ERR "PrintAssert:%s (%s:%d) error code:%d\n",\
+		__FUNCTION__, __FILE__, __LINE__, e)) \
+	}
+#endif
 #if defined(CONFIG_TRACING) && defined(DEBUG)
 	#define tfa98xx_trace_printk(...) trace_printk(__VA_ARGS__)
 #else

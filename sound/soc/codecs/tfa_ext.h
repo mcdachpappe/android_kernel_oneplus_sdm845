@@ -20,8 +20,7 @@
 /**
 This enum type specifies the different events that may trigger a callback.
 */
-enum tfadsp_event_en
-{
+enum tfadsp_event_en {
  TFADSP_CMD_ACK         =  1,   /**< Command handling is completed */
  TFADSP_SOFT_MUTE_READY     =  8,   /**< Muting completed */
  TFADSP_VOLUME_READY        = 16,   /**< Volume change completed */
