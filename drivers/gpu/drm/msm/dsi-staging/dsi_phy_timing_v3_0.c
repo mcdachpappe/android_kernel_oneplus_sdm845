@@ -17,14 +17,14 @@
 void dsi_phy_hw_v3_0_get_default_phy_params(
 		struct phy_clk_params *params)
 {
-	params->clk_prep_buf = 0;
+	params->clk_prep_buf = 50;
 	params->clk_zero_buf = 0;
-	params->clk_trail_buf = 0;
-	params->hs_prep_buf = 0;
-	params->hs_zero_buf = 0;
-	params->hs_trail_buf = 0;
+	params->clk_trail_buf = 30;
+	params->hs_prep_buf = 50;
+	params->hs_zero_buf = 10;
+	params->hs_trail_buf = 30;
 	params->hs_rqst_buf = 0;
-	params->hs_exit_buf = 0;
+	params->hs_exit_buf = 10;
 }
 
 int32_t dsi_phy_hw_v3_0_calc_clk_zero(s64 rec_temp1, s64 mult)
