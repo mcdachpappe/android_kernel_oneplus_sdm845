@@ -2983,6 +2983,7 @@
 
 &gpu_cx_gdsc {
 	parent-supply = <&pm660l_s3_level>;
+	vdd_parent-supply = <&pm660l_s3_level>;
 	status = "ok";
 };
 

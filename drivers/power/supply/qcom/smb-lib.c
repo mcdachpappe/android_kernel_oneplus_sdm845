@@ -581,20 +581,6 @@ static int smblib_set_usb_pd_allowed_voltage(struct smb_charger *chg,
  * HELPER FUNCTIONS *
  ********************/
 
-int smblib_get_prop_from_bms(struct smb_charger *chg,
-				enum power_supply_property psp,
-				union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy, psp, val);
-
-	return rc;
-}
-
 int smblib_force_ufp(struct smb_charger *chg)
 {
 	int rc;
@@ -1327,6 +1313,11 @@ static int __smblib_set_prop_typec_power_role(struct smb_charger *chg,
 	}
 		if (!chg->otg_switch)
 			power_role = UFP_EN_CMD_BIT;
+
+	if (power_role != TYPEC_DISABLE_CMD_BIT) {
+		if (chg->ufp_only_mode)
+			power_role = UFP_EN_CMD_BIT;
+	}
 
 	if (power_role != TYPEC_DISABLE_CMD_BIT) {
 		if (chg->ufp_only_mode)
@@ -2221,6 +2212,20 @@ int smblib_get_prop_charge_qnovo_enable(struct smb_charger *chg,
 
 	val->intval = (bool)(stat & QNOVO_PT_ENABLE_CMD_BIT);
 	return 0;
+}
+
+int smblib_get_prop_from_bms(struct smb_charger *chg,
+				enum power_supply_property psp,
+				union power_supply_propval *val)
+{
+	int rc;
+
+	if (!chg->bms_psy)
+		return -EINVAL;
+
+	rc = power_supply_get_property(chg->bms_psy, psp, val);
+
+	return rc;
 }
 
 /***********************

@@ -2308,6 +2308,15 @@ static int smb2_post_init(struct smb2 *chip)
 	 */
 	rerun_election(chg->usb_icl_votable);
 
+	/* configure power role for UDP-role */
+	rc = smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+				 TYPEC_POWER_ROLE_CMD_MASK, UFP_EN_CMD_BIT);
+	if (rc < 0) {
+		dev_err(chg->dev,
+			"Couldn't configure power role for UDP rc=%d\n", rc);
+		return rc;
+	}
+
 	/* Force charger in Sink Only mode */
 	if (chg->ufp_only_mode) {
 		rc = smblib_read(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,

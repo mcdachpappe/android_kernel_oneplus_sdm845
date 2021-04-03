@@ -1808,14 +1808,15 @@ static inline long qcedev_ioctl(struct file *file,
 				handle->sha_ctxt.diglen);
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req)))
+					sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
+		}
 		}
 		break;
 
 	case QCEDEV_IOCTL_SHA_FINAL_REQ:
-
+		{
 		if (handle->sha_ctxt.init_done == false) {
 			pr_err("%s Init was not called\n", __func__);
 			err = -EINVAL;
@@ -1857,6 +1858,7 @@ static inline long qcedev_ioctl(struct file *file,
 			goto exit_free_qcedev_areq;
 		}
 		handle->sha_ctxt.init_done = false;
+		}
 		break;
 
 	case QCEDEV_IOCTL_GET_SHA_REQ:
@@ -1900,9 +1902,10 @@ static inline long qcedev_ioctl(struct file *file,
 				handle->sha_ctxt.diglen);
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req)))
+					sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
+		}
 		}
 		break;
 
