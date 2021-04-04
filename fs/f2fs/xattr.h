@@ -47,7 +47,7 @@ struct f2fs_xattr_entry {
 	__u8    e_name_index;
 	__u8    e_name_len;
 	__le16  e_value_size;   /* size of attribute value */
-	char    e_name[0];      /* attribute name */
+	char    e_name[];      /* attribute name */
 };
 
 #define XATTR_HDR(ptr)		((struct f2fs_xattr_header *)(ptr))
@@ -131,6 +131,7 @@ extern ssize_t f2fs_listxattr(struct dentry *, char *, size_t);
 #else
 
 #define f2fs_xattr_handlers	NULL
+#define f2fs_listxattr		NULL
 static inline int f2fs_setxattr(struct inode *inode, int index,
 		const char *name, const void *value, size_t size,
 		struct page *page, int flags)
@@ -140,11 +141,6 @@ static inline int f2fs_setxattr(struct inode *inode, int index,
 static inline int f2fs_getxattr(struct inode *inode, int index,
 			const char *name, void *buffer,
 			size_t buffer_size, struct page *dpage)
-{
-	return -EOPNOTSUPP;
-}
-static inline ssize_t f2fs_listxattr(struct dentry *dentry, char *buffer,
-		size_t buffer_size)
 {
 	return -EOPNOTSUPP;
 }

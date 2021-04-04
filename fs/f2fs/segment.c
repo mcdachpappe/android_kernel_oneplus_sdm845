@@ -288,6 +288,8 @@ void f2fs_drop_inmem_pages_all(struct f2fs_sb_info *sbi, bool gc_failure)
 	struct list_head *head = &sbi->inode_list[ATOMIC_FILE];
 	struct inode *inode;
 	struct f2fs_inode_info *fi;
+	unsigned int count = sbi->atomic_files;
+	unsigned int looped = 0;
 next:
 	spin_lock(&sbi->inode_lock[ATOMIC_FILE]);
 	if (list_empty(head)) {
@@ -296,22 +298,26 @@ next:
 	}
 	fi = list_first_entry(head, struct f2fs_inode_info, inmem_ilist);
 	inode = igrab(&fi->vfs_inode);
+	if (inode)
+		list_move_tail(&fi->inmem_ilist, head);
 	spin_unlock(&sbi->inode_lock[ATOMIC_FILE]);
 
 	if (inode) {
 		if (gc_failure) {
-			if (fi->i_gc_failures[GC_FAILURE_ATOMIC])
-				goto drop;
-			goto skip;
+			if (!fi->i_gc_failures[GC_FAILURE_ATOMIC])
+				goto skip;
 		}
-drop:
 		set_inode_flag(inode, FI_ATOMIC_REVOKE_REQUEST);
 		f2fs_drop_inmem_pages(inode);
+skip:
 		iput(inode);
 	}
-skip:
 	congestion_wait(BLK_RW_ASYNC, HZ/50);
 	cond_resched();
+	if (gc_failure) {
+		if (++looped >= count)
+			return;
+	}
 	goto next;
 }
 
@@ -327,13 +333,15 @@ void f2fs_drop_inmem_pages(struct inode *inode)
 		mutex_unlock(&fi->inmem_lock);
 	}
 
-	clear_inode_flag(inode, FI_ATOMIC_FILE);
 	fi->i_gc_failures[GC_FAILURE_ATOMIC] = 0;
-	stat_dec_atomic_write(inode);
 
 	spin_lock(&sbi->inode_lock[ATOMIC_FILE]);
 	if (!list_empty(&fi->inmem_ilist))
 		list_del_init(&fi->inmem_ilist);
+	if (f2fs_is_atomic_file(inode)) {
+		clear_inode_flag(inode, FI_ATOMIC_FILE);
+		sbi->atomic_files--;
+	}
 	spin_unlock(&sbi->inode_lock[ATOMIC_FILE]);
 }
 
@@ -480,7 +488,7 @@ int f2fs_commit_inmem_pages(struct inode *inode)
 void f2fs_balance_fs(struct f2fs_sb_info *sbi, bool need)
 {
 	if (time_to_inject(sbi, FAULT_CHECKPOINT)) {
-		f2fs_show_injection_info(FAULT_CHECKPOINT);
+		f2fs_show_injection_info(sbi, FAULT_CHECKPOINT);
 		f2fs_stop_checkpoint(sbi, false);
 	}
 
@@ -496,7 +504,7 @@ void f2fs_balance_fs(struct f2fs_sb_info *sbi, bool need)
 	 * dir/node pages without enough free segments.
 	 */
 	if (has_not_enough_free_secs(sbi, 0, 0)) {
-		mutex_lock(&sbi->gc_mutex);
+		down_write(&sbi->gc_lock);
 		f2fs_gc(sbi, false, false, NULL_SEGNO);
 	}
 }
@@ -1007,8 +1015,9 @@ static void __remove_discard_cmd(struct f2fs_sb_info *sbi,
 
 	if (dc->error)
 		printk_ratelimited(
-			"%sF2FS-fs: Issue discard(%u, %u, %u) failed, ret: %d",
-			KERN_INFO, dc->lstart, dc->start, dc->len, dc->error);
+			"%sF2FS-fs (%s): Issue discard(%u, %u, %u) failed, ret: %d",
+			KERN_INFO, sbi->sb->s_id,
+			dc->lstart, dc->start, dc->len, dc->error);
 	__detach_discard_cmd(dcc, dc);
 }
 
@@ -1068,7 +1077,7 @@ static void __init_discard_policy(struct f2fs_sb_info *sbi,
 
 	dpolicy->max_requests = DEF_MAX_DISCARD_REQUEST;
 	dpolicy->io_aware_gran = MAX_PLIST_NUM;
-	dpolicy->timeout = 0;
+	dpolicy->timeout = false;
 
 	if (discard_type == DPOLICY_BG) {
 		dpolicy->min_interval = DEF_MIN_DISCARD_ISSUE_TIME;
@@ -1089,10 +1098,10 @@ static void __init_discard_policy(struct f2fs_sb_info *sbi,
 	} else if (discard_type == DPOLICY_FSTRIM) {
 		dpolicy->io_aware = false;
 	} else if (discard_type == DPOLICY_UMOUNT) {
-		dpolicy->max_requests = UINT_MAX;
 		dpolicy->io_aware = false;
 		/* we need to issue all to keep CP_TRIMMED_FLAG */
 		dpolicy->granularity = 1;
+		dpolicy->timeout = true;
 	}
 }
 
@@ -1148,7 +1157,7 @@ static int __submit_discard_cmd(struct f2fs_sb_info *sbi,
 		dc->len += len;
 
 		if (time_to_inject(sbi, FAULT_DISCARD)) {
-			f2fs_show_injection_info(FAULT_DISCARD);
+			f2fs_show_injection_info(sbi, FAULT_DISCARD);
 			err = -EIO;
 			goto submit;
 		}
@@ -1447,6 +1456,8 @@ next:
 
 	return issued;
 }
+static unsigned int __wait_all_discard_cmd(struct f2fs_sb_info *sbi,
+					struct discard_policy *dpolicy);
 
 static int __issue_discard_cmd(struct f2fs_sb_info *sbi,
 					struct discard_policy *dpolicy)
@@ -1455,15 +1466,17 @@ static int __issue_discard_cmd(struct f2fs_sb_info *sbi,
 	struct list_head *pend_list;
 	struct discard_cmd *dc, *tmp;
 	struct blk_plug plug;
-	int i, issued = 0;
+	int i, issued;
 	bool io_interrupted = false;
 
-	if (dpolicy->timeout != 0)
-		f2fs_update_time(sbi, dpolicy->timeout);
+	if (dpolicy->timeout)
+		f2fs_update_time(sbi, UMOUNT_DISCARD_TIMEOUT);
 
+retry:
+	issued = 0;
 	for (i = MAX_PLIST_NUM - 1; i >= 0; i--) {
-		if (dpolicy->timeout != 0 &&
-				f2fs_time_over(sbi, dpolicy->timeout))
+		if (dpolicy->timeout &&
+				f2fs_time_over(sbi, UMOUNT_DISCARD_TIMEOUT))
 			break;
 
 		if (i + 1 < dpolicy->granularity)
@@ -1484,8 +1497,8 @@ static int __issue_discard_cmd(struct f2fs_sb_info *sbi,
 		list_for_each_entry_safe(dc, tmp, pend_list, list) {
 			f2fs_bug_on(sbi, dc->state != D_PREP);
 
-			if (dpolicy->timeout != 0 &&
-				f2fs_time_over(sbi, dpolicy->timeout))
+			if (dpolicy->timeout &&
+				f2fs_time_over(sbi, UMOUNT_DISCARD_TIMEOUT))
 				break;
 
 			if (dpolicy->io_aware && i < dpolicy->io_aware_gran &&
@@ -1505,6 +1518,11 @@ next:
 
 		if (issued >= dpolicy->max_requests || io_interrupted)
 			break;
+	}
+
+	if (dpolicy->type == DPOLICY_UMOUNT && issued) {
+		__wait_all_discard_cmd(sbi, dpolicy);
+		goto retry;
 	}
 
 	if (!issued && io_interrupted)
@@ -1664,7 +1682,6 @@ bool f2fs_issue_discard_timeout(struct f2fs_sb_info *sbi)
 
 	__init_discard_policy(sbi, &dpolicy, DPOLICY_UMOUNT,
 					dcc->discard_granularity);
-	dpolicy.timeout = UMOUNT_DISCARD_TIMEOUT;
 	__issue_discard_cmd(sbi, &dpolicy);
 	dropped = __drop_discard_cmd(sbi);
 
@@ -2687,7 +2704,7 @@ unlock:
 	up_read(&SM_I(sbi)->curseg_lock);
 }
 
-void f2fs_allocate_new_segments(struct f2fs_sb_info *sbi)
+void f2fs_allocate_new_segments(struct f2fs_sb_info *sbi, int type)
 {
 	struct curseg_info *curseg;
 	unsigned int old_segno;
@@ -2696,10 +2713,17 @@ void f2fs_allocate_new_segments(struct f2fs_sb_info *sbi)
 	down_write(&SIT_I(sbi)->sentry_lock);
 
 	for (i = CURSEG_HOT_DATA; i <= CURSEG_COLD_DATA; i++) {
+		if (type != NO_CHECK_TYPE && i != type)
+			continue;
+
 		curseg = CURSEG_I(sbi, i);
-		old_segno = curseg->segno;
-		SIT_I(sbi)->s_ops->allocate_segment(sbi, i, true);
-		locate_dirty_segment(sbi, old_segno);
+		if (type == NO_CHECK_TYPE || curseg->next_blkoff ||
+				get_valid_blocks(sbi, curseg->segno, false) ||
+				get_ckpt_valid_blocks(sbi, curseg->segno)) {
+			old_segno = curseg->segno;
+			SIT_I(sbi)->s_ops->allocate_segment(sbi, i, true);
+			locate_dirty_segment(sbi, old_segno);
+		}
 	}
 
 	up_write(&SIT_I(sbi)->sentry_lock);
@@ -2840,9 +2864,9 @@ int f2fs_trim_fs(struct f2fs_sb_info *sbi, struct fstrim_range *range)
 	if (sbi->discard_blks == 0)
 		goto out;
 
-	mutex_lock(&sbi->gc_mutex);
+	down_write(&sbi->gc_lock);
 	err = f2fs_write_checkpoint(sbi, &cpc);
-	mutex_unlock(&sbi->gc_mutex);
+	up_write(&sbi->gc_lock);
 	if (err)
 		goto out;
 
@@ -3066,6 +3090,27 @@ void f2fs_allocate_data_block(struct f2fs_sb_info *sbi, struct page *page,
 {
 	struct sit_info *sit_i = SIT_I(sbi);
 	struct curseg_info *curseg = CURSEG_I(sbi, type);
+	bool put_pin_sem = false;
+
+	if (type == CURSEG_COLD_DATA) {
+		/* GC during CURSEG_COLD_DATA_PINNED allocation */
+		if (down_read_trylock(&sbi->pin_sem)) {
+			put_pin_sem = true;
+		} else {
+			type = CURSEG_WARM_DATA;
+			curseg = CURSEG_I(sbi, type);
+		}
+	} else if (type == CURSEG_COLD_DATA_PINNED) {
+		type = CURSEG_COLD_DATA;
+	}
+
+	/*
+	 * We need to wait for node_write to avoid block allocation during
+	 * checkpoint. This can only happen to quota writes which can cause
+	 * the below discard race condition.
+	 */
+	if (IS_DATASEG(type))
+		down_write(&sbi->node_write);
 
 	down_read(&SM_I(sbi)->curseg_lock);
 
@@ -3131,6 +3176,12 @@ void f2fs_allocate_data_block(struct f2fs_sb_info *sbi, struct page *page,
 	mutex_unlock(&curseg->curseg_mutex);
 
 	up_read(&SM_I(sbi)->curseg_lock);
+
+	if (IS_DATASEG(type))
+		up_write(&sbi->node_write);
+
+	if (put_pin_sem)
+		up_read(&sbi->pin_sem);
 }
 
 static void update_device_state(struct f2fs_io_info *fio)
@@ -3253,7 +3304,7 @@ int f2fs_inplace_write_data(struct f2fs_io_info *fio)
 
 	stat_inc_inplace_blocks(fio->sbi);
 
-	if (fio->bio)
+	if (fio->bio && !(SM_I(sbi)->ipu_policy & (1 << F2FS_IPU_NOCACHE)))
 		err = f2fs_merge_page_bio(fio);
 	else
 		err = f2fs_submit_page_bio(fio);
@@ -3377,7 +3428,10 @@ void f2fs_wait_on_page_writeback(struct page *page,
 	if (PageWriteback(page)) {
 		struct f2fs_sb_info *sbi = F2FS_P_SB(page);
 
+		/* submit cached LFS IO */
 		f2fs_submit_merged_write_cond(sbi, NULL, page, 0, type);
+		/* sbumit cached IPU IO */
+		f2fs_submit_merged_ipu_write(sbi, NULL, page);
 		if (ordered) {
 			wait_on_page_writeback(page);
 			f2fs_bug_on(sbi, locked && PageWriteback(page));
