@@ -415,8 +415,6 @@ static int alarmtimer_resume(struct device *dev)
 	rtc = alarmtimer_get_rtcdev();
 	if (rtc)
 		rtc_timer_cancel(rtc, &rtctimer);
-	
-	queue_delayed_work(power_off_alarm_workqueue, &work, 0);
 	return 0;
 }
 
