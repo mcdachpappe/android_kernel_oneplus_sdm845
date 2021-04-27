@@ -2261,6 +2261,10 @@ struct task_struct {
 	struct fuse_package *fpack;
 #endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 
+#ifdef CONFIG_ANDROID_SIMPLE_LMK
+	struct task_struct		*simple_lmk_next;
+#endif
+
 /* CPU-specific state of this task */
 	struct thread_struct thread;
 /*
