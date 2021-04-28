@@ -1024,15 +1024,6 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 	return best_level;
 }
 
-static void cluster_notify(struct lpm_cluster *cluster,
-		struct lpm_cluster_level *level, bool enter)
-{
-	if (level->is_reset && enter)
-		cpu_cluster_pm_enter(cluster->aff_level);
-	else if (level->is_reset && !enter)
-		cpu_cluster_pm_exit(cluster->aff_level);
-}
-
 static int cluster_configure(struct lpm_cluster *cluster, int idx,
 		bool from_idle, int predicted)
 {
@@ -1086,8 +1077,6 @@ static int cluster_configure(struct lpm_cluster *cluster, int idx,
 				return -EBUSY;
 		}
 	}
-	/* Notify cluster enter event after successfully config completion */
-	cluster_notify(cluster, level, true);
 
 	cluster->last_level = idx;
 
@@ -1232,8 +1221,6 @@ static void cluster_unprepare(struct lpm_cluster *cluster,
 
 	last_level = cluster->last_level;
 	cluster->last_level = cluster->default_level;
-
-	cluster_notify(cluster, &cluster->levels[last_level], false);
 
 	if (from_idle)
 		update_cluster_history(&cluster->history, last_level);
