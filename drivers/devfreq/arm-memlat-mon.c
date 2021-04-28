@@ -60,7 +60,6 @@ struct cpu_grp_info {
 	unsigned int event_ids[NUM_EVENTS];
 	struct cpu_pmu_stats *cpustats;
 	struct memlat_hwmon hw;
-	struct notifier_block arm_memlat_cpu_notif;
 	struct list_head mon_list;
 };
 
@@ -177,8 +176,6 @@ static void stop_hwmon(struct memlat_hwmon *hw)
 	cpumask_clear(&cpu_grp->inited_cpus);
 
 	put_online_cpus();
-
-	unregister_cpu_notifier(&cpu_grp->arm_memlat_cpu_notif);
 }
 
 static struct perf_event_attr *alloc_attr(void)
@@ -233,38 +230,10 @@ err_out:
 	return err;
 }
 
-static int arm_memlat_cpu_callback(struct notifier_block *nb,
-		unsigned long action, void *hcpu)
-{
-	unsigned long cpu = (unsigned long)hcpu;
-	struct cpu_grp_info *cpu_grp, *tmp;
-
-	if (action != CPU_ONLINE)
-		return NOTIFY_OK;
-
-	mutex_lock(&list_lock);
-	list_for_each_entry_safe(cpu_grp, tmp, &memlat_mon_list, mon_list) {
-		if (!cpumask_test_cpu(cpu, &cpu_grp->cpus) ||
-		    cpumask_test_cpu(cpu, &cpu_grp->inited_cpus))
-			continue;
-		if (set_events(cpu_grp, cpu))
-			pr_warn("Failed to create perf ev for CPU%lu\n", cpu);
-		else
-			cpumask_set_cpu(cpu, &cpu_grp->inited_cpus);
-		if (cpumask_equal(&cpu_grp->cpus, &cpu_grp->inited_cpus))
-			list_del(&cpu_grp->mon_list);
-	}
-	mutex_unlock(&list_lock);
-
-	return NOTIFY_OK;
-}
-
 static int start_hwmon(struct memlat_hwmon *hw)
 {
 	int cpu, ret = 0;
 	struct cpu_grp_info *cpu_grp = to_cpu_grp(hw);
-
-	register_cpu_notifier(&cpu_grp->arm_memlat_cpu_notif);
 
 	get_online_cpus();
 	for_each_cpu(cpu, &cpu_grp->cpus) {
@@ -329,7 +298,6 @@ static int arm_memlat_mon_driver_probe(struct platform_device *pdev)
 	cpu_grp = devm_kzalloc(dev, sizeof(*cpu_grp), GFP_KERNEL);
 	if (!cpu_grp)
 		return -ENOMEM;
-	cpu_grp->arm_memlat_cpu_notif.notifier_call = arm_memlat_cpu_callback;
 	hw = &cpu_grp->hw;
 
 	hw->dev = dev;
