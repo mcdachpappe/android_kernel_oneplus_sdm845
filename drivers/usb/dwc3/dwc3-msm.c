@@ -298,7 +298,6 @@ struct dwc3_msm {
 #define MDWC3_POWER_COLLAPSE		BIT(2)
 
 	unsigned int		irq_to_affin;
-	struct notifier_block	dwc3_cpu_notifier;
 	struct notifier_block	usbdev_nb;
 	bool			hc_died;
 	/* for usb connector either type-C or microAB */
@@ -3122,22 +3121,6 @@ static irqreturn_t msm_dwc3_pwr_irq(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static int dwc3_cpu_notifier_cb(struct notifier_block *nfb,
-		unsigned long action, void *hcpu)
-{
-	uint32_t cpu = (uintptr_t)hcpu;
-	struct dwc3_msm *mdwc =
-			container_of(nfb, struct dwc3_msm, dwc3_cpu_notifier);
-
-	if (cpu == cpu_to_affin && action == CPU_ONLINE) {
-		pr_debug("%s: cpu online:%u irq:%d\n", __func__,
-				cpu_to_affin, mdwc->irq_to_affin);
-		irq_set_affinity(mdwc->irq_to_affin, get_cpu_mask(cpu));
-	}
-
-	return NOTIFY_OK;
-}
-
 static void dwc3_otg_sm_work(struct work_struct *w);
 static int get_psy_type(struct dwc3_msm *mdwc);
 
@@ -3921,10 +3904,6 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 	}
 
 	mdwc->irq_to_affin = platform_get_irq(mdwc->dwc3, 0);
-	mdwc->dwc3_cpu_notifier.notifier_call = dwc3_cpu_notifier_cb;
-
-	if (cpu_to_affin)
-		register_cpu_notifier(&mdwc->dwc3_cpu_notifier);
 
 	ret = of_property_read_u32(node, "qcom,num-gsi-evt-buffs",
 				&mdwc->num_gsi_event_buffers);
@@ -4021,8 +4000,6 @@ put_psy:
 	if (mdwc->usb_psy)
 		power_supply_put(mdwc->usb_psy);
 
-	if (cpu_to_affin)
-		unregister_cpu_notifier(&mdwc->dwc3_cpu_notifier);
 put_dwc3:
 	platform_device_put(mdwc->dwc3);
 	if (mdwc->bus_perf_client)
@@ -4055,9 +4032,6 @@ static int dwc3_msm_remove(struct platform_device *pdev)
 	device_remove_file(&pdev->dev, &dev_attr_xhci_link_compliance);
 	if (mdwc->usb_psy)
 		power_supply_put(mdwc->usb_psy);
-
-	if (cpu_to_affin)
-		unregister_cpu_notifier(&mdwc->dwc3_cpu_notifier);
 
 	/*
 	 * In case of system suspend, pm_runtime_get_sync fails.
