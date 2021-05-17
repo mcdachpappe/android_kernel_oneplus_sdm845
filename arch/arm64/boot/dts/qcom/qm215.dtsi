@@ -30,30 +30,14 @@
 };
 
 &soc {
-	/delete-node/ devfreq-cpufreq;
-	devfreq-cpufreq {
-		cpubw-cpufreq {
-		target-dev = <&cpubw>;
-		cpu-to-dev-map =
-			<  998400  4248 >,
-			< 1094400  4541 >,
-			< 1305600  5645 >;
-		};
-
-		mincpubw-cpufreq {
-			target-dev = <&mincpubw>;
-			cpu-to-dev-map =
-				<  998400 2270 >,
-				< 1305600 4248 >;
-		};
+	qcom,vidc@1d00000 {
+		qcom,allowed-clock-rates = <329140000 329140000
+					308570000 270000000 200000000>;
 	};
 };
 
-&soc {
-	qcom,vidc@1d00000 {
-		qcom,allowed-clock-rates = <308570000 308570000
-					308570000 270000000 200000000>;
-	};
+&clock_gcc {
+	compatible = "qcom,gcc-qm215";
 };
 
 /* GPU overrides */

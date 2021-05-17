@@ -124,7 +124,6 @@
 	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
 								200000000>;
 	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50", "SDR104";
-
 	status = "ok";
 };
 
@@ -190,6 +189,9 @@
 };
 
 &i2c_5 { /* BLSP2 QUP1 (NFC) */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	status = "ok";
 	nq@28 {
 		compatible = "qcom,nq-nci";

@@ -36,6 +36,7 @@
 		qcom,mdss-dsi-lane-3-state;
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
+		qcom,mdss-dsi-lp11-init;
 	  qcom,mdss-dsi-high-brightness-panel;
 		qcom,mdss-bl-high2bit;
 		qcom,mdss-dsi-display-timings {

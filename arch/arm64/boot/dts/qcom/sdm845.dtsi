@@ -488,7 +488,7 @@
 	};
 
 	chosen {
-		bootargs = "quiet rcupdate.rcu_normal_after_boot=1 noirqdebug rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket";
+		bootargs = "quiet rcupdate.rcu_expedited=1";
 	};
 
 	soc: soc { };
@@ -1442,7 +1442,7 @@
 
 		/* PM QoS */
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cpu-group-latency-us = <100 100>;
+		qcom,pm-qos-cpu-group-latency-us = <70 70>;
 		qcom,pm-qos-default-cpu = <0>;
 
 		pinctrl-names = "dev-reset-assert", "dev-reset-deassert";
@@ -2689,6 +2689,7 @@
 		qcom,ipa-wdi2;
 		qcom,use-64-bit-dma-mask;
 		qcom,arm-smmu;
+		qcom,smmu-fast-map;
 		qcom,bandwidth-vote-for-ipa;
 		qcom,msm-bus,name = "ipa";
 		qcom,msm-bus,num-cases = <5>;
@@ -2811,7 +2812,6 @@
 
 		ipa_smmu_ap: ipa_smmu_ap {
 			compatible = "qcom,ipa-smmu-ap-cb";
-			qcom,smmu-s1-bypass;
 			iommus = <&apps_smmu 0x720 0x0>;
 			qcom,iova-mapping = <0x20000000 0x40000000>;
 			qcom,additional-mapping =
@@ -2821,7 +2821,6 @@
 
 		ipa_smmu_wlan: ipa_smmu_wlan {
 			compatible = "qcom,ipa-smmu-wlan-cb";
-			qcom,smmu-s1-bypass;
 			iommus = <&apps_smmu 0x721 0x0>;
 			qcom,additional-mapping =
 			/* ipa-uc ram */
@@ -2830,7 +2829,6 @@
 
 		ipa_smmu_uc: ipa_smmu_uc {
 			compatible = "qcom,ipa-smmu-uc-cb";
-			qcom,smmu-s1-bypass;
 			iommus = <&apps_smmu 0x722 0x0>;
 			qcom,iova-mapping = <0x40000000 0x20000000>;
 		};
@@ -3121,7 +3119,6 @@
 		vdd-3.3-ch0-supply = <&pm8998_l25>;
 		qcom,vdd-0.8-cx-mx-config = <800000 800000>;
 		qcom,vdd-3.3-ch0-config = <3104000 3312000>;
-		qcom,smmu-s1-bypass;
 	};
 
 	qmi-tmd-devices {
@@ -3506,8 +3503,8 @@
 			polling-delay-passive = <10>;
 			polling-delay = <0>;
 			thermal-governor = "step_wise";
-			wake-capable-sensor;
 			disable-thermal-zone;
+			wake-capable-sensor;
 			trips {
 				gpu_trip0: gpu-trip0 {
 					temperature = <95000>;

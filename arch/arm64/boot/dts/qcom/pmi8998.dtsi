@@ -838,12 +838,24 @@
 
 		trips {
 			low_soc: low-soc {
-				temperature = <5>;
+				temperature = <10>;
 				hysteresis = <0>;
 				type = "passive";
 			};
 		};
 		cooling-maps {
+			soc_cpu4 {
+				trip = <&low_soc>;
+				cooling-device =
+					<&CPU4 THERMAL_MAX_LIMIT
+						THERMAL_MAX_LIMIT>;
+			};
+			soc_cpu5 {
+				trip = <&low_soc>;
+				cooling-device =
+					<&CPU5 THERMAL_MAX_LIMIT
+						THERMAL_MAX_LIMIT>;
+			};
 			soc_map6 {
 				trip = <&low_soc>;
 				cooling-device =
@@ -864,7 +876,6 @@
 		polling-delay = <0>;
 		thermal-sensors = <&pmi8998_tz>;
 		wake-capable-sensor;
-		disable-thermal-zone;
 
 		trips {
 			pmi8998_trip0: pmi8998-trip0 {
