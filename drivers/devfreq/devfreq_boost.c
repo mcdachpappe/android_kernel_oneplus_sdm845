@@ -10,7 +10,6 @@
 #include <linux/kthread.h>
 #include <linux/msm_drm_notify.h>
 #include <linux/slab.h>
-#include <uapi/linux/sched/types.h>
 
 enum {
 	SCREEN_OFF,
@@ -49,8 +48,8 @@ static void devfreq_max_unboost(struct work_struct *work);
 }
 
 static struct df_boost_drv df_boost_drv_g __read_mostly = {
-	BOOST_DEV_INIT(df_boost_drv_g, DEVFREQ_CPU_LLCC_DDR_BW,
-		       CONFIG_DEVFREQ_CPU_LLCC_DDR_BW_BOOST_FREQ)
+	BOOST_DEV_INIT(df_boost_drv_g, DEVFREQ_MSM_CPUBW,
+		       CONFIG_DEVFREQ_MSM_CPUBW_BOOST_FREQ)
 };
 
 static void __devfreq_boost_kick(struct boost_dev *b)
@@ -199,7 +198,7 @@ static int msm_drm_notifier_cb(struct notifier_block *nb,
 	for (i = 0; i < DEVFREQ_MAX; i++) {
 		struct boost_dev *b = &d->devices[i];
 
-		if (*blank == MSM_DRM_BLANK_UNBLANK) {
+		if (*blank == MSM_DRM_BLANK_UNBLANK_CUST) {
 			clear_bit(SCREEN_OFF, &b->state);
 			__devfreq_boost_kick_max(b,
 				CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
@@ -305,8 +304,7 @@ static int __init devfreq_boost_init(void)
 	for (i = 0; i < DEVFREQ_MAX; i++) {
 		struct boost_dev *b = &d->devices[i];
 
-		thread[i] = kthread_run_perf_critical(cpu_perf_mask,
-						      devfreq_boost_thread, b,
+		thread[i] = kthread_run_perf_critical(devfreq_boost_thread, b,
 						      "devfreq_boostd/%d", i);
 		if (IS_ERR(thread[i])) {
 			ret = PTR_ERR(thread[i]);
