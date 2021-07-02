@@ -55,7 +55,6 @@ config KPROBES
 config JUMP_LABEL
        bool "Optimize very unlikely/likely branches"
        depends on HAVE_ARCH_JUMP_LABEL
-       depends on !LTO_CLANG # https://github.com/ClangBuiltLinux/linux/issues/500
        help
          This option enables a transparent branch optimization that
 	 makes certain almost-always-true or almost-always-false branch
@@ -512,6 +511,7 @@ config LD_BFD
 
 config LD_GOLD
 	bool "gold"
+	depends on LTO_CLANG
 	help
 	  Use the alternative ld.gold linker from binutils.
 
@@ -521,6 +521,21 @@ config LD_LLD
 	  Use the alternative lld linker from LLVM.
 
 endchoice
+
+config LD_DEAD_CODE_DATA_ELIMINATION
+	bool "Eliminate dead code & data sections at link time"
+	help
+	  Select this if the architecture wants to do dead code and
+	  data elimination with the linker by compiling with
+	  -ffunction-sections -fdata-sections and linking with
+	  --gc-sections.
+
+	  This requires that the arch annotates or otherwise protects
+	  its external entry points from being discarded. Linker scripts
+	  must also merge .text.*, .data.*, and .bss.* correctly into
+	  output sections. Care must be taken not to pull in unrelated
+	  sections (e.g., '.text.init'). Typically '.' in section names
+	  is used to distinguish them from label names / C identifiers.
 
 config LTO
 	def_bool n
@@ -533,9 +548,14 @@ config ARCH_SUPPORTS_LTO_CLANG
 	  - compiling inline assembly with clang's integrated assembler,
 	  - and linking with either lld or GNU gold w/ LLVMgold.
 
+config ARCH_SUPPORTS_THINLTO
+	bool
+	help
+	  An architecture should select this if it supports clang's ThinLTO.
+
 config THINLTO
 	bool "Use clang ThinLTO (EXPERIMENTAL)"
-	depends on LTO_CLANG
+	depends on LTO_CLANG && ARCH_SUPPORTS_THINLTO
 	default y
 	help
 	  Use ThinLTO to speed up Link Time Optimization.
