@@ -48,7 +48,6 @@ static bool logger_initialized;
 /**
  * nl_srv_init() - wrapper function to register to cnss_logger
  * @wiphy:	the pointer to the wiphy structure
- * @proto:	the host log netlink protocol
  *
  * The netlink socket is no longer initialized in the driver itself, instead
  * will be initialized in the cnss_logger module, the driver should register
@@ -61,7 +60,7 @@ static bool logger_initialized;
  *
  * Return: radio index for success and -EINVAL for failure
  */
-int nl_srv_init(void *wiphy, int proto)
+int nl_srv_init(void *wiphy)
 {
 	if (logger_initialized)
 		goto initialized;
@@ -268,7 +267,7 @@ qdf_export_symbol(nl_srv_is_initialized);
 #include <net/cnss_nl.h>
 
 /* For CNSS_GENL netlink sockets will be initialized by CNSS Kernel Module */
-int nl_srv_init(void *wiphy, int proto)
+int nl_srv_init(void *wiphy)
 {
 	return 0;
 }
@@ -482,7 +481,7 @@ int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag,
 	return 0;
 }
 
-#elif !defined(MULTI_IF_NAME) || defined(MULTI_IF_LOG)
+#elif !defined(MULTI_IF_NAME)
 
 /* Global variables */
 static DEFINE_MUTEX(nl_srv_sem);
@@ -498,7 +497,7 @@ static void nl_srv_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh);
  * Initialize the netlink service.
  * Netlink service is usable after this.
  */
-int nl_srv_init(void *wiphy, int proto)
+int nl_srv_init(void *wiphy)
 {
 	int retcode = 0;
 	struct netlink_kernel_cfg cfg = {
@@ -506,7 +505,7 @@ int nl_srv_init(void *wiphy, int proto)
 		.input = nl_srv_rcv
 	};
 
-	nl_srv_sock = netlink_kernel_create(&init_net, proto,
+	nl_srv_sock = netlink_kernel_create(&init_net, WLAN_NLINK_PROTO_FAMILY,
 					    &cfg);
 
 	if (nl_srv_sock != NULL) {
@@ -737,7 +736,7 @@ qdf_export_symbol(nl_srv_is_initialized);
 
 #else
 
-int nl_srv_init(void *wiphy, int proto)
+int nl_srv_init(void *wiphy)
 {
 	return 0;
 }

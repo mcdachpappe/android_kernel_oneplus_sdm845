@@ -712,6 +712,7 @@ int hdd_reg_set_band(struct net_device *dev, u8 ui_band)
 	struct hdd_context *hdd_ctx;
 	enum band_info currBand;
 	enum band_info connectedBand;
+	long lrc;
 
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 
@@ -788,14 +789,27 @@ int hdd_reg_set_band(struct net_device *dev, u8 ui_band)
 			hdd_debug("STA (Device mode %s(%d)) connected in band %u, Changing band to %u, Issuing Disconnect",
 					hdd_device_mode_to_string(adapter->device_mode),
 					adapter->device_mode, currBand, band);
+			INIT_COMPLETION(adapter->disconnect_comp_var);
 
-			status = wlan_hdd_disconnect(adapter,
-					eCSR_DISCONNECT_REASON_UNSPECIFIED,
-					eSIR_MAC_OPER_CHANNEL_BAND_CHANGE);
-			if (status) {
-				hdd_err("Hdd disconnect failed, status: %d",
-					status);
+			status = sme_roam_disconnect(
+					mac_handle,
+					adapter->session_id,
+					eCSR_DISCONNECT_REASON_UNSPECIFIED);
+
+			if (QDF_STATUS_SUCCESS != status) {
+				hdd_err("sme_roam_disconnect failure, status: %d",
+						(int)status);
 				return -EINVAL;
+			}
+
+			lrc = wait_for_completion_timeout(
+					&adapter->disconnect_comp_var,
+					msecs_to_jiffies(
+						WLAN_WAIT_TIME_DISCONNECT));
+
+			if (lrc == 0) {
+				hdd_err("Timeout while waiting for csr_roam_disconnect");
+				return -ETIMEDOUT;
 			}
 		}
 
@@ -1218,22 +1232,6 @@ static enum nl80211_dfs_regions dfs_reg_to_nl80211_dfs_regions(
 	}
 }
 
-#ifdef DFS_PRI_MULTIPLIER
-static void hdd_set_dfs_pri_multiplier(struct hdd_context *hdd_ctx,
-				       enum dfs_reg dfs_region)
-{
-	if (dfs_region == DFS_ETSI_REG)
-		wlan_sap_set_dfs_pri_multiplier(
-				hdd_ctx->mac_handle,
-				hdd_ctx->config->dfsRadarPriMultiplier);
-}
-#else
-static inline void hdd_set_dfs_pri_multiplier(struct hdd_context *hdd_ctx,
-					      enum dfs_reg dfs_region)
-{
-}
-#endif
-
 void hdd_send_wiphy_regd_sync_event(struct hdd_context *hdd_ctx)
 {
 	struct ieee80211_regdomain *regd;
@@ -1271,9 +1269,6 @@ void hdd_send_wiphy_regd_sync_event(struct hdd_context *hdd_ctx)
 	qdf_mem_copy(regd->alpha2, reg_rules->alpha2, REG_ALPHA2_LEN + 1);
 	regd->dfs_region =
 		dfs_reg_to_nl80211_dfs_regions(reg_rules->dfs_region);
-
-	hdd_set_dfs_pri_multiplier(hdd_ctx, reg_rules->dfs_region);
-
 	regd_rules = regd->reg_rules;
 	hdd_debug("Regulatory Domain %s", regd->alpha2);
 	hdd_debug("start freq\tend freq\t@ max_bw\tant_gain\tpwr\tflags");
@@ -1341,36 +1336,28 @@ static void hdd_regulatory_dyn_cbk(struct wlan_objmgr_psoc *psoc,
 		hdd_send_wiphy_regd_sync_event(hdd_ctx);
 #endif
 
-	if (avoid_freq_ind) {
+	if (avoid_freq_ind)
 		hdd_ch_avoid_ind(hdd_ctx, &avoid_freq_ind->chan_list,
 				&avoid_freq_ind->freq_list);
-	} else {
+	else
 		sme_generic_change_country_code(hdd_ctx->mac_handle,
 				hdd_ctx->reg.alpha2);
-		/*Check whether need restart SAP/P2p Go*/
-		policy_mgr_check_concurrent_intf_and_restart_sap(hdd_ctx->psoc);
-	}
-}
-
-int hdd_update_regulatory_config(struct hdd_context *hdd_ctx)
-{
-	struct reg_config_vars config_vars;
-
-	reg_program_config_vars(hdd_ctx, &config_vars);
-	ucfg_reg_set_config_vars(hdd_ctx->psoc, config_vars);
-	return 0;
 }
 
 int hdd_regulatory_init(struct hdd_context *hdd_ctx, struct wiphy *wiphy)
 {
 	bool offload_enabled;
+	struct reg_config_vars config_vars;
 	struct regulatory_channel cur_chan_list[NUM_CHANNELS];
 	enum country_src cc_src;
 	uint8_t alpha2[REG_ALPHA2_LEN + 1];
 
+	reg_program_config_vars(hdd_ctx, &config_vars);
 	ucfg_reg_register_chan_change_callback(hdd_ctx->psoc,
 					       hdd_regulatory_dyn_cbk,
 					       NULL);
+
+	ucfg_reg_set_config_vars(hdd_ctx->psoc, config_vars);
 
 	wiphy->regulatory_flags |= REGULATORY_WIPHY_SELF_MANAGED;
 	/* Check the kernel version for upstream commit aced43ce780dc5 that
@@ -1427,15 +1414,3 @@ int hdd_regulatory_init(struct hdd_context *hdd_ctx, struct wiphy *wiphy)
 	return 0;
 }
 #endif
-
-void hdd_update_regdb_offload_config(struct hdd_context *hdd_ctx)
-{
-	if (!hdd_ctx->config->ignore_fw_reg_offload_ind) {
-		hdd_debug("regdb offload is based on firmware capability");
-		return;
-	}
-
-	hdd_debug("Ignore regdb offload Indication from FW");
-	ucfg_set_ignore_fw_reg_offload_ind(hdd_ctx->psoc);
-}
-

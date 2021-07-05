@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
  *
  *
  * Permission to use, copy, modify, and/or distribute this software for
@@ -95,14 +95,6 @@
 /* EEPROM setting is a country code */
 #define    COUNTRY_ERD_FLAG     0x8000
 
-/**
- * reg_is_world_ctry_code() - Check if the given country code is WORLD regdomain
- * @ctry_code: Country code value.
- *
- * Return: If country code is WORLD regdomain return true else false
- */
-bool reg_is_world_ctry_code(uint16_t ctry_code);
-
 extern const struct chan_map *channel_map;
 
 enum channel_enum reg_get_chan_enum(uint32_t chan_num);
@@ -147,15 +139,6 @@ void reg_set_channel_params(struct wlan_objmgr_pdev *pdev,
  * Return: QDF_STATUS
  */
 QDF_STATUS reg_set_band(struct wlan_objmgr_pdev *pdev, enum band_info band);
-
-/**
- * reg_get_band() - Get the band information for the PDEV
- * @pdev: The physical dev to get the band for
- * @band: The band parameters of the physical device
- *
- * Return: QDF_STATUS
- */
-QDF_STATUS reg_get_band(struct wlan_objmgr_pdev *pdev, enum band_info *band);
 
 /**
  * reg_restore_cached_channels() - Cache the current state of the channles
@@ -333,16 +316,6 @@ uint16_t reg_dmn_get_opclass_from_channel(uint8_t *country,
 					  uint8_t channel,
 					  uint8_t offset);
 
-/**
- * reg_dmn_get_opclass_from_channe() - Print channels in op class.
- * @country: Country code.
- * @opclass: opclass.
- *
- * Return: Void.
- */
-void reg_dmn_print_channels_in_opclass(uint8_t *country,
-					uint8_t op_class);
-
 uint16_t reg_dmn_set_curr_opclasses(uint8_t num_classes, uint8_t *class);
 
 uint16_t reg_dmn_get_curr_opclasses(uint8_t *num_classes, uint8_t *class);
@@ -460,16 +433,6 @@ bool reg_is_disable_ch(struct wlan_objmgr_pdev *pdev, uint32_t chan);
 uint32_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev, uint32_t freq);
 
 uint32_t reg_chan_to_freq(struct wlan_objmgr_pdev *pdev, uint32_t chan_num);
-
-/**
- * reg_legacy_chan_to_freq() - Get freq from chan noumber, for 2G and 5G
- * @pdev: Pointer to pdev
- * @chan_num: Channel number
- *
- * Return: Channel frequency if success, otherwise 0
- */
-uint16_t reg_legacy_chan_to_freq(struct wlan_objmgr_pdev *pdev,
-				 uint8_t chan_num);
 
 /**
  * reg_chan_is_49ghz() - Check if the input channel number is 4.9GHz
@@ -714,22 +677,5 @@ bool reg_chan_in_range(struct regulatory_channel *chan_list,
 		uint32_t low_freq_5g,
 		uint32_t high_freq_5g,
 		enum channel_enum ch_enum);
-
-/**
- * reg_set_ignore_fw_reg_offload_ind() - Set if regdb offload indication
- * needs to be ignored
- * @psoc: Pointer to psoc
- *
- * Return: QDF_STATUS
- */
-QDF_STATUS reg_set_ignore_fw_reg_offload_ind(struct wlan_objmgr_psoc *psoc);
-
-/**
- * reg_get_ignore_fw_reg_offload_ind() - Check whether regdb offload indication
- * needs to be ignored
- *
- * @psoc: Pointer to psoc
- */
-bool reg_get_ignore_fw_reg_offload_ind(struct wlan_objmgr_psoc *psoc);
 
 #endif

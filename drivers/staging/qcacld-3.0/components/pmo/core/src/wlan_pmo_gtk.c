@@ -174,6 +174,7 @@ QDF_STATUS pmo_core_cache_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
 	enum QDF_OPMODE opmode;
 	uint8_t vdev_id;
 
+	pmo_enter();
 	if (!gtk_req) {
 		pmo_err("gtk_req is NULL");
 		status = QDF_STATUS_E_INVAL;
@@ -204,6 +205,7 @@ QDF_STATUS pmo_core_cache_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
 dec_ref:
 	pmo_vdev_put_ref(vdev);
 out:
+	pmo_exit();
 
 	return status;
 }
@@ -214,6 +216,7 @@ QDF_STATUS pmo_core_flush_gtk_offload_req(struct wlan_objmgr_vdev *vdev)
 	uint8_t vdev_id;
 	QDF_STATUS status;
 
+	pmo_enter();
 	if (!vdev) {
 		pmo_err("psoc is NULL");
 		status = QDF_STATUS_E_INVAL;
@@ -238,6 +241,7 @@ QDF_STATUS pmo_core_flush_gtk_offload_req(struct wlan_objmgr_vdev *vdev)
 dec_ref:
 	pmo_vdev_put_ref(vdev);
 out:
+	pmo_exit();
 
 	return status;
 }

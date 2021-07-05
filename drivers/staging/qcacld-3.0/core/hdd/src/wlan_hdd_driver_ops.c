@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -40,14 +40,14 @@
 #include "wlan_hdd_driver_ops.h"
 #include "wlan_ipa_ucfg_api.h"
 #include "wlan_hdd_debugfs.h"
-#include <qdf_notifier.h>
-#include <qdf_hang_event_notifier.h>
 
 #ifdef MODULE
 #define WLAN_MODULE_NAME  module_name(THIS_MODULE)
 #else
 #define WLAN_MODULE_NAME  "wlan"
 #endif
+
+#define DISABLE_KRAIT_IDLE_PS_VAL      1
 
 #define SSR_MAX_FAIL_CNT 3
 static uint8_t re_init_fail_cnt, probe_fail_cnt;
@@ -154,7 +154,7 @@ static void hdd_hif_init_driver_state_callbacks(void *data,
  *
  * Return: None
  */
-#ifdef SLUB_MEM_OPTIMIZE
+#ifdef QCS403_MEM_OPTIMIZE
 static void hdd_hif_set_attribute(struct hif_opaque_softc *hif_ctx)
 {
 	hif_set_attribute(hif_ctx, HIF_LOWDESC_CE_NO_PKTLOG_CFG);
@@ -267,7 +267,7 @@ int hdd_hif_open(struct device *dev, void *bdev, const struct hif_bus_id *bid,
 		ret = hdd_napi_create();
 		hdd_debug("hdd_napi_create returned: %d", ret);
 		if (ret == 0)
-			hdd_debug("NAPI: no instances are created");
+			hdd_warn("NAPI: no instances are created");
 		else if (ret < 0) {
 			hdd_err("NAPI creation error, rc: 0x%x, reinit: %d",
 				ret, reinit);
@@ -380,7 +380,6 @@ static void hdd_soc_load_unlock(struct device *dev)
 	hdd_remove_pm_qos(dev);
 	hdd_allow_suspend(WIFI_POWER_EVENT_WAKELOCK_DRIVER_INIT);
 	hdd_stop_driver_ops_timer();
-	hdd_start_complete(0);
 	mutex_unlock(&hdd_init_deinit_lock);
 }
 
@@ -415,6 +414,7 @@ static int hdd_soc_probe(struct device *dev,
 
 	probe_fail_cnt = 0;
 	cds_set_driver_loaded(true);
+	hdd_start_complete(0);
 	cds_set_load_in_progress(false);
 
 	hdd_soc_load_unlock(dev);
@@ -467,6 +467,7 @@ assert_fail_count:
 
 unlock:
 	cds_set_driver_in_bad_state(true);
+	cds_set_recovery_in_progress(false);
 	hdd_soc_load_unlock(dev);
 
 	return check_for_probe_defer(errno);
@@ -559,22 +560,21 @@ static inline void hdd_wlan_ssr_shutdown_event(void)
 #endif
 
 /**
- * hdd_send_hang_data() - Send hang data to userspace
- * @data: Hang data
+ * hdd_send_hang_reason() - Send hang reason to the userspace
  *
  * Return: None
  */
-static void hdd_send_hang_data(void *data, size_t data_len)
+static void hdd_send_hang_reason(void)
 {
 	enum qdf_hang_reason reason = QDF_REASON_UNSPECIFIED;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 
-	if (!hdd_ctx)
+	if (wlan_hdd_validate_context(hdd_ctx))
 		return;
 
 	cds_get_recovery_reason(&reason);
 	cds_reset_recovery_reason();
-	wlan_hdd_send_hang_reason_event(hdd_ctx, reason, data, data_len);
+	wlan_hdd_send_hang_reason_event(hdd_ctx, reason);
 }
 
 /**
@@ -624,6 +624,7 @@ static void wlan_hdd_shutdown(void)
 	if (pld_is_pdr(hdd_ctx->parent_dev) && ucfg_ipa_is_enabled())
 		ucfg_ipa_fw_rejuvenate_send_msg(hdd_ctx->pdev);
 	hdd_wlan_ssr_shutdown_event();
+	hdd_send_hang_reason();
 
 	if (!cds_wait_for_external_threads_completion(__func__))
 		hdd_err("Host is not ready for SSR, attempting anyway");
@@ -901,7 +902,7 @@ static int __wlan_hdd_bus_suspend_noirq(void)
 	int errno;
 	uint32_t pending_events;
 
-	hdd_debug("start bus_suspend_noirq");
+	hdd_info("start bus_suspend_noirq");
 	errno = wlan_hdd_validate_context(hdd_ctx);
 	if (errno) {
 		hdd_err("Invalid HDD context: errno %d", errno);
@@ -942,7 +943,7 @@ static int __wlan_hdd_bus_suspend_noirq(void)
 
 	hdd_ctx->suspend_resume_stats.suspends++;
 
-	hdd_debug("bus_suspend_noirq done");
+	hdd_info("bus_suspend_noirq done");
 	return 0;
 
 resume_hif_noirq:
@@ -1078,7 +1079,7 @@ static int __wlan_hdd_bus_resume_noirq(void)
 	int status;
 	QDF_STATUS qdf_status;
 
-	hdd_debug("starting bus_resume_noirq");
+	hdd_info("starting bus_resume_noirq");
 	if (cds_is_driver_recovering())
 		return 0;
 
@@ -1103,7 +1104,7 @@ static int __wlan_hdd_bus_resume_noirq(void)
 	status = hif_bus_resume_noirq(hif_ctx);
 	QDF_BUG(!status);
 
-	hdd_debug("bus_resume_noirq done");
+	hdd_info("bus_resume_noirq done");
 	return status;
 }
 
@@ -1519,12 +1520,12 @@ static void wlan_hdd_set_the_pld_uevent(struct pld_uevent_data *uevent)
 {
 	switch (uevent->uevent) {
 	case PLD_RECOVERY:
+		cds_set_target_ready(false);
+		cds_set_recovery_in_progress(true);
+		break;
 	case PLD_FW_DOWN:
 		cds_set_target_ready(false);
 		cds_set_recovery_in_progress(true);
-		qdf_complete_wait_events();
-		break;
-	case PLD_FW_HANG_EVENT:
 		break;
 	}
 }
@@ -1539,8 +1540,6 @@ static void wlan_hdd_handle_the_pld_uevent(struct pld_uevent_data *uevent)
 {
 	enum cds_driver_state driver_state;
 	struct hdd_context *hdd_ctx;
-	struct qdf_notifer_data hang_evt_data;
-	enum qdf_hang_reason reason = QDF_REASON_UNSPECIFIED;
 
 	driver_state = cds_get_driver_state();
 
@@ -1563,38 +1562,17 @@ static void wlan_hdd_handle_the_pld_uevent(struct pld_uevent_data *uevent)
 
 	switch (uevent->uevent) {
 	case PLD_RECOVERY:
+		cds_set_target_ready(false);
 		hdd_pld_ipa_uc_shutdown_pipes();
+		qdf_complete_wait_events();
 		break;
 	case PLD_FW_DOWN:
+		cds_set_target_ready(false);
 		wlan_cfg80211_cleanup_scan_queue(hdd_ctx->pdev, NULL);
 		if (pld_is_fw_rejuvenate(hdd_ctx->parent_dev) &&
 		    ucfg_ipa_is_enabled())
 			ucfg_ipa_fw_rejuvenate_send_msg(hdd_ctx->pdev);
-		break;
-	case PLD_FW_HANG_EVENT:
-		hdd_info("Received fimrware hang event");
-		cds_get_recovery_reason(&reason);
-		hang_evt_data.hang_data =
-				qdf_mem_malloc(QDF_HANG_EVENT_DATA_SIZE);
-		if (!hang_evt_data.hang_data)
-			return;
-		hang_evt_data.offset = 0;
-		qdf_hang_event_notifier_call(reason, &hang_evt_data);
-		if (uevent->hang_data.hang_event_data_len >=
-		    QDF_HANG_EVENT_DATA_SIZE / 2)
-		uevent->hang_data.hang_event_data_len =
-				QDF_HANG_EVENT_DATA_SIZE / 2;
-
-		hang_evt_data.offset = QDF_WLAN_HANG_FW_OFFSET;
-		if (uevent->hang_data.hang_event_data_len)
-			qdf_mem_copy((hang_evt_data.hang_data +
-				     hang_evt_data.offset),
-				     uevent->hang_data.hang_event_data,
-				     uevent->hang_data.hang_event_data_len);
-
-		hdd_send_hang_data(hang_evt_data.hang_data,
-				   QDF_HANG_EVENT_DATA_SIZE);
-		qdf_mem_free(hang_evt_data.hang_data);
+		qdf_complete_wait_events();
 		break;
 	default:
 		break;
@@ -1627,7 +1605,6 @@ static void wlan_hdd_pld_uevent(struct device *dev,
 	wlan_hdd_set_the_pld_uevent(uevent);
 
 	hdd_psoc_idle_timer_stop(hdd_ctx);
-
 	mutex_lock(&hdd_init_deinit_lock);
 	wlan_hdd_handle_the_pld_uevent(uevent);
 	mutex_unlock(&hdd_init_deinit_lock);
@@ -1647,18 +1624,7 @@ static void wlan_hdd_pld_uevent(struct device *dev,
 static int wlan_hdd_pld_runtime_suspend(struct device *dev,
 					enum pld_bus_type bus_type)
 {
-	int errno;
-
-	errno = wlan_hdd_runtime_suspend(dev);
-
-	/* If it returns other errno to kernel, it will treat
-	 * it as critical issue, so all the future runtime
-	 * PM api will return error, pm runtime can't be work
-	 * anymore. Such case found in SSR.
-	 */
-	if (errno && errno != -EAGAIN && errno != -EBUSY)
-		errno = -EAGAIN;
-	return errno;
+	return wlan_hdd_runtime_suspend(dev);
 }
 
 /**

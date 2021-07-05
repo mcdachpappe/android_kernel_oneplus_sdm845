@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -379,11 +379,6 @@ struct tx_frame {
 	qdf_timer_t tx_timer;
 };
 
-enum tdls_configured_external_control {
-	TDLS_STRICT_EXTERNAL_CONTROL = 1,
-	TDLS_LIBERAL_EXTERNAL_CONTROL = 2,
-};
-
 /**
  * enum tdls_feature_bit
  * @TDLS_FEATURE_OFF_CHANNEL: tdls off channel
@@ -393,8 +388,7 @@ enum tdls_configured_external_control {
  * @TDLS_FEATURE_SCAN: tdls scan
  * @TDLS_FEATURE_ENABLE: tdls enabled
  * @TDLS_FEAUTRE_IMPLICIT_TRIGGER: tdls implicit trigger
- * @TDLS_FEATURE_EXTERNAL_CONTROL: enforce strict tdls external control
- * @TDLS_FEATURE_LIBERAL_EXTERNAL_CONTROL: liberal external tdls control
+ * @TDLS_FEATURE_EXTERNAL_CONTROL: tdls external control
  */
 enum tdls_feature_bit {
 	TDLS_FEATURE_OFF_CHANNEL,
@@ -404,8 +398,7 @@ enum tdls_feature_bit {
 	TDLS_FEATURE_SCAN,
 	TDLS_FEATURE_ENABLE,
 	TDLS_FEAUTRE_IMPLICIT_TRIGGER,
-	TDLS_FEATURE_EXTERNAL_CONTROL,
-	TDLS_FEATURE_LIBERAL_EXTERNAL_CONTROL,
+	TDLS_FEATURE_EXTERNAL_CONTROL
 };
 
 #define TDLS_IS_OFF_CHANNEL_ENABLED(flags) \
@@ -424,8 +417,6 @@ enum tdls_feature_bit {
 	CHECK_BIT(flags, TDLS_FEAUTRE_IMPLICIT_TRIGGER)
 #define TDLS_IS_EXTERNAL_CONTROL_ENABLED(flags) \
 	CHECK_BIT(flags, TDLS_FEATURE_EXTERNAL_CONTROL)
-#define TDLS_IS_LIBERAL_EXTERNAL_CONTROL_ENABLED(flags) \
-	CHECK_BIT(flags, TDLS_FEATURE_LIBERAL_EXTERNAL_CONTROL)
 
 /**
  * struct tdls_user_config - TDLS user configuration
@@ -446,7 +437,6 @@ enum tdls_feature_bit {
  * @tdls_pre_off_chan_num: tdls off channel number
  * @tdls_pre_off_chan_bw: tdls off channel bandwidth
  * @tdls_peer_kickout_threshold: sta kickout threshold for tdls peer
- * @tdls_discovery_wake_timeout: Discovery wake timeout
  * @delayed_trig_framint: delayed trigger frame interval
  * @tdls_vdev_nss_2g: tdls NSS setting for 2G band
  * @tdls_vdev_nss_5g: tdls NSS setting for 5G band
@@ -469,7 +459,6 @@ struct tdls_user_config {
 	uint32_t tdls_pre_off_chan_num;
 	uint32_t tdls_pre_off_chan_bw;
 	uint32_t tdls_peer_kickout_threshold;
-	uint32_t tdls_discovery_wake_timeout;
 	uint32_t delayed_trig_framint;
 	uint8_t tdls_vdev_nss_2g;
 	uint8_t tdls_vdev_nss_5g;
@@ -808,7 +797,6 @@ struct tdls_oper_config_force_peer_request {
  * @teardown_notification_ms: tdls teardown notification interval
  * @tdls_peer_kickout_threshold: tdls packets threshold
  *    for peer kickout operation
- * @tdls_discovery_wake_timeout: Discovery wake timeout
  */
 struct tdls_info {
 	uint32_t vdev_id;
@@ -826,7 +814,6 @@ struct tdls_info {
 	uint32_t puapsd_rx_frame_threshold;
 	uint32_t teardown_notification_ms;
 	uint32_t tdls_peer_kickout_threshold;
-	uint32_t tdls_discovery_wake_timeout;
 };
 
 /**

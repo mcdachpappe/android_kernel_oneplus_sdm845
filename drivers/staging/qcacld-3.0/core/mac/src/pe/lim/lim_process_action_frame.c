@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -85,12 +85,16 @@ void lim_stop_tx_and_switch_channel(tpAniSirGlobal pMac, uint8_t sessionId)
 		return;
 	}
 
+	pe_debug("Channel switch Mode: %d",
+		       psessionEntry->gLimChannelSwitch.switchMode);
+
 	if (psessionEntry->gLimChannelSwitch.switchMode ==
 	    eSIR_CHANSW_MODE_SILENT
 	    || psessionEntry->gLimChannelSwitch.switchCount <=
 	    SIR_CHANSW_TX_STOP_MAX_COUNT) {
 		/* Freeze the transmission */
 		lim_frame_transmission_control(pMac, eLIM_TX_ALL, eLIM_STOP_TX);
+
 	} else {
 		/* Resume the transmission */
 		lim_frame_transmission_control(pMac, eLIM_TX_ALL, eLIM_RESUME_TX);
@@ -1096,11 +1100,10 @@ static void __lim_process_qos_map_configure_frame(tpAniSirGlobal mac_ctx,
 		return;
 	}
 	lim_send_sme_mgmt_frame_ind(mac_ctx, mac_hdr->fc.subType,
-				    (uint8_t *)mac_hdr,
-				    frame_len + sizeof(tSirMacMgmtHdr), 0,
-				    WMA_GET_RX_CH(rx_pkt_info), session,
-				    WMA_GET_RX_RSSI_NORMALIZED(rx_pkt_info),
-				    RXMGMT_FLAG_NONE);
+			(uint8_t *) mac_hdr,
+			frame_len + sizeof(tSirMacMgmtHdr), 0,
+			WMA_GET_RX_CH(rx_pkt_info), session,
+			WMA_GET_RX_RSSI_NORMALIZED(rx_pkt_info));
 }
 
 #ifdef ANI_SUPPORT_11H
@@ -1311,8 +1314,7 @@ __lim_process_radio_measure_request(tpAniSirGlobal pMac, uint8_t *pRxPacketInfo,
 			 HIGH_SEQ_NUM_OFFSET) |
 			pHdr->seqControl.seqNumLo);
 	if (curr_seq_num == pMac->rrm.rrmPEContext.prev_rrm_report_seq_num &&
-	    (pMac->rrm.rrmPEContext.pCurrentReq[DEFAULT_RRM_IDX] ||
-	     pMac->rrm.rrmPEContext.pCurrentReq[DEFAULT_RRM_IDX + 1])) {
+	    pMac->rrm.rrmPEContext.pCurrentReq) {
 		pe_err("rrm report req frame, seq num: %d is already in progress, drop it",
 			curr_seq_num);
 		return;
@@ -1320,10 +1322,9 @@ __lim_process_radio_measure_request(tpAniSirGlobal pMac, uint8_t *pRxPacketInfo,
 	/* Save seq no of currently processing rrm report req frame */
 	pMac->rrm.rrmPEContext.prev_rrm_report_seq_num = curr_seq_num;
 	lim_send_sme_mgmt_frame_ind(pMac, pHdr->fc.subType, (uint8_t *)pHdr,
-				    frameLen + sizeof(tSirMacMgmtHdr), 0,
-				    WMA_GET_RX_CH(pRxPacketInfo), psessionEntry,
-				    WMA_GET_RX_RSSI_NORMALIZED(pRxPacketInfo),
-				    RXMGMT_FLAG_NONE);
+		frameLen + sizeof(tSirMacMgmtHdr), 0,
+		WMA_GET_RX_CH(pRxPacketInfo), psessionEntry,
+		WMA_GET_RX_RSSI_NORMALIZED(pRxPacketInfo));
 
 	frm = qdf_mem_malloc(sizeof(*frm));
 	if (frm == NULL) {
@@ -1342,8 +1343,8 @@ __lim_process_radio_measure_request(tpAniSirGlobal pMac, uint8_t *pRxPacketInfo,
 				   pBody, frameLen);
 		    goto err;
 	} else if (DOT11F_WARNED(nStatus)) {
-		pe_debug("Warnings while unpacking a Radio Measure request (0x%08x, %d bytes):",
-			 nStatus, frameLen);
+		pe_debug("There were warnings while unpacking a Radio Measure request (0x%08x, %d bytes):",
+			nStatus, frameLen);
 	}
 	/* Call rrm function to handle the request. */
 
@@ -1558,7 +1559,7 @@ static void __lim_process_sa_query_response_action_frame(tpAniSirGlobal pMac,
 					    WMA_GET_RX_CH(pRxPacketInfo),
 					    psessionEntry,
 					    WMA_GET_RX_RSSI_NORMALIZED(
-					    pRxPacketInfo), RXMGMT_FLAG_NONE);
+					    pRxPacketInfo));
 		return;
 	}
 
@@ -1971,16 +1972,6 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 		case SIR_MAC_WNM_BSS_TM_QUERY:
 		case SIR_MAC_WNM_BSS_TM_REQUEST:
 		case SIR_MAC_WNM_BSS_TM_RESPONSE:
-			if ((mac_ctx->roam.configParam.sta_disable_roam &
-			    LFR3_STA_ROAM_DISABLE_BY_P2P) &&
-			    session && LIM_IS_STA_ROLE(session) &&
-			    (policy_mgr_mode_specific_connection_count(
-				mac_ctx->psoc, PM_P2P_CLIENT_MODE, NULL) ||
-			     policy_mgr_mode_specific_connection_count(
-				mac_ctx->psoc, PM_P2P_GO_MODE, NULL))) {
-				pe_debug("p2p session active drop BTM frame");
-				break;
-			}
 		case SIR_MAC_WNM_NOTIF_REQUEST:
 		case SIR_MAC_WNM_NOTIF_RESPONSE:
 			rssi = WMA_GET_RX_RSSI_NORMALIZED(rx_pkt_info);
@@ -1992,7 +1983,7 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 					frame_len + sizeof(tSirMacMgmtHdr),
 					session->smeSessionId,
 					WMA_GET_RX_CH(rx_pkt_info),
-					session, rssi, RXMGMT_FLAG_NONE);
+					session, rssi);
 			break;
 		default:
 			pe_debug("Action ID: %d not handled in WNM category",
@@ -2082,7 +2073,7 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 					WMA_GET_RX_CH(rx_pkt_info),
 					session,
 					WMA_GET_RX_RSSI_NORMALIZED(
-					rx_pkt_info), RXMGMT_FLAG_NONE);
+					rx_pkt_info));
 		} else {
 			pe_debug("Dropping the vendor specific action frame"
 					"beacause of (WES Mode not enabled "
@@ -2141,7 +2132,7 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 					session->smeSessionId,
 					WMA_GET_RX_CH(rx_pkt_info), session,
 					WMA_GET_RX_RSSI_NORMALIZED(
-					rx_pkt_info), RXMGMT_FLAG_NONE);
+					rx_pkt_info));
 			break;
 		default:
 			pe_debug("Unhandled public action frame: %d",
@@ -2206,7 +2197,7 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 					    WMA_GET_RX_CH(rx_pkt_info),
 					    session,
 					    WMA_GET_RX_RSSI_NORMALIZED(
-					    rx_pkt_info), RXMGMT_FLAG_NONE);
+					    rx_pkt_info));
 		break;
 	}
 	case SIR_MAC_ACTION_PROT_DUAL_PUB:
@@ -2223,8 +2214,7 @@ void lim_process_action_frame(tpAniSirGlobal mac_ctx,
 				mac_hdr->fc.subType, (uint8_t *) mac_hdr,
 				frame_len + sizeof(tSirMacMgmtHdr),
 				session->smeSessionId,
-				WMA_GET_RX_CH(rx_pkt_info), session, rssi,
-				RXMGMT_FLAG_NONE);
+				WMA_GET_RX_CH(rx_pkt_info), session, rssi);
 			break;
 		default:
 			pe_debug("Unhandled - Protected Dual Public Action");
@@ -2328,8 +2318,7 @@ void lim_process_action_frame_no_session(tpAniSirGlobal pMac, uint8_t *pBd)
 					(uint8_t *) mac_hdr,
 					frame_len + sizeof(tSirMacMgmtHdr), 0,
 					WMA_GET_RX_CH(pBd), NULL,
-					WMA_GET_RX_RSSI_NORMALIZED(pBd),
-					RXMGMT_FLAG_NONE);
+					WMA_GET_RX_RSSI_NORMALIZED(pBd));
 			break;
 		default:
 			pe_warn("Unhandled public action frame: %x",

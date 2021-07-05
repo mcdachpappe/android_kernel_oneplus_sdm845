@@ -549,11 +549,9 @@ lim_indicate_probe_req_to_hdd(tpAniSirGlobal pMac, uint8_t *pBd,
 	lim_send_sme_mgmt_frame_ind(pMac, pHdr->fc.subType,
 				    (uint8_t *) pHdr,
 				    (frameLen + sizeof(tSirMacMgmtHdr)),
-				    psessionEntry->smeSessionId,
-				    WMA_GET_RX_CH(pBd),
+				    psessionEntry->smeSessionId, WMA_GET_RX_CH(pBd),
 				    psessionEntry,
-				    WMA_GET_RX_RSSI_NORMALIZED(pBd),
-				    RXMGMT_FLAG_NONE);
+				    WMA_GET_RX_RSSI_NORMALIZED(pBd));
 } /*** end lim_indicate_probe_req_to_hdd() ***/
 
 /**

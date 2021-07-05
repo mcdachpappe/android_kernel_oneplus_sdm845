@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -481,6 +481,8 @@ static int __wlan_hdd_cfg80211_scan(struct wiphy *wiphy,
 	struct scan_params params = {0};
 	struct wlan_objmgr_vdev *vdev;
 
+	hdd_enter();
+
 	if (cds_is_fw_down()) {
 		hdd_err("firmware is down, scan cmd cannot be processed");
 		return -EINVAL;
@@ -515,6 +517,10 @@ static int __wlan_hdd_cfg80211_scan(struct wiphy *wiphy,
 		schedule_work(&adapter->scan_block_work);
 		return 0;
 	}
+
+	hdd_debug("Device_mode %s(%d)",
+		hdd_device_mode_to_string(adapter->device_mode),
+		adapter->device_mode);
 
 	/*
 	 * IBSS vdev does not need to scan to establish
@@ -686,7 +692,7 @@ static int __wlan_hdd_cfg80211_scan(struct wiphy *wiphy,
 error:
 	if (params.default_ie.ptr)
 		qdf_mem_free(params.default_ie.ptr);
-
+	hdd_exit();
 	return status;
 }
 
@@ -1289,13 +1295,11 @@ static int __wlan_hdd_cfg80211_sched_scan_start(struct wiphy *wiphy,
 	struct hdd_context *hdd_ctx;
 	struct wlan_objmgr_vdev *vdev;
 	int ret;
-	enum QDF_GLOBAL_MODE curr_mode;
 
-	curr_mode = hdd_get_conparam();
+	hdd_enter();
 
-	if (QDF_GLOBAL_FTM_MODE == curr_mode ||
-	    QDF_GLOBAL_MONITOR_MODE == curr_mode) {
-		hdd_err_rl("Command not allowed in FTM/Monitor mode");
+	if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam()) {
+		hdd_err("Command not allowed in FTM mode");
 		return -EINVAL;
 	}
 
@@ -1406,13 +1410,11 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct net_device *dev)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	int errno;
-	enum QDF_GLOBAL_MODE curr_mode;
 
-	curr_mode = hdd_get_conparam();
+	hdd_enter();
 
-	if (QDF_GLOBAL_FTM_MODE == curr_mode ||
-	    QDF_GLOBAL_MONITOR_MODE == curr_mode) {
-		hdd_err_rl("Command not allowed in FTM/Monitor mode");
+	if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam()) {
+		hdd_err_rl("Command not allowed in FTM mode");
 		return -EINVAL;
 	}
 
@@ -1454,6 +1456,8 @@ static int __wlan_hdd_cfg80211_sched_scan_stop(struct net_device *dev)
 
 	errno = wlan_hdd_sched_scan_stop(dev);
 
+	hdd_exit();
+
 	return errno;
 }
 
@@ -1467,16 +1471,7 @@ int wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 	ret = __wlan_hdd_cfg80211_sched_scan_stop(dev);
 	cds_ssr_unprotect(__func__);
 
-	/* The return 0 is intentional. We observed a crash due to a return of
-	 * failure in sched_scan_stop , especially for a case where the unload
-	 * of the happens at the same time. The function
-	 * __cfg80211_stop_sched_scan was clearing rdev->sched_scan_req only
-	 * when the sched_scan_stop returns success. If it returns a failure ,
-	 * then its next invocation due to the clean up of the second interface
-	 * will have the dev pointer corresponding to the first one leading to
-	 * a crash.
-	 */
-	return 0;
+	return ret;
 }
 #else
 int wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
@@ -1489,16 +1484,7 @@ int wlan_hdd_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 	ret = __wlan_hdd_cfg80211_sched_scan_stop(dev);
 	cds_ssr_unprotect(__func__);
 
-	/* The return 0 is intentional. We observed a crash due to a return of
-	 * failure in sched_scan_stop , especially for a case where the unload
-	 * of the happens at the same time. The function
-	 * __cfg80211_stop_sched_scan was clearing rdev->sched_scan_req only
-	 * when the sched_scan_stop returns success. If it returns a failure ,
-	 * then its next invocation due to the clean up of the second interface
-	 * will have the dev pointer corresponding to the first one leading to
-	 * a crash.
-	 */
-	return 0;
+	return ret;
 }
 #endif /* KERNEL_VERSION(4, 12, 0) */
 #endif /*FEATURE_WLAN_SCAN_PNO */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -86,6 +86,8 @@ bool pmo_tgt_get_multiple_mc_filter_support(struct wlan_objmgr_vdev *vdev)
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 	struct wlan_objmgr_psoc *psoc;
 
+	pmo_enter();
+
 	psoc = pmo_vdev_get_psoc(vdev);
 
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
@@ -104,6 +106,8 @@ QDF_STATUS pmo_tgt_set_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
+	pmo_enter();
+
 	psoc = pmo_vdev_get_psoc(vdev);
 
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
@@ -118,6 +122,7 @@ QDF_STATUS pmo_tgt_set_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear multiple mc filter");
 out:
+	pmo_exit();
 
 	return status;
 }
@@ -128,6 +133,8 @@ QDF_STATUS pmo_tgt_clear_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
+
+	pmo_enter();
 
 	psoc = pmo_vdev_get_psoc(vdev);
 
@@ -143,6 +150,7 @@ QDF_STATUS pmo_tgt_clear_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear multiple mc filter");
 out:
+	pmo_exit();
 
 	return status;
 }

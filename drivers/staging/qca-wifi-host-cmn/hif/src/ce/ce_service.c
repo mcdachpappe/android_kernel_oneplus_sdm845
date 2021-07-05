@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -155,35 +155,6 @@ static void hif_ce_desc_data_record(struct hif_ce_desc_event *event, int len)
 }
 #endif
 
-#if defined(HIF_CONFIG_SLUB_DEBUG_ON) && defined(HIF_RECORD_RX_PADDR)
-/**
- * hif_ce_desc_record_rx_paddr() - record physical address for IOMMU
- * IOVA addr and MMU virtual addr for Rx
- * @scn: hif_softc
- * @event: structure detailing a ce event
- *
- * Record physical address for ce event type HIF_RX_DESC_POST and
- * HIF_RX_DESC_COMPLETION
- *
- * Return: none
- */
-void hif_ce_desc_record_rx_paddr(struct hif_softc *scn,
-				 struct hif_ce_desc_event *event)
-{
-	if (event->type != HIF_RX_DESC_POST &&
-	    event->type != HIF_RX_DESC_COMPLETION)
-		return;
-
-	if (event->descriptor.dest_desc.buffer_addr)
-		event->dma_to_phy = qdf_mem_paddr_from_dmaaddr(
-				scn->qdf_dev,
-				event->descriptor.dest_desc.buffer_addr);
-
-	if (event->memory)
-		event->virt_to_phy = virt_to_phys(qdf_nbuf_data(event->memory));
-}
-#endif
-
 /**
  * hif_record_ce_desc_event() - record ce descriptor events
  * @scn: hif_softc
@@ -235,8 +206,6 @@ void hif_record_ce_desc_event(struct hif_softc *scn, int ce_id,
 
 	event->memory = memory;
 	event->index = index;
-
-	hif_ce_desc_record_rx_paddr(scn, event);
 
 #if HIF_CE_DEBUG_DATA_BUF
 	if (ce_hist->data_enable[ce_id])
@@ -2751,34 +2720,6 @@ static void ce_prepare_shadow_register_v2_cfg_legacy(struct hif_softc *scn,
 	*shadow_config = NULL;
 }
 
-#ifdef HIF_CE_LOG_INFO
-/**
- * ce_get_index_info_legacy(): Get CE index info
- * @scn: HIF Context
- * @ce_state: CE opaque handle
- * @info: CE info
- *
- * Return: 0 for success and non zero for failure
- */
-static
-int ce_get_index_info_legacy(struct hif_softc *scn, void *ce_state,
-			     struct ce_index *info)
-{
-	struct CE_state *state = (struct CE_state *)ce_state;
-
-	info->id = state->id;
-	if (state->src_ring) {
-		info->u.legacy_info.sw_index = state->src_ring->sw_index;
-		info->u.legacy_info.write_index = state->src_ring->write_index;
-	} else if (state->dest_ring) {
-		info->u.legacy_info.sw_index = state->dest_ring->sw_index;
-		info->u.legacy_info.write_index = state->dest_ring->write_index;
-	}
-
-	return 0;
-}
-#endif
-
 struct ce_ops ce_service_legacy = {
 	.ce_get_desc_size = ce_get_desc_size_legacy,
 	.ce_ring_setup = ce_ring_setup_legacy,
@@ -2795,10 +2736,6 @@ struct ce_ops ce_service_legacy = {
 	.ce_send_entries_done_nolock = ce_send_entries_done_nolock_legacy,
 	.ce_prepare_shadow_register_v2_cfg =
 		ce_prepare_shadow_register_v2_cfg_legacy,
-#ifdef HIF_CE_LOG_INFO
-	.ce_get_index_info =
-		ce_get_index_info_legacy,
-#endif
 };
 
 

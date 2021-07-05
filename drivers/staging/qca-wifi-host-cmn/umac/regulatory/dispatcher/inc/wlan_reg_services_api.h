@@ -255,16 +255,6 @@ uint16_t wlan_reg_dmn_get_opclass_from_channel(uint8_t *country,
 					       uint8_t offset);
 
 /**
- * wlan_reg_dmn_print_channels_in_opclass() - Print channels in op-class
- * @country: country alpha2
- * @opclass: oplcass
- *
- * Return: void
- */
-void wlan_reg_dmn_print_channels_in_opclass(uint8_t *country,
-					    uint8_t opclass);
-
-/**
  * wlan_reg_dmn_get_chanwidth_from_opclass() - get channel width from
  *                                             operating class
  * @country: country alpha2
@@ -447,16 +437,6 @@ uint32_t wlan_reg_chan_to_freq(struct wlan_objmgr_pdev *pdev,
  *
  * Return: true or false
  */
-
-/**
- * wlan_reg_legacy_chan_to_freq () - convert chan to freq, for 2G and 5G
- * @chan: channel number
- *
- * Return: frequency
- */
-uint16_t wlan_reg_legacy_chan_to_freq(struct wlan_objmgr_pdev *pdev,
-				      uint8_t chan);
-
 bool wlan_reg_is_world(uint8_t *country);
 
 /**

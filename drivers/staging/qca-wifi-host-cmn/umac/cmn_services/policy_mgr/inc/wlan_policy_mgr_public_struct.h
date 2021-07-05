@@ -1008,7 +1008,6 @@ struct dual_mac_config {
  * Default is DBS for STA+STA and STA+P2P.
  * @sta_sap_scc_on_lte_coex_chan: Is STA+SAP SCC allowed on a
  *                              lte coex channel
- * @go_force_scc: Enable/Disable P2P GO force SCC
  * @enable_dfs_master_cap: Is DFS master capability enabled
  */
 struct policy_mgr_user_cfg {
@@ -1018,10 +1017,9 @@ struct policy_mgr_user_cfg {
 	bool enable2x2;
 	uint32_t mcc_to_scc_switch_mode;
 	bool sub_20_mhz_enabled;
-	uint32_t is_sta_sap_scc_allowed_on_dfs_chan;
+	bool is_sta_sap_scc_allowed_on_dfs_chan;
 	uint32_t channel_select_logic_conc;
 	uint32_t sta_sap_scc_on_lte_coex_chan;
-	uint32_t go_force_scc;
 	uint8_t enable_dfs_master_cap;
 };
 

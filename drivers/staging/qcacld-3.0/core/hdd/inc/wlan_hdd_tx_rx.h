@@ -184,29 +184,11 @@ void wlan_hdd_netif_queue_control(struct hdd_adapter *adapter,
 
 #ifdef FEATURE_MONITOR_MODE_SUPPORT
 int hdd_set_mon_rx_cb(struct net_device *dev);
-
-/**
- * hdd_mon_rx_packet_cbk() - Receive callback registered with OL layer.
- * @context: pointer to qdf context
- * @rxBuf: pointer to rx qdf_nbuf
- *
- * TL will call this to notify the HDD when one or more packets were
- * received for a registered STA.
- *
- * Return: QDF_STATUS
- */
-QDF_STATUS hdd_mon_rx_packet_cbk(void *context, qdf_nbuf_t rxbuf);
 #else
 static inline
 int hdd_set_mon_rx_cb(struct net_device *dev)
 {
 	return 0;
-}
-
-static inline
-QDF_STATUS hdd_mon_rx_packet_cbk(void *context, qdf_nbuf_t rxbuf)
-{
-	return QDF_STATUS_SUCCESS;
 }
 #endif
 
@@ -216,28 +198,10 @@ void wlan_hdd_classify_pkt(struct sk_buff *skb);
 
 #ifdef MSM_PLATFORM
 void hdd_reset_tcp_delack(struct hdd_context *hdd_ctx);
-
-/**
- * hdd_reset_tcp_adv_win_scale() - Reset tcp adv window scale value to default
- * @hdd_ctx: Handle to hdd context
- *
- * Function used to reset TCP advance window scale value to its default value
- *
- * Return: None
- */
-void hdd_reset_tcp_adv_win_scale(struct hdd_context *hdd_ctx);
-#ifdef RX_PERFORMANCE
 bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx);
-#else
-static inline bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
-{
-	return false;
-}
-#endif
 #define HDD_MSM_CFG(msm_cfg)	msm_cfg
 #else
 static inline void hdd_reset_tcp_delack(struct hdd_context *hdd_ctx) {}
-static inline void hdd_reset_tcp_adv_win_scale(struct hdd_context *hdd_ctx) {}
 static inline bool hdd_is_current_high_throughput(struct hdd_context *hdd_ctx)
 {
 	return false;

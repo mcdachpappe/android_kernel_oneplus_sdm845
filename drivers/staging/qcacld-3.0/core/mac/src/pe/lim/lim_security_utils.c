@@ -320,17 +320,6 @@ void lim_add_pre_auth_node(tpAniSirGlobal pMac, struct tLimPreAuthNode *pAuthNod
 void lim_release_pre_auth_node(tpAniSirGlobal pMac, tpLimPreAuthNode pAuthNode)
 {
 	pAuthNode->fFree = 1;
-	if (pAuthNode->authType == eSIR_AUTH_TYPE_SAE &&
-	    pAuthNode->assoc_req.present) {
-		tpSirAssocReq assoc =
-			 (tpSirAssocReq)pAuthNode->assoc_req.assoc_req;
-
-		if (assoc->assocReqFrameLength)
-			qdf_mem_free(assoc->assocReqFrame);
-		qdf_mem_free(assoc);
-		pAuthNode->assoc_req.assoc_req = NULL;
-		pAuthNode->assoc_req.present = false;
-	}
 	MTRACE(mac_trace
 		       (pMac, TRACE_CODE_TIMER_DEACTIVATE, NO_SESSION,
 		       eLIM_PRE_AUTH_CLEANUP_TIMER));
@@ -377,8 +366,9 @@ void lim_delete_pre_auth_node(tpAniSirGlobal pMac, tSirMacAddr macAddr)
 
 		pMac->lim.pLimPreAuthList = pTempNode->next;
 
-		pe_debug("fRelease data for %d peer %pM",
-			 pTempNode->authNodeIdx, macAddr);
+		pe_debug("first node to delete, Release data entry: %pK id %d peer",
+			       pTempNode, pTempNode->authNodeIdx);
+		lim_print_mac_addr(pMac, macAddr, LOGD);
 		lim_release_pre_auth_node(pMac, pTempNode);
 
 		return;

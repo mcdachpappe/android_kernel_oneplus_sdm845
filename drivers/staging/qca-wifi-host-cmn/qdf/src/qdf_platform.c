@@ -58,11 +58,10 @@ void qdf_register_self_recovery_callback(qdf_self_recovery_callback callback)
 
 qdf_export_symbol(qdf_register_self_recovery_callback);
 
-void __qdf_trigger_self_recovery(void *psoc, enum qdf_hang_reason reason,
-				 const char *func, const uint32_t line)
+void __qdf_trigger_self_recovery(const char *func, const uint32_t line)
 {
 	if (self_recovery_cb)
-		self_recovery_cb(psoc, reason, func, line);
+		self_recovery_cb(QDF_REASON_UNSPECIFIED, func, line);
 }
 
 qdf_export_symbol(__qdf_trigger_self_recovery);

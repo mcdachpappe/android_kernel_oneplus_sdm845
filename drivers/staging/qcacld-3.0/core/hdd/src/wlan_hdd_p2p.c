@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -48,7 +48,6 @@
 #include "wlan_p2p_ucfg_api.h"
 #include "wlan_cfg80211_p2p.h"
 #include "wlan_hdd_object_manager.h"
-#include "wlan_pkt_capture_ucfg_api.h"
 
 /* Ms to Time Unit Micro Sec */
 #define MS_TO_TU_MUS(x)   ((x) * 1024)
@@ -249,8 +248,7 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	 * Where as wlan_cfg80211_mgmt_tx requires roc and requires approval
 	 * from policy manager.
 	 */
-	if ((adapter->device_mode == QDF_STA_MODE ||
-	     adapter->device_mode == QDF_SAP_MODE) &&
+	if ((adapter->device_mode == QDF_STA_MODE) &&
 	    (type == SIR_MAC_MGMT_FRAME &&
 	    sub_type == SIR_MAC_MGMT_AUTH)) {
 		qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_SME,
@@ -646,9 +644,6 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 	if (0 != ret)
 		return ERR_PTR(ret);
 
-	if (wlan_hdd_check_mon_concurrency())
-		return ERR_PTR(-EINVAL);
-
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
 		   TRACE_CODE_HDD_ADD_VIRTUAL_INTF, NO_SESSION, type);
 	/*
@@ -675,24 +670,11 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 			wlan_abort_scan(hdd_ctx->pdev, INVAL_PDEV_ID,
 					adapter->session_id, INVALID_SCAN_ID,
 					false);
+			hdd_debug("Abort Scan while adding virtual interface");
 		}
 
 		if (vdev)
 			hdd_objmgr_put_vdev(vdev);
-	}
-
-	adapter = NULL;
-	if ((ucfg_pkt_capture_get_mode(hdd_ctx->psoc)) &&
-	    (type == NL80211_IFTYPE_MONITOR)) {
-		ret = wlan_hdd_add_monitor_check(hdd_ctx, &adapter, name,
-						 true, name_assign_type);
-		if (ret)
-			return ERR_PTR(-EINVAL);
-
-		if (adapter) {
-			hdd_exit();
-			return adapter->dev->ieee80211_ptr;
-		}
 	}
 
 	if (session_type == QDF_SAP_MODE) {
@@ -875,9 +857,6 @@ int __wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	if (adapter->device_mode == QDF_SAP_MODE &&
 	    wlan_sap_is_pre_cac_active(hdd_ctx->mac_handle)) {
 		hdd_clean_up_pre_cac_interface(hdd_ctx);
-	} else if (wlan_hdd_is_session_type_monitor(
-					adapter->device_mode)) {
-		wlan_hdd_del_monitor(hdd_ctx, adapter, TRUE);
 	} else {
 		wlan_hdd_release_intf_addr(hdd_ctx,
 					   adapter->mac_addr.bytes);
@@ -923,59 +902,16 @@ hdd_is_qos_action_frame(uint8_t *pb_frames, uint32_t frame_len)
 		 WLAN_HDD_QOS_MAP_CONFIGURE));
 }
 
-#if defined(WLAN_FEATURE_SAE) && defined(CFG80211_EXTERNAL_AUTH_AP_SUPPORT)
-/**
- * wlan_hdd_set_rxmgmt_external_auth_flag() - Set the EXTERNAL_AUTH flag
- * @nl80211_flag: flags to be sent to nl80211 from enum nl80211_rxmgmt_flags
- *
- * Set the flag NL80211_RXMGMT_FLAG_EXTERNAL_AUTH if supported.
- */
-static void
-wlan_hdd_set_rxmgmt_external_auth_flag(enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-	*nl80211_flag |= NL80211_RXMGMT_FLAG_EXTERNAL_AUTH;
-}
-#else
-static void
-wlan_hdd_set_rxmgmt_external_auth_flag(enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-}
-#endif
-
-/**
- * wlan_hdd_cfg80211_convert_rxmgmt_flags() - Convert RXMGMT value
- * @nl80211_flag: Flags to be sent to nl80211 from enum nl80211_rxmgmt_flags
- * @flag: flags set by driver(SME/PE) from enum rxmgmt_flags
- *
- * Convert driver internal RXMGMT flag value to nl80211 defined RXMGMT flag
- * Return: 0 on success, -EINVAL on invalid value
- */
-static int
-wlan_hdd_cfg80211_convert_rxmgmt_flags(enum rxmgmt_flags flag,
-				       enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-	int ret = -EINVAL;
-
-	if (flag & RXMGMT_FLAG_EXTERNAL_AUTH) {
-		wlan_hdd_set_rxmgmt_external_auth_flag(nl80211_flag);
-		ret = 0;
-	}
-
-	return ret;
-}
-
 void __hdd_indicate_mgmt_frame(struct hdd_adapter *adapter,
 			     uint32_t frm_len,
 			     uint8_t *pb_frames,
-			     uint8_t frameType, uint32_t rxChan,
-			     int8_t rxRssi, enum rxmgmt_flags rx_flags)
+			     uint8_t frameType, uint32_t rxChan, int8_t rxRssi)
 {
 	uint16_t freq;
 	uint8_t type = 0;
 	uint8_t subType = 0;
 	struct hdd_context *hdd_ctx;
 	uint8_t *dest_addr;
-	enum nl80211_rxmgmt_flags nl80211_flag = 0;
 
 	hdd_debug("Frame Type = %d Frame Length = %d",
 		frameType, frm_len);
@@ -1051,10 +987,10 @@ void __hdd_indicate_mgmt_frame(struct hdd_adapter *adapter,
 	/* Indicate an action frame. */
 	if (rxChan <= MAX_NO_OF_2_4_CHANNELS)
 		freq = ieee80211_channel_to_frequency(rxChan,
-						      HDD_NL80211_BAND_2GHZ);
+						      NL80211_BAND_2GHZ);
 	else
 		freq = ieee80211_channel_to_frequency(rxChan,
-						      HDD_NL80211_BAND_5GHZ);
+						      NL80211_BAND_5GHZ);
 
 	if (hdd_is_qos_action_frame(pb_frames, frm_len))
 		sme_update_dsc_pto_up_mapping(hdd_ctx->mac_handle,
@@ -1065,14 +1001,10 @@ void __hdd_indicate_mgmt_frame(struct hdd_adapter *adapter,
 	hdd_debug("Indicate Frame over NL80211 sessionid : %d, idx :%d",
 		   adapter->session_id, adapter->dev->ifindex);
 
-	if (wlan_hdd_cfg80211_convert_rxmgmt_flags(rx_flags, &nl80211_flag))
-		hdd_debug("Failed to convert RXMGMT flags :0x%x to nl80211 "
-			  "format", rx_flags);
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
 	cfg80211_rx_mgmt(adapter->dev->ieee80211_ptr,
 		 freq, rxRssi * 100, pb_frames,
-			 frm_len, NL80211_RXMGMT_FLAG_ANSWERED | nl80211_flag);
+			 frm_len, NL80211_RXMGMT_FLAG_ANSWERED);
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0))
 	cfg80211_rx_mgmt(adapter->dev->ieee80211_ptr,
 			freq, rxRssi * 100, pb_frames,
@@ -1387,8 +1319,6 @@ int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter,
 	int32_t ret = 0;
 	uint32_t concurrent_state;
 	struct hdd_context *hdd_ctx;
-	uint32_t sta_cli_bit_mask = QDF_STA_MASK | QDF_P2P_CLIENT_MASK;
-	uint32_t sta_go_bit_mask = QDF_STA_MASK | QDF_P2P_GO_MASK;
 
 	if (!adapter) {
 		hdd_err("Invalid adapter");
@@ -1406,8 +1336,9 @@ int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter,
 	 * Check if concurrency mode is active.
 	 * Need to modify this code to support MCC modes other than STA/P2P
 	 */
-	if (((concurrent_state & sta_cli_bit_mask) == sta_cli_bit_mask) ||
-	    ((concurrent_state & sta_go_bit_mask) == sta_go_bit_mask)) {
+	if ((concurrent_state ==
+	     (QDF_STA_MASK | QDF_P2P_CLIENT_MASK)) ||
+	    (concurrent_state == (QDF_STA_MASK | QDF_P2P_GO_MASK))) {
 		hdd_info("STA & P2P are both enabled");
 
 		/*
@@ -1423,6 +1354,7 @@ int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter,
 
 		set_value = set_first_connection_operating_channel(
 			hdd_ctx, set_value, adapter->device_mode);
+
 
 		set_value = set_second_connection_operating_channel(
 			hdd_ctx, set_value, adapter->session_id);
@@ -1446,8 +1378,6 @@ void wlan_hdd_set_mcc_latency(struct hdd_adapter *adapter, int set_value)
 {
 	uint32_t concurrent_state;
 	struct hdd_context *hdd_ctx;
-	uint32_t sta_cli_bit_mask = QDF_STA_MASK | QDF_P2P_CLIENT_MASK;
-	uint32_t sta_go_bit_mask = QDF_STA_MASK | QDF_P2P_GO_MASK;
 
 	if (!adapter) {
 		hdd_err("Invalid adapter");
@@ -1466,8 +1396,9 @@ void wlan_hdd_set_mcc_latency(struct hdd_adapter *adapter, int set_value)
 	 * Check if concurrency mode is active.
 	 * Need to modify this code to support MCC modes other than STA/P2P
 	 */
-	if (((concurrent_state & sta_cli_bit_mask) == sta_cli_bit_mask) ||
-	    ((concurrent_state & sta_go_bit_mask) == sta_go_bit_mask)) {
+	if ((concurrent_state ==
+	     (QDF_STA_MASK | QDF_P2P_CLIENT_MASK)) ||
+	    (concurrent_state == (QDF_STA_MASK | QDF_P2P_GO_MASK))) {
 		hdd_info("STA & P2P are both enabled");
 		/*
 		 * The channel number and latency are formatted in

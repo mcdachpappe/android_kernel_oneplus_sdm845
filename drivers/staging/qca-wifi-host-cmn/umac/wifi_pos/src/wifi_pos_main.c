@@ -233,9 +233,8 @@ static void wifi_update_channel_bw_info(struct wlan_objmgr_psoc *psoc,
 	wlan_reg_set_channel_params(pdev, chan, sec_ch_2g, &ch_params);
 	if (ch_params.center_freq_seg0)
 		chan_info->band_center_freq1 =
-			wlan_reg_legacy_chan_to_freq(
-						pdev,
-						ch_params.center_freq_seg0);
+			wlan_reg_get_channel_freq(pdev,
+						  ch_params.center_freq_seg0);
 
 	wifi_pos_psoc->wifi_pos_get_phy_mode(chan, ch_params.ch_width,
 					     &phy_mode);
@@ -404,10 +403,8 @@ static QDF_STATUS wifi_pos_process_app_reg_req(struct wlan_objmgr_psoc *psoc,
 	}
 
 	wifi_pos_debug("Valid App Req Req from pid(%d)", req->pid);
-	qdf_spin_lock_bh(&wifi_pos_obj->wifi_pos_lock);
 	wifi_pos_obj->is_app_registered = true;
 	wifi_pos_obj->app_pid = req->pid;
-	qdf_spin_unlock_bh(&wifi_pos_obj->wifi_pos_lock);
 
 	vdev_idx = 0;
 	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -204,8 +204,7 @@ void lim_update_short_slot_time(tpAniSirGlobal pMac, tSirMacAddr peerMacAddr,
 void lim_send_sme_mgmt_frame_ind(tpAniSirGlobal mac_ctx, uint8_t frame_type,
 				 uint8_t *frame, uint32_t frame_len,
 				 uint16_t session_id, uint32_t rx_channel,
-				 tpPESession psession_entry, int8_t rx_rssi,
-				 enum rxmgmt_flags rx_flags);
+				 tpPESession psession_entry, int8_t rx_rssi);
 
 /*
  * lim_deactivate_timers() - Function to deactivate lim timers
@@ -1472,20 +1471,5 @@ static inline void lim_set_peer_twt_cap(tpPESession session,
 {
 }
 #endif
-
-struct wlan_ies *
-hdd_get_self_disconnect_ies(tpAniSirGlobal mac_ctx, uint8_t vdev_id);
-
-void hdd_free_self_disconnect_ies(tpAniSirGlobal mac_ctx, uint8_t vdev_id);
-
-/**
- * lim_is_sha384_akm() - Function to check if the negotiated AKM for the
- * current session is based on sha384 key derivation function.
- * @mac_ctx: pointer to mac data
- * @akm: negotiated AKM for the current session
- *
- * Return: true if akm is sha384 based kdf or false
- */
-bool lim_is_sha384_akm(enum ani_akm_type akm);
 
 #endif /* __LIM_UTILS_H */

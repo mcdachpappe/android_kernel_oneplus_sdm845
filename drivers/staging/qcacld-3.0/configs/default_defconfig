@@ -18,7 +18,6 @@ endif
 
 ifdef CONFIG_ICNSS
 	CONFIG_ROME_IF = snoc
-	CONFIG_QCA_WIFI_SDIO := n
 endif
 
 ifeq (y,$(findstring y,$(CONFIG_CNSS) $(CONFIG_CNSS2)))
@@ -67,19 +66,11 @@ ifeq ($(CONFIG_ARCH_MSM8917), y)
 	endif
 endif
 
-ifeq (y,$(findstring y,$(CONFIG_ARCH_QCS405) $(CONFIG_ARCH_QCS403)))
-	CONFIG_ARCH_QCS40X := y
-endif
-
-ifeq ($(CONFIG_ARCH_QCS40X), y)
+ifeq ($(CONFIG_ARCH_QCS405), y)
 	CONFIG_WLAN_SYNC_TSF_PLUS := y
 	CONFIG_WLAN_SYNC_TSF_PLUS_NOIRQ := y
 	CONFIG_RX_PERFORMANCE := y
 	CONFIG_TGT_NUM_MSDU_DESC := 900
-	CONFIG_MULTI_IF_LOG := y
-	CONFIG_DFS_PRI_MULTIPLIER := y
-	CONFIG_DFS_OVERRIDE_RF_THRESHOLD := y
-	CONFIG_RX_THREAD_PRIORITY := y
 endif
 
 #Flag to enable Legacy Fast Roaming2(LFR2)
@@ -109,11 +100,19 @@ CONFIG_QCACLD_FEATURE_COEX_CONFIG := y
 endif
 
 #Flag to enable get hw capability
-ifeq ($(CONFIG_ARCH_QCS40X), y)
+ifeq ($(CONFIG_ARCH_QCS405), y)
 CONFIG_QCACLD_FEATURE_HW_CAPABILITY := y
 endif
 
 ifeq ($(CONFIG_ARCH_MSM8998), y)
+CONFIG_QCACLD_FEATURE_METERING := y
+endif
+
+ifeq ($(CONFIG_ARCH_SDM660), y)
+CONFIG_QCACLD_FEATURE_METERING := y
+endif
+
+ifeq ($(CONFIG_ARCH_SDM630), y)
 CONFIG_QCACLD_FEATURE_METERING := y
 endif
 
@@ -125,7 +124,11 @@ ifeq ($(CONFIG_ARCH_SM8150), y)
 CONFIG_QCACLD_FEATURE_METERING := y
 endif
 
-ifeq ($(CONFIG_HELIUMPLUS), y)
+ifeq ($(CONFIG_ARCH_SDM670), y)
+CONFIG_QCACLD_FEATURE_METERING := y
+endif
+
+ifeq ($(CONFIG_ARCH_SM6150), y)
 CONFIG_QCACLD_FEATURE_METERING := y
 endif
 
@@ -134,12 +137,6 @@ CONFIG_QCOM_VOWIFI_11R := y
 
 #Flag to enable disable ACTION OUI feature
 CONFIG_WLAN_FEATURE_ACTION_OUI := y
-
-#Flag to enable Adaptive 11r feature
-CONFIG_ADAPTIVE_11R := y
-
-#Flag to enable sae single pmk feature
-CONFIG_SAE_SINGLE_PMK := y
 
 #Flag to enable FILS Feature (11ai)
 CONFIG_WLAN_FEATURE_FILS := y
@@ -232,7 +229,7 @@ ifeq ($(CONFIG_ROME_IF), snoc)
 	CONFIG_WLAN_TX_FLOW_CONTROL_V2 := y
 endif
 
-ifeq ($(CONFIG_ARCH_QCS40X), y)
+ifeq ($(CONFIG_ARCH_QCS405), y)
 CONFIG_WLAN_TX_FLOW_CONTROL_V2 := n
 # Flag to improve TCP TX throughput for both
 # CONFIG_WLAN_TX_FLOW_CONTROL_LEGACY and CONFIG_WLAN_TX_FLOW_CONTROL_V2
@@ -303,7 +300,6 @@ CONFIG_DP_LFR := y
 CONFIG_HTT_PADDR64 := y
 CONFIG_RX_OL := y
 CONFIG_TX_TID_OVERRIDE := y
-CONFIG_WLAN_CLD_PM_QOS := y
 endif
 
 #Enable WLAN/Power debugfs feature only if debug_fs is enabled
@@ -344,10 +340,10 @@ else
 endif
 
 # Compile all log levels by default
-CONFIG_WLAN_LOG_FATAL := n
-CONFIG_WLAN_LOG_ERROR := n
-CONFIG_WLAN_LOG_WARN := n
-CONFIG_WLAN_LOG_INFO := n
+CONFIG_WLAN_LOG_FATAL := y
+CONFIG_WLAN_LOG_ERROR := y
+CONFIG_WLAN_LOG_WARN := y
+CONFIG_WLAN_LOG_INFO := y
 
 #Enable OL debug and wmi unified functions
 CONFIG_ATH_PERF_PWR_OFFLOAD := y
@@ -405,8 +401,8 @@ CONFIG_WLAN_OPEN_P2P_INTERFACE := y
 CONFIG_WLAN_ENABLE_SOCIAL_CHANNELS_5G_ONLY := y
 endif
 
-#enable 4addr support for QCS40X
-ifeq ($(CONFIG_ARCH_QCS40X), y)
+#enable 4addr support for QCS405
+ifeq ($(CONFIG_ARCH_QCS405), y)
 CONFIG_FEATURE_WLAN_STA_4ADDR_SCHEME := y
 endif
 
@@ -418,16 +414,6 @@ CONFIG_ATH_SUPPORT_FLOWMAC_MODULE := n
 
 #Enable spectral support
 CONFIG_ATH_SUPPORT_SPECTRAL := n
-
-#Customize DSCP_to-UP map based on RFC8325
-ifeq ($(CONFIG_HELIUMPLUS), y)
-CONFIG_WLAN_CUSTOM_DSCP_UP_MAP := y
-CONFIG_WLAN_SEND_DSCP_UP_MAP_TO_FW := y
-endif
-
-ifeq ($(CONFIG_ARCH_BENGAL), y)
-CONFIG_SMMU_S1_UNMAP := y
-endif
 
 #Enable WDI Event support
 ifeq ($(CONFIG_REMOVE_PKT_LOG), y)
@@ -480,15 +466,33 @@ CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
 endif
 endif
 
-ifeq ($(CONFIG_HELIUMPLUS), y)
-ifneq ($(CONFIG_ARCH_SDM630), y)
-ifneq ($(CONFIG_ARCH_SDM660), y)
-ifneq ($(CONFIG_ARCH_MSM8998), y)
+ifeq ($(CONFIG_ARCH_SDMMAGPIE), y)
 ifeq ($(CONFIG_IPA_OFFLOAD), y)
 CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
 endif
 endif
+
+ifeq ($(CONFIG_ARCH_LITO), y)
+ifeq ($(CONFIG_IPA_OFFLOAD), y)
+CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
 endif
+endif
+
+ifeq ($(CONFIG_ARCH_ATOLL), y)
+ifeq ($(CONFIG_IPA_OFFLOAD), y)
+CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
+endif
+endif
+
+ifeq ($(CONFIG_ARCH_TRINKET), y)
+ifeq ($(CONFIG_IPA_OFFLOAD), y)
+CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
+endif
+endif
+
+ifeq ($(CONFIG_ARCH_SM6150), y)
+ifeq ($(CONFIG_IPA_OFFLOAD), y)
+CONFIG_ENABLE_SMMU_S1_TRANSLATION := y
 endif
 endif
 
@@ -533,13 +537,6 @@ CONFIG_WLAN_WBUFF := y
 #Flag to enable set and get disable channel list feature
 CONFIG_DISABLE_CHANNEL_LIST :=y
 
-#Flag to enable beacon receive feature
-CONFIG_WLAN_BCN_RECV_FEATURE := y
-
-#Flag to enable SAR Safety Feature
-CONFIG_SAR_SAFETY_FEATURE := y
-
-
 CONFIG_WIFI_POS_CONVERGED := y
 ifneq ($(CONFIG_WIFI_POS_CONVERGED), y)
 CONFIG_WIFI_POS_LEGACY := y
@@ -575,7 +572,7 @@ CONFIG_CONVERGED_TDLS_ENABLE := y
 CONFIG_WLAN_CONV_SPECTRAL_ENABLE := y
 CONFIG_WLAN_SPECTRAL_ENABLE := y
 CONFIG_WMI_CMD_STRINGS := y
-CONFIG_FEATURE_MONITOR_MODE_SUPPORT := y
+CONFIG_FEATURE_MONITOR_MODE_SUPPORT := n
 CONFIG_DESC_DUP_DETECT_DEBUG := n
 CONFIG_DEBUG_RX_RING_BUFFER := n
 CONFIG_WLAN_FEATURE_TWT := y
@@ -627,21 +624,3 @@ CONFIG_FEATURE_BECN_STATS := n
 ifeq ($(CONFIG_ARCH_QCS405), y)
 CONFIG_QCACLD_FEATURE_MPTA_HELPER := y
 endif
-
-#Enable support to get ANI level
-CONFIG_ANI_LEVEL_REQUEST := y
-
-#Enable OEM DATA feature
-CONFIG_FEATURE_OEM_DATA := y
-
-ifeq ($(CONFIG_ARCH_QCS405), y)
-ifeq ($(CONFIG_CNSS_TIMESYNC), y)
-CONFIG_FEATURE_WLAN_TIME_SYNC_FTM := y
-endif
-endif
-
-ifeq ($(CONFIG_ARCH_SDM660), y)
-CONFIG_WLAN_FEATURE_PKT_CAPTURE := y
-endif
-
-CONFIG_WLAN_HANG_EVENT := n

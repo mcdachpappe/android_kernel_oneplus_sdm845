@@ -24,7 +24,7 @@
   @brief Auto-generated HWIO interface include file.
 
   Reference chip release:
-    QCN90xx (Pine) [PINE_TOP_P3_R34_2019_08_30_JSON]
+    QCN90xx (Pine) [PINE_TOP_P2_R14_2019_05_17]
  
   This file contains HWIO register definitions for the following modules:
     CE_.*
@@ -67,7 +67,7 @@
 /*----------------------------------------------------------------------------
  * MODULE: WFSS_CE_0_CHANNEL_SRC_REG
  *--------------------------------------------------------------------------*/
-#define CE_WFSS_CE_REG_BASE 0x1B80000
+#include "msmhwioreg.h"
 #define SEQ_WCSS_UMAC_WFSS_CE_0_REG_WFSS_CE_0_CHANNEL_SRC_REG_OFFSET 0x1B80000
 #define SEQ_WCSS_UMAC_WFSS_CE_0_REG_WFSS_CE_0_CHANNEL_DST_REG_OFFSET 0x1B81000
 #define SEQ_WCSS_UMAC_WFSS_CE_0_REG_WFSS_CE_1_CHANNEL_SRC_REG_OFFSET 0x1B82000
@@ -15041,33 +15041,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_GXI_RD_ERR_STALL_DISABLE_IX_1_VALUE_BMSK                                          0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_GXI_RD_ERR_STALL_DISABLE_IX_1_VALUE_SHFT                                                 0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ADDR(x)                                                    ((x) + 0x0000004c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_PHYS(x)                                                    ((x) + 0x0000004c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_OFFS                                                       (0x0000004c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RMSK                                                           0x9f9f
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_POR                                                        0x00000000
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_POR_RMSK                                                   0xffffffff
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ATTR                                                              0x3
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_IN(x)      \
-        in_dword_masked(HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ADDR(x), HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RMSK)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_INM(x, m)      \
-        in_dword_masked(HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ADDR(x), m)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_OUT(x, v)      \
-        out_dword(HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ADDR(x),v)
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_OUTM(x,m,v) \
-        out_dword_masked_ns(HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_ADDR(x),m,v,HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_IN(x))
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_WR_OVR_EN_BMSK                                                 0x8000
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_WR_OVR_EN_SHFT                                                    0xf
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_WR_OVR_CNT_BMSK                                                0x1f00
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_WR_OVR_CNT_SHFT                                                   0x8
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RD_OVR_EN_BMSK                                                   0x80
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RD_OVR_EN_SHFT                                                    0x7
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RD_OVR_CNT_BMSK                                                  0x1f
-#define HWIO_WFSS_CE_COMMON_R0_CE_GXI_AXI_OUTSANDING_CTL_RD_OVR_CNT_SHFT                                                   0x0
-
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_ADDR(x)                                                                 ((x) + 0x00000050)
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_PHYS(x)                                                                 ((x) + 0x00000050)
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_OFFS                                                                    (0x00000050)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_ADDR(x)                                                                 ((x) + 0x0000004c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_PHYS(x)                                                                 ((x) + 0x0000004c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_OFFS                                                                    (0x0000004c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_RMSK                                                                     0x1ffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_POR                                                                     0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_POR_RMSK                                                                0xffffffff
@@ -15087,9 +15063,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_SRC_RING_IE_BMSK                                                             0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_0_SRC_RING_IE_SHFT                                                               0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_ADDR(x)                                                                 ((x) + 0x00000054)
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_PHYS(x)                                                                 ((x) + 0x00000054)
-#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_OFFS                                                                    (0x00000054)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_ADDR(x)                                                                 ((x) + 0x00000050)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_PHYS(x)                                                                 ((x) + 0x00000050)
+#define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_OFFS                                                                    (0x00000050)
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_RMSK                                                                         0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_POR                                                                     0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_POR_RMSK                                                                0xffffffff
@@ -15105,9 +15081,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_STS_RING_IE_BMSK                                                             0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_HOST_IE_1_STS_RING_IE_SHFT                                                               0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_ADDR(x)                                                                  ((x) + 0x00000058)
-#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_PHYS(x)                                                                  ((x) + 0x00000058)
-#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_OFFS                                                                     (0x00000058)
+#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_ADDR(x)                                                                  ((x) + 0x00000054)
+#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_PHYS(x)                                                                  ((x) + 0x00000054)
+#define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_OFFS                                                                     (0x00000054)
 #define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_RMSK                                                                       0xffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_POR                                                                      0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_POR_RMSK                                                                 0xffffffff
@@ -15125,9 +15101,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_SRC_BMSK                                                                      0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_SECURITY_SRC_SHFT                                                                        0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_ADDR(x)                                                               ((x) + 0x0000005c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_PHYS(x)                                                               ((x) + 0x0000005c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_OFFS                                                                  (0x0000005c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_ADDR(x)                                                               ((x) + 0x00000058)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_PHYS(x)                                                               ((x) + 0x00000058)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_OFFS                                                                  (0x00000058)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_RMSK                                                                   0x1ffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_POR_RMSK                                                              0xffffffff
@@ -15147,9 +15123,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_SRC_RING_IE_BMSK                                                           0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_0_SRC_RING_IE_SHFT                                                             0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_ADDR(x)                                                               ((x) + 0x00000060)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_PHYS(x)                                                               ((x) + 0x00000060)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_OFFS                                                                  (0x00000060)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_ADDR(x)                                                               ((x) + 0x0000005c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_PHYS(x)                                                               ((x) + 0x0000005c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_OFFS                                                                  (0x0000005c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_RMSK                                                                       0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_POR_RMSK                                                              0xffffffff
@@ -15165,9 +15141,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_STS_RING_IE_BMSK                                                           0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TARGET_IE_1_STS_RING_IE_SHFT                                                             0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_ADDR(x)                                                      ((x) + 0x00000064)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_PHYS(x)                                                      ((x) + 0x00000064)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_OFFS                                                         (0x00000064)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_ADDR(x)                                                      ((x) + 0x00000060)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_PHYS(x)                                                      ((x) + 0x00000060)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_OFFS                                                         (0x00000060)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_RMSK                                                         0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_POR                                                          0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_POR_RMSK                                                     0xffffffff
@@ -15183,9 +15159,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_SEED_0_BMSK                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_0_SEED_0_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_ADDR(x)                                                      ((x) + 0x00000068)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_PHYS(x)                                                      ((x) + 0x00000068)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_OFFS                                                         (0x00000068)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_ADDR(x)                                                      ((x) + 0x00000064)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_PHYS(x)                                                      ((x) + 0x00000064)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_OFFS                                                         (0x00000064)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_RMSK                                                         0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_POR                                                          0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_POR_RMSK                                                     0xffffffff
@@ -15201,9 +15177,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_SEED_1_BMSK                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_1_SEED_1_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_ADDR(x)                                                      ((x) + 0x0000006c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_PHYS(x)                                                      ((x) + 0x0000006c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_OFFS                                                         (0x0000006c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_ADDR(x)                                                      ((x) + 0x00000068)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_PHYS(x)                                                      ((x) + 0x00000068)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_OFFS                                                         (0x00000068)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_RMSK                                                                0x1
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_POR                                                          0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_POR_RMSK                                                     0xffffffff
@@ -15219,9 +15195,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_SEED_2_BMSK                                                         0x1
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_LFSR_SEED_2_SEED_2_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_ADDR(x)                                                           ((x) + 0x00000070)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_PHYS(x)                                                           ((x) + 0x00000070)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_OFFS                                                              (0x00000070)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_ADDR(x)                                                           ((x) + 0x0000006c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_PHYS(x)                                                           ((x) + 0x0000006c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_OFFS                                                              (0x0000006c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_RMSK                                                              0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_POR                                                               0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_POR_RMSK                                                          0xffffffff
@@ -15237,9 +15213,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_POLY_0_BMSK                                                       0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_0_POLY_0_SHFT                                                              0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_ADDR(x)                                                           ((x) + 0x00000074)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_PHYS(x)                                                           ((x) + 0x00000074)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_OFFS                                                              (0x00000074)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_ADDR(x)                                                           ((x) + 0x00000070)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_PHYS(x)                                                           ((x) + 0x00000070)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_OFFS                                                              (0x00000070)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_RMSK                                                              0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_POR                                                               0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_POR_RMSK                                                          0xffffffff
@@ -15255,9 +15231,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_POLY_1_BMSK                                                       0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_1_POLY_1_SHFT                                                              0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_ADDR(x)                                                           ((x) + 0x00000078)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_PHYS(x)                                                           ((x) + 0x00000078)
-#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_OFFS                                                              (0x00000078)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_ADDR(x)                                                           ((x) + 0x00000074)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_PHYS(x)                                                           ((x) + 0x00000074)
+#define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_OFFS                                                              (0x00000074)
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_RMSK                                                                     0x1
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_POR                                                               0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_POR_RMSK                                                          0xffffffff
@@ -15273,9 +15249,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_POLY_2_BMSK                                                              0x1
 #define HWIO_WFSS_CE_COMMON_R0_CE_TOEPLITZ_POLY_2_POLY_2_SHFT                                                              0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_ADDR(x)                                                               ((x) + 0x0000007c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_PHYS(x)                                                               ((x) + 0x0000007c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_OFFS                                                                  (0x0000007c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_ADDR(x)                                                               ((x) + 0x00000078)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_PHYS(x)                                                               ((x) + 0x00000078)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_OFFS                                                                  (0x00000078)
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_RMSK                                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_POR_RMSK                                                              0xffffffff
@@ -15287,9 +15263,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_VALUE_BMSK                                                            0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_0_VALUE_SHFT                                                                   0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_ADDR(x)                                                               ((x) + 0x00000080)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_PHYS(x)                                                               ((x) + 0x00000080)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_OFFS                                                                  (0x00000080)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_ADDR(x)                                                               ((x) + 0x0000007c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_PHYS(x)                                                               ((x) + 0x0000007c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_OFFS                                                                  (0x0000007c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_RMSK                                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_POR_RMSK                                                              0xffffffff
@@ -15301,9 +15277,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_VALUE_BMSK                                                            0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_1_VALUE_SHFT                                                                   0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_ADDR(x)                                                               ((x) + 0x00000084)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_PHYS(x)                                                               ((x) + 0x00000084)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_OFFS                                                                  (0x00000084)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_ADDR(x)                                                               ((x) + 0x00000080)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_PHYS(x)                                                               ((x) + 0x00000080)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_OFFS                                                                  (0x00000080)
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_RMSK                                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_POR_RMSK                                                              0xffffffff
@@ -15315,9 +15291,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_VALUE_BMSK                                                            0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_2_VALUE_SHFT                                                                   0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_ADDR(x)                                                               ((x) + 0x00000088)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_PHYS(x)                                                               ((x) + 0x00000088)
-#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_OFFS                                                                  (0x00000088)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_ADDR(x)                                                               ((x) + 0x00000084)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_PHYS(x)                                                               ((x) + 0x00000084)
+#define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_OFFS                                                                  (0x00000084)
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_RMSK                                                                  0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_POR_RMSK                                                              0xffffffff
@@ -15329,9 +15305,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_VALUE_BMSK                                                            0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_DEBUG_DMA_3_VALUE_SHFT                                                                   0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_ADDR(x)                                                            ((x) + 0x0000008c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_PHYS(x)                                                            ((x) + 0x0000008c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_OFFS                                                               (0x0000008c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_ADDR(x)                                                            ((x) + 0x00000088)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_PHYS(x)                                                            ((x) + 0x00000088)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_OFFS                                                               (0x00000088)
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_RMSK                                                               0xfffdffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_POR                                                                0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_POR_RMSK                                                           0xffffffff
@@ -15357,9 +15333,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_CSM_CORE_CLK_BMSK                                                       0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_0_CSM_CORE_CLK_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_ADDR(x)                                                            ((x) + 0x00000090)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_PHYS(x)                                                            ((x) + 0x00000090)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_OFFS                                                               (0x00000090)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_ADDR(x)                                                            ((x) + 0x0000008c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_PHYS(x)                                                            ((x) + 0x0000008c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_OFFS                                                               (0x0000008c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_RMSK                                                                 0xffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_POR                                                                0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_POR_RMSK                                                           0xffffffff
@@ -15377,9 +15353,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_SRC_SRNG_CLK_BMSK                                                       0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_1_SRC_SRNG_CLK_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_ADDR(x)                                                            ((x) + 0x00000094)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_PHYS(x)                                                            ((x) + 0x00000094)
-#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_OFFS                                                               (0x00000094)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_ADDR(x)                                                            ((x) + 0x00000090)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_PHYS(x)                                                            ((x) + 0x00000090)
+#define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_OFFS                                                               (0x00000090)
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_RMSK                                                                   0x1fff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_POR                                                                0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_POR_RMSK                                                           0xffffffff
@@ -15397,9 +15373,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_STS_SRNG_CLK_BMSK                                                       0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_CLK_GATE_DIS_2_STS_SRNG_CLK_SHFT                                                         0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_ADDR(x)                                                               ((x) + 0x00000098)
-#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_PHYS(x)                                                               ((x) + 0x00000098)
-#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_OFFS                                                                  (0x00000098)
+#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_ADDR(x)                                                               ((x) + 0x00000094)
+#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_PHYS(x)                                                               ((x) + 0x00000094)
+#define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_OFFS                                                                  (0x00000094)
 #define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_RMSK                                                                       0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_POR                                                                   0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_POR_RMSK                                                              0xffffffff
@@ -15415,9 +15391,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_IDLE_CFG_BMSK                                                              0xfff
 #define HWIO_WFSS_CE_COMMON_R0_CE_IDLE_CONFIG_IDLE_CFG_SHFT                                                                0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_ADDR(x)                                                      ((x) + 0x0000009c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_PHYS(x)                                                      ((x) + 0x0000009c)
-#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_OFFS                                                         (0x0000009c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_ADDR(x)                                                      ((x) + 0x00000098)
+#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_PHYS(x)                                                      ((x) + 0x00000098)
+#define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_OFFS                                                         (0x00000098)
 #define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_RMSK                                                         0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_POR                                                          0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_POR_RMSK                                                     0xffffffff
@@ -15429,9 +15405,9 @@
 #define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_VALUE_BMSK                                                   0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_INVALID_APB_ACC_ADDR_VALUE_SHFT                                                          0x0
 
-#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_ADDR(x)                                                           ((x) + 0x000000a0)
-#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_PHYS(x)                                                           ((x) + 0x000000a0)
-#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_OFFS                                                              (0x000000a0)
+#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_ADDR(x)                                                           ((x) + 0x0000009c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_PHYS(x)                                                           ((x) + 0x0000009c)
+#define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_OFFS                                                              (0x0000009c)
 #define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_RMSK                                                              0xffffffff
 #define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_POR                                                               0x00000000
 #define HWIO_WFSS_CE_COMMON_R0_CE_S_PARE_REGISTER_POR_RMSK                                                          0xffffffff

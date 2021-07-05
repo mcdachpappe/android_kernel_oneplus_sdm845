@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012, 2014-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2012, 2014-2018 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -34,22 +34,13 @@
 
 #define RRM_BCN_RPT_NO_BSS_INFO    0
 #define RRM_BCN_RPT_MIN_RPT        1
-#define RRM_CH_BUF_LEN             45
 
 uint8_t rrm_get_min_of_max_tx_power(tpAniSirGlobal pMac, int8_t regMax,
 				    int8_t apTxPower);
 
 QDF_STATUS rrm_initialize(tpAniSirGlobal pMac);
 
-/**
- * rrm_cleanup  - cleanup RRM measurement related data for the measurement
- * index
- * @mac: Pointer to mac context
- * @idx: Measurement index
- *
- * Return: None
- */
-void rrm_cleanup(tpAniSirGlobal mac, uint8_t idx);
+QDF_STATUS rrm_cleanup(tpAniSirGlobal pMac);
 
 QDF_STATUS rrm_process_link_measurement_request(tpAniSirGlobal pMac,
 						uint8_t *pRxPacketInfo,
@@ -101,22 +92,4 @@ rrm_process_beacon_report_xmit(tpAniSirGlobal pMac,
 
 void lim_update_rrm_capability(tpAniSirGlobal mac_ctx,
 			       tpSirSmeJoinReq join_req);
-/**
- * rrm_reject_req - Reject rrm request
- * @radiomes_report: radio measurement report
- * @rrm_req: Array of Measurement request IEs
- * @num_report: Num of report
- * @index: Measurement index
- * @measurement_type: Measurement Type
- *
- * Reject the Radio Resource Measurement request, if one is
- * already in progress
- *
- * Return: QDF_STATUS
- */
-QDF_STATUS rrm_reject_req(tpSirMacRadioMeasureReport *radiomes_report,
-			  tDot11fRadioMeasurementRequest *rrm_req,
-			  uint8_t *num_report, uint8_t index,
-			  uint8_t measurement_type);
-
 #endif

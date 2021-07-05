@@ -33,50 +33,11 @@
 #define mlme_debug(params...) QDF_TRACE_DEBUG(QDF_MODULE_ID_MLME, params)
 
 /**
- * struct wlan_ies - Generic WLAN Information Element(s) format
- * @len: Total length of the IEs
- * @data: IE data
- */
-struct wlan_ies {
-	uint16_t len;
-	uint8_t *data;
-};
-
-/**
- * struct wlan_disconnect_info - WLAN Disconnection Information
- * @self_discon_ies: Disconnect IEs to be sent in deauth/disassoc frames
- *                   originated from driver
- * @peer_discon_ies: Disconnect IEs received in deauth/disassoc frames from peer
- * @discon_reason: Disconnect reason as per enum eSirMacReasonCodes
- * @from_ap: True if the disconnection is initiated from AP
- */
-struct wlan_disconnect_info {
-	struct wlan_ies self_discon_ies;
-	struct wlan_ies peer_discon_ies;
-	uint32_t discon_reason;
-	bool from_ap;
-};
-
-/**
  * struct peer_mlme_priv_obj - peer MLME component object
  * @ucast_key_cipher: unicast crypto type.
- * @is_pmf_enabled: True if PMF is enabled
- * @last_assoc_received_time: last assoc received time
- * @last_disassoc_deauth_received_time: last disassoc/deauth received time
  */
 struct peer_mlme_priv_obj {
 	uint32_t ucast_key_cipher;
-	bool is_pmf_enabled;
-	qdf_time_t last_assoc_received_time;
-	qdf_time_t last_disassoc_deauth_received_time;
-};
-
-/**
- * struct mlme_roam_invoke_entity_param - roam invoke entity params
- * @roam_invoke_in_progress: is roaming already in progress.
- */
-struct mlme_roam_invoke_entity_param {
-	bool roam_invoke_in_progress;
 };
 
 /**
@@ -84,19 +45,11 @@ struct mlme_roam_invoke_entity_param {
  * @dynamic_cfg: current configuration of nss, chains for vdev.
  * @ini_cfg: Max configuration of nss, chains supported for vdev.
  * @sta_dynamic_oce_value: Dyanmic oce flags value for sta
- * @follow_ap_edca: if true, it is forced to follow the AP's edca
- * @disconnect_info: Disconnection information
- * @reconn_after_assoc_timeout: reconnect to the same AP if association timeout
- * @roam_invoke_params: Roam invoke params
  */
 struct vdev_mlme_priv_obj {
 	struct mlme_nss_chains dynamic_cfg;
 	struct mlme_nss_chains ini_cfg;
 	uint8_t sta_dynamic_oce_value;
-	bool follow_ap_edca;
-	struct wlan_disconnect_info disconnect_info;
-	bool reconn_after_assoc_timeout;
-	struct mlme_roam_invoke_entity_param roam_invoke_params;
 };
 
 
@@ -163,15 +116,6 @@ mlme_vdev_object_created_notification(struct wlan_objmgr_vdev *vdev,
 QDF_STATUS
 mlme_vdev_object_destroyed_notification(struct wlan_objmgr_vdev *vdev,
 					void *arg);
-
-/**
- * mlme_get_roam_invoke_params() - get the roam invoke params
- * @vdev: vdev pointer
- *
- * Return: pointer to the vdev roam invoke config structure
- */
-struct mlme_roam_invoke_entity_param *
-mlme_get_roam_invoke_params(struct wlan_objmgr_vdev *vdev);
 
 /**
  * wlan_peer_set_unicast_cipher() - set unicast cipher
@@ -255,132 +199,4 @@ mlme_peer_object_created_notification(struct wlan_objmgr_peer *peer,
 QDF_STATUS
 mlme_peer_object_destroyed_notification(struct wlan_objmgr_peer *peer,
 					void *arg);
-
-/**
- * mlme_set_peer_pmf_status() - set pmf status of peer
- * @peer: PEER object
- * @is_pmf_enabled: Carries if PMF is enabled or not
- *
- * is_pmf_enabled will be set to true if PMF is enabled by peer
- *
- * Return: void
- */
-void mlme_set_peer_pmf_status(struct wlan_objmgr_peer *peer,
-			      bool is_pmf_enabled);
-/**
- * mlme_get_peer_pmf_status() - get if peer is of pmf capable
- * @peer: PEER object
- *
- * Return: Value of is_pmf_enabled; True if PMF is enabled by peer
- */
-bool mlme_get_peer_pmf_status(struct wlan_objmgr_peer *peer);
-
-/**
- * mlme_set_self_disconnect_ies() - Set diconnect IEs configured from userspace
- * @vdev: vdev pointer
- * @ie: pointer for disconnect IEs
- *
- * Return: None
- */
-void mlme_set_self_disconnect_ies(struct wlan_objmgr_vdev *vdev,
-				  struct wlan_ies *ie);
-
-/**
- * mlme_free_self_disconnect_ies() - Free the self diconnect IEs
- * @vdev: vdev pointer
- *
- * Return: None
- */
-void mlme_free_self_disconnect_ies(struct wlan_objmgr_vdev *vdev);
-
-/**
- * mlme_get_self_disconnect_ies() - Get diconnect IEs from vdev object
- * @vdev: vdev pointer
- *
- * Return: Returns a pointer to the self disconnect IEs present in vdev object
- */
-struct wlan_ies *mlme_get_self_disconnect_ies(struct wlan_objmgr_vdev *vdev);
-
-/**
- * mlme_set_peer_disconnect_ies() - Cache disconnect IEs received from peer
- * @vdev: vdev pointer
- * @ie: pointer for disconnect IEs
- *
- * Return: None
- */
-void mlme_set_peer_disconnect_ies(struct wlan_objmgr_vdev *vdev,
-				  struct wlan_ies *ie);
-
-/**
- * mlme_free_peer_disconnect_ies() - Free the peer diconnect IEs
- * @vdev: vdev pointer
- *
- * Return: None
- */
-void mlme_free_peer_disconnect_ies(struct wlan_objmgr_vdev *vdev);
-
-/**
- * mlme_set_reconn_after_assoc_timeout_flag() - Set reconn after assoc timeout
- * flag
- * @psoc: soc object
- * @vdev_id: vdev id
- * @flag: enable or disable reconnect
- *
- * Return: void
- */
-void mlme_set_reconn_after_assoc_timeout_flag(struct wlan_objmgr_psoc *psoc,
-					      uint8_t vdev_id, bool flag);
-
-/**
- * mlme_get_reconn_after_assoc_timeout_flag() - Get reconn after assoc timeout
- * flag
- * @psoc: soc object
- * @vdev_id: vdev id
- *
- * Return: true for enabling reconnect, otherwise false
- */
-bool mlme_get_reconn_after_assoc_timeout_flag(struct wlan_objmgr_psoc *psoc,
-					      uint8_t vdev_id);
-
-/**
- * mlme_get_peer_disconnect_ies() - Get diconnect IEs from vdev object
- * @vdev: vdev pointer
- *
- * Return: Returns a pointer to the peer disconnect IEs present in vdev object
- */
-struct wlan_ies *mlme_get_peer_disconnect_ies(struct wlan_objmgr_vdev *vdev);
-
-/**
- * mlme_set_discon_reason_n_from_ap() - set disconnect reason and from ap flag
- * @psoc: PSOC pointer
- * @vdev_id: vdev id
- * @from_ap: True if the disconnect is initiated from peer.
- *           False otherwise.
- * @reason_code: The disconnect code received from peer or internally generated.
- *
- * Set the reason code and from_ap.
- *
- * Return: void
- */
-void mlme_set_discon_reason_n_from_ap(struct wlan_objmgr_psoc *psoc,
-				      uint8_t vdev_id, bool from_ap,
-				      uint32_t reason_code);
-
-/**
- * mlme_get_discon_reason_n_from_ap() - Get disconnect reason and from ap flag
- * @psoc: PSOC pointer
- * @vdev_id: vdev id
- * @from_ap: Get the from_ap cached through mlme_set_discon_reason_n_from_ap
- *           and copy to this buffer.
- * @reason_code: Get the reason_code cached through
- *               mlme_set_discon_reason_n_from_ap and copy to this buffer.
- *
- * Copy the contents of from_ap and reason_code to given buffers.
- *
- * Return: void
- */
-void mlme_get_discon_reason_n_from_ap(struct wlan_objmgr_psoc *psoc,
-				      uint8_t vdev_id, bool *from_ap,
-				      uint32_t *reason_code);
-
 #endif
