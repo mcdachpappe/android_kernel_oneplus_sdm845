@@ -739,17 +739,6 @@ struct cfg80211_bitrate_mask {
 };
 
 /**
- * enum cfg80211_ap_settings_flags - AP settings flags
- *
- * Used by cfg80211_ap_settings
- *
- * @AP_SETTINGS_EXTERNAL_AUTH_SUPPORT: AP supports external authentication
- */
-enum cfg80211_ap_settings_flags {
-	AP_SETTINGS_EXTERNAL_AUTH_SUPPORT = BIT(0),
-};
-
-/**
  * struct cfg80211_ap_settings - AP configuration
  *
  * Used to configure an AP interface.
@@ -774,11 +763,6 @@ enum cfg80211_ap_settings_flags {
  * @pbss: If set, start as a PCP instead of AP. Relevant for DMG
  *	networks.
  * @beacon_rate: bitrate to be used for beacons
- * @ht_cap: HT capabilities (or %NULL if HT isn't enabled)
- * @vht_cap: VHT capabilities (or %NULL if VHT isn't enabled)
- * @ht_required: stations must support HT
- * @vht_required: stations must support VHT
- * @flags: flags, as defined in enum cfg80211_ap_settings_flags
  */
 struct cfg80211_ap_settings {
 	struct cfg80211_chan_def chandef;
@@ -799,11 +783,6 @@ struct cfg80211_ap_settings {
 	const struct cfg80211_acl_data *acl;
 	bool pbss;
 	struct cfg80211_bitrate_mask beacon_rate;
-
-	const struct ieee80211_ht_cap *ht_cap;
-	const struct ieee80211_vht_cap *vht_cap;
-	bool ht_required, vht_required;
-	u32 flags;
 };
 
 /**
@@ -1165,10 +1144,6 @@ struct cfg80211_tid_stats {
  * @rx_duration: aggregate PPDU duration(usecs) for all the frames from a peer
  * @pertid: per-TID statistics, see &struct cfg80211_tid_stats, using the last
  *	(IEEE80211_NUM_TIDS) index for MSDUs not encapsulated in QoS-MPDUs.
- * @rx_mpdu_count: number of MPDUs received from this station
- * @fcs_err_count: number of packets (MPDUs) received from this station with
- *	an FCS error. This counter should be incremented only when TA of the
- *	received packet with an FCS error matches the peer MAC address.
  */
 struct station_info {
 	u64 filled;
@@ -1213,9 +1188,6 @@ struct station_info {
 	u64 rx_duration;
 	u8 rx_beacon_signal_avg;
 	struct cfg80211_tid_stats pertid[IEEE80211_NUM_TIDS + 1];
-
-	u32 rx_mpdu_count;
-	u32 fcs_err_count;
 };
 
 #if IS_ENABLED(CONFIG_CFG80211)
@@ -2610,7 +2582,6 @@ struct cfg80211_nan_func {
  *	use %WLAN_STATUS_UNSPECIFIED_FAILURE if user space cannot give you
  *	the real status code for failures. Used only for the authentication
  *	response command interface (user space to driver).
- * @pmkid: The identifier to refer a PMKSA.
  */
 struct cfg80211_external_auth_params {
 	enum nl80211_external_auth_action action;
@@ -2618,7 +2589,6 @@ struct cfg80211_external_auth_params {
 	struct cfg80211_ssid ssid;
 	unsigned int key_mgmt_suite;
 	u16 status;
-	const u8 *pmkid;
 };
 
 /**

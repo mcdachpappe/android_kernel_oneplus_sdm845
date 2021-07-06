@@ -2130,10 +2130,10 @@ enum nl80211_commands {
  *     &enum nl80211_external_auth_action value). This is used with the
  *     &NL80211_CMD_EXTERNAL_AUTH request event.
  * @NL80211_ATTR_EXTERNAL_AUTH_SUPPORT: Flag attribute indicating that the user
- *	space supports external authentication. This attribute shall be used
- *	with %NL80211_CMD_CONNECT and %NL80211_CMD_START_AP request. The driver
- *	may offload authentication processing to user space if this capability
- *	is indicated in the respective requests from the user space.
+ *     space supports external authentication. This attribute shall be used
+ *     only with %NL80211_CMD_CONNECT request. The driver may offload
+ *     authentication processing to user space if this capability is indicated
+ *     in NL80211_CMD_CONNECT requests from the user space.
  *
  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
  * @NL80211_ATTR_MAX: highest attribute number currently defined
@@ -2886,12 +2886,6 @@ enum nl80211_sta_bss_param {
  * @NL80211_STA_INFO_RX_DURATION: aggregate PPDU duration for all frames
  *	received from the station (u64, usec)
  * @NL80211_STA_INFO_PAD: attribute used for padding for 64-bit alignment
- * @NL80211_STA_INFO_RX_MPDUS: total number of received packets (MPDUs)
- *	(u32, from this station)
- * @NL80211_STA_INFO_FCS_ERROR_COUNT: total number of packets (MPDUs) received
- *	with an FCS error (u32, from this station). This count may not include
- *	some packets with an FCS error due to TA corruption. Hence this counter
- *	might not be fully accurate.
  * @__NL80211_STA_INFO_AFTER_LAST: internal
  * @NL80211_STA_INFO_MAX: highest possible station info attribute
  */
@@ -2930,8 +2924,6 @@ enum nl80211_sta_info {
 	NL80211_STA_INFO_TID_STATS,
 	NL80211_STA_INFO_RX_DURATION,
 	NL80211_STA_INFO_PAD,
-	NL80211_STA_INFO_RX_MPDUS,
-	NL80211_STA_INFO_FCS_ERROR_COUNT,
 
 	/* keep last */
 	__NL80211_STA_INFO_AFTER_LAST,
@@ -5181,14 +5173,9 @@ enum nl80211_crit_proto_id {
  * Used by cfg80211_rx_mgmt()
  *
  * @NL80211_RXMGMT_FLAG_ANSWERED: frame was answered by device/driver.
- * @NL80211_RXMGMT_FLAG_EXTERNAL_AUTH: Host driver intends to offload
- *	the authentication. Exclusively defined for host drivers that
- *	advertises the SME functionality but would like the userspace
- *	to handle certain authentication algorithms (e.g. SAE).
  */
 enum nl80211_rxmgmt_flags {
 	NL80211_RXMGMT_FLAG_ANSWERED = 1 << 0,
-	NL80211_RXMGMT_FLAG_EXTERNAL_AUTH = 1 << 1,
 };
 
 /*
