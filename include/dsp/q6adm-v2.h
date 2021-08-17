@@ -187,4 +187,5 @@ int adm_programable_channel_mixer(int port_id, int copp_idx, int session_id,
 			int session_type,
 			struct msm_pcm_channel_mixer *ch_mixer,
 			int channel_index);
+void adm_set_session_type(int port_id, int session_type);
 #endif /* __Q6_ADM_V2_H__ */
