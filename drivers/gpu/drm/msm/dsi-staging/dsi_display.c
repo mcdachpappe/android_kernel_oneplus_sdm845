@@ -234,31 +234,31 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 	if (strcmp(dsi_display->panel->name, "samsung s6e3fc2x01 cmd mode dsi panel") == 0) {
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
 				if (panel->naive_display_p3_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
 				}
 				if (panel->naive_display_wide_color_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
 				}
 				if (panel->naive_display_srgb_color_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
 				}
 
 				if (panel->naive_display_customer_srgb_mode) {
-					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
+					pr_debug("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
 				} else {
-					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
+					pr_debug("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
 				}
 
 				if (panel->naive_display_customer_p3_mode) {
-						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
+						pr_debug("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
 				} else {
-					pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
+					pr_debug("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
 			}
@@ -266,31 +266,31 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 	if (strcmp(dsi_display->panel->name, "samsung sofef00_m cmd mode dsi panel") == 0) {
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
 				if (panel->naive_display_p3_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
 				}
 				if (panel->naive_display_wide_color_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
 				}
 				if (panel->naive_display_srgb_color_mode) {
-					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
+					pr_debug("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
 				}
 
 				if (panel->naive_display_customer_srgb_mode) {
-					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
+					pr_debug("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
 				} else {
-					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
+					pr_debug("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
 				}
 
 				if (panel->naive_display_customer_p3_mode) {
-						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
+						pr_debug("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
 				} else {
-						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
+						pr_debug("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
 			}
@@ -1291,7 +1291,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 		rc = dsi_panel_set_lp2(display->panel);
 	break;
 	default:
-		pr_err("SDE_MODE_DPMS_NOLP\n");
+		pr_debug("SDE_MODE_DPMS_NOLP\n");
 		rc = dsi_panel_set_nolp(display->panel);
 		break;
 	}

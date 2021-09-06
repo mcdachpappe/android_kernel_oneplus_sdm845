@@ -2549,7 +2549,7 @@ void sde_crtc_complete_commit(struct drm_crtc *crtc,
 			blank = cstate->fingerprint_pressed;
 			notifier_data.data = &blank;
 			notifier_data.id = MSM_DRM_PRIMARY_DISPLAY;
-			pr_err("fingerprint status: %s",
+			pr_debug("fingerprint status: %s",
 					blank ? "pressed" : "up");
 			msm_drm_notifier_call_chain(
 					MSM_DRM_ONSCREENFINGERPRINT_EVENT,
@@ -2833,7 +2833,7 @@ ssize_t oneplus_display_notify_aod_hid(struct device *dev,
 	SDE_ATRACE_BEGIN("aod_hid_node");
 	err = sscanf(buf, "%du", &onscreenaod_hid);
 	if (err)
-		pr_err("sscanf failed onscreenaod_hid");
+		pr_debug("sscanf failed onscreenaod_hid");
 
 	//oneplus_onscreenaod_hid = !!onscreenaod_hid;
 	if (onscreenaod_hid == oneplus_onscreenaod_hid) {
@@ -2841,7 +2841,7 @@ ssize_t oneplus_display_notify_aod_hid(struct device *dev,
 		return count;
 	}
 
-	pr_info("notify aod hid %d\n", onscreenaod_hid);
+	pr_debug("notify aod hid %d\n", onscreenaod_hid);
 	oneplus_onscreenaod_hid = onscreenaod_hid;
 	SDE_ATRACE_END("aod_hid_node");
 	return count;
@@ -2868,7 +2868,7 @@ ssize_t oneplus_display_notify_fp_press(struct device *dev,
 	SDE_ATRACE_BEGIN("oneplus_display_notify_fp_press");
 	err = sscanf(buf, "%du", &onscreenfp_status);
 	if (err < 0)
-		pr_err("sscanf failed for &onscreenfp_status\n");
+		pr_debug("sscanf failed for &onscreenfp_status\n");
 
 	//onscreenfp_status = !!onscreenfp_status;
 	if (onscreenfp_status == oneplus_onscreenfp_status) {
@@ -2876,7 +2876,7 @@ ssize_t oneplus_display_notify_fp_press(struct device *dev,
 		return count;
 	}
 
-	pr_info("notify fingerpress %s\n", onscreenfp_status ? "on" : "off");
+	pr_debug("notify fingerpress %s\n", onscreenfp_status ? "on" : "off");
 
 
 	oneplus_onscreenfp_status = onscreenfp_status;
@@ -2928,13 +2928,13 @@ ssize_t oneplus_display_notify_dim(struct device *dev,
 	SDE_ATRACE_BEGIN("oneplus_display_notify_dim");
 	err = sscanf(buf, "%du", &dim_status);
 	if (err < 0)
-		pr_err("oneplus_display_notify_dim sscanf failed");
+		pr_debug("oneplus_display_notify_dim sscanf failed");
 
 	//dim_status = !!dim_status;
-	pr_info("notify dim %d\n", dim_status);
+	pr_debug("notify dim %d\n", dim_status);
 
 	if (display->panel->aod_status == 0 && (dim_status == 2)) {
-		pr_err("fp set it in normal status\n");
+		pr_debug("fp set it in normal status\n");
 
 		if (dim_status == oneplus_dim_status)
 			return count;
@@ -2962,10 +2962,10 @@ ssize_t oneplus_display_notify_dim(struct device *dev,
 	if (oneplus_dim_status == 1 && HBM_flag) {
 		rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_SET_HBM_ON_5);
 		if (rc) {
-			pr_err("failed to send DSI_CMD_SET_HBM_ON_5 cmds, rc=%d\n", rc);
+			pr_debug("failed to send DSI_CMD_SET_HBM_ON_5 cmds, rc=%d\n", rc);
 			return rc;
 		}
-		pr_err("Notify dim not commit,send DSI_CMD_SET_HBM_ON_5 cmds\n");
+		pr_debug("Notify dim not commit,send DSI_CMD_SET_HBM_ON_5 cmds\n");
 		return count;
 	}
 	drm_modeset_lock_all(drm_dev);
@@ -3017,7 +3017,7 @@ static int sde_crtc_config_fingerprint_dim_layer(struct drm_crtc_state
 	cstate = to_sde_crtc_state(crtc_state);
 
 	if (cstate->num_dim_layers == SDE_MAX_DIM_LAYERS - 1) {
-		pr_err("failed to get available dim layer for custom\n");
+		pr_debug("failed to get available dim layer for custom\n");
 		return -EINVAL;
 	}
 
