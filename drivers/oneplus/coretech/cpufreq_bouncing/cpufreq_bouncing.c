@@ -28,7 +28,7 @@ struct cpufreq_bouncing {
 	unsigned int *freqs; // quick mapping
 
 	/* config */
-	bool enable;
+	int enable;
 	int cur_level;
 
 	/* config: ceil */
@@ -48,7 +48,7 @@ struct cpufreq_bouncing {
 	},
 	/* gold */
 	{
-		.enable        = true,
+		.enable        = 1,
 		.down_limit_ns = 50 * NSEC_PER_MSEC,
 		.up_limit_ns   = 50 * NSEC_PER_MSEC,
 		.limit_thres   = 30 * NSEC_PER_MSEC,
@@ -60,8 +60,8 @@ struct cpufreq_bouncing {
 };
 
 /* init config */
-static bool enable = false;
-module_param_named(enable, enable, bool, 0644);
+static int enable = 0;
+module_param_named(enable, enable, int, 0644);
 
 static bool debug = false;
 module_param_named(debug, debug, bool, 0644);
@@ -93,7 +93,7 @@ static int cb_config_store(const char *buf, const struct kernel_param *kp)
 	 */
 	struct pack {
 		int clus;
-		bool enable;
+		int enable;
 
 		int limit_level;
 		u64 limit_thres_ms;
@@ -139,7 +139,7 @@ static int cb_config_store(const char *buf, const struct kernel_param *kp)
 		goto out;
 
 	/* begin update config */
-	cb->enable = false;
+	cb->enable = 0;
 	cb->last_ts = 0;
 	cb->last_freq_update_ts = 0;
 	cb->acc = 0;
@@ -422,7 +422,7 @@ static int __cpufreq_policy_parser(int cpu, int cb_idx)
 		}
 	} else {
 		pr_err("can't alloc memory for freqs\n");
-		cb->enable = false;
+		cb->enable = 0;
 	}
 	return cpu + cpumask_weight(pol->related_cpus);
 }
@@ -457,7 +457,7 @@ static void cb_clean_up(void)
 {
 	struct cpufreq_bouncing *cb;
 	int i;
-	enable = false;
+	enable = 0;
 	smp_wmb();
 
 	for (i = 0; i < CLUS_MAX; ++i) {

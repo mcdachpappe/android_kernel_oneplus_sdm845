@@ -291,7 +291,7 @@ enum {
 	MAX_TYPES
 };
 
-static const struct apsd_result const smblib_apsd_results[] = {
+static const struct apsd_result smblib_apsd_results[] = {
 	[UNKNOWN] = {
 		.name	= "UNKNOWN",
 		.bit	= 0,
@@ -4504,15 +4504,15 @@ int op_rerun_apsd(struct smb_charger *chg)
 
 	if (!val.intval)
 		return 0;
-		/* rerun APSD */
-		pr_info("OP Reruning APSD type\n");
-		rc = smblib_masked_write(chg, CMD_APSD_REG,
-					APSD_RERUN_BIT,
-					APSD_RERUN_BIT);
-		if (rc < 0) {
-			smblib_err(chg, "Couldn't rerun APSD rc = %d\n", rc);
-			return rc;
-		}
+	/* rerun APSD */
+	pr_info("OP Reruning APSD type\n");
+	rc = smblib_masked_write(chg, CMD_APSD_REG,
+				APSD_RERUN_BIT,
+				APSD_RERUN_BIT);
+	if (rc < 0) {
+		smblib_err(chg, "Couldn't rerun APSD rc = %d\n", rc);
+		return rc;
+	}
 	return 0;
 }
 

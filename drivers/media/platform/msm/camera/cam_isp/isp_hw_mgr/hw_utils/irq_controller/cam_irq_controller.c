@@ -697,11 +697,12 @@ irqreturn_t cam_irq_controller_handle_irq(int irq_num, void *priv)
 		for (j = 0; j < CAM_IRQ_PRIORITY_MAX; j++) {
 			if (controller->irq_register_arr[i].
 				top_half_enable_mask[j] &
-				controller->irq_status_arr[i])
+				controller->irq_status_arr[i]) {
 				need_th_processing[j] = true;
 				CAM_DBG(CAM_ISP,
 					"i %d j %d need_th_processing = %d",
 					i, j, need_th_processing[j]);
+			}
 		}
 	}
 
