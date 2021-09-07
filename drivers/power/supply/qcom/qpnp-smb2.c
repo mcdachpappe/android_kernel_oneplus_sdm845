@@ -348,7 +348,7 @@ static int smb2_parse_dt(struct smb2 *chip)
 		chg->FFC_WARM_CUTOFF, rc, 1);
 	OF_PROP_READ(node, "ffc-full-vbat-mv",
 		chg->FFC_VBAT_FULL, rc, 1);
-	pr_info("T1:%d, T2:%d, T3:%d, fcc1:%d, fcc1:%d, cut1:%d, cut2:%d,full:%d\n",
+	pr_debug("T1:%d, T2:%d, T3:%d, fcc1:%d, fcc1:%d, cut1:%d, cut2:%d,full:%d\n",
 		chg->FFC_TEMP_T1, chg->FFC_TEMP_T2, chg->FFC_TEMP_T3,
 		chg->FFC_NOR_FCC, chg->FFC_WARM_FCC, chg->FFC_NORMAL_CUTOFF,
 		chg->FFC_WARM_CUTOFF, chg->FFC_VBAT_FULL);
@@ -367,12 +367,12 @@ static int smb2_parse_dt(struct smb2 *chip)
 			chg->OTG_NORMAL_BAT_ICL, rc, 1);
 	if (rc < 0)
 		chg->OTG_NORMAL_BAT_ICL = -EINVAL;
-	pr_info("OTG_ICL:enable:%d,CapThr:%d,LowThr:%d,NorThr:%d\n",
+	pr_debug("OTG_ICL:enable:%d,CapThr:%d,LowThr:%d,NorThr:%d\n",
 		chg->OTG_ICL_CTRL,
 		chg->OTG_LOW_BAT,
 		chg->OTG_LOW_BAT_ICL,
 		chg->OTG_NORMAL_BAT_ICL);
-	pr_info("q1:%d,q2:%d,q3:%d,NORMAL_CUTOFF:%d,warm:%d,FULL=%d\n",
+	pr_debug("q1:%d,q2:%d,q3:%d,NORMAL_CUTOFF:%d,warm:%d,FULL=%d\n",
 		chg->FFC_TEMP_T1,
 		chg->FFC_TEMP_T2,
 		chg->FFC_TEMP_T3,
@@ -392,35 +392,35 @@ static int smb2_parse_dt(struct smb2 *chip)
 
 	chg->pd_disabled = of_property_read_bool(node,
 						"disable-pd");
-	pr_info("T0=%d, T1=%d, T2=%d, T3=%d, T4=%d, T5=%d, T6=%d\n",
+	pr_debug("T0=%d, T1=%d, T2=%d, T3=%d, T4=%d, T5=%d, T6=%d\n",
 		chg->BATT_TEMP_T0, chg->BATT_TEMP_T1, chg->BATT_TEMP_T2,
 		chg->BATT_TEMP_T3, chg->BATT_TEMP_T4, chg->BATT_TEMP_T5,
 		chg->BATT_TEMP_T6);
-	pr_info("BATT_TEMP_LITTLE_COLD=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_LITTLE_COLD=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_LITTLE_COLD],
 		chg->vbatmax[BATT_TEMP_LITTLE_COLD],
 		chg->vbatdet[BATT_TEMP_LITTLE_COLD]);
-	pr_info("BATT_TEMP_COOL=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_COOL=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_COOL],
 		chg->vbatmax[BATT_TEMP_COOL],
 		chg->vbatdet[BATT_TEMP_COOL]);
-	pr_info("BATT_TEMP_LITTLE_COOL=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_LITTLE_COOL=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_LITTLE_COOL],
 		chg->vbatmax[BATT_TEMP_LITTLE_COOL],
 		chg->vbatdet[BATT_TEMP_LITTLE_COOL]);
-	pr_info("BATT_TEMP_PRE_NORMAL=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_PRE_NORMAL=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_PRE_NORMAL],
 		chg->vbatmax[BATT_TEMP_PRE_NORMAL],
 		chg->vbatdet[BATT_TEMP_PRE_NORMAL]);
-	pr_info("BATT_TEMP_NORMAL=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_NORMAL=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_NORMAL],
 		chg->vbatmax[BATT_TEMP_NORMAL],
 		chg->vbatdet[BATT_TEMP_NORMAL]);
-	pr_info("BATT_TEMP_WARM=%d, %d, %d\n",
+	pr_debug("BATT_TEMP_WARM=%d, %d, %d\n",
 		chg->ibatmax[BATT_TEMP_WARM],
 		chg->vbatmax[BATT_TEMP_WARM],
 		chg->vbatdet[BATT_TEMP_WARM]);
-	pr_info("cutoff_volt_with_charger=%d, disable-pd=%d\n",
+	pr_debug("cutoff_volt_with_charger=%d, disable-pd=%d\n",
 		smbchg_cutoff_volt_with_charger, chg->pd_disabled);
 
 	chg->check_batt_full_by_sw = of_property_read_bool(node,
@@ -430,7 +430,7 @@ static int smb2_parse_dt(struct smb2 *chip)
 					&chg->sw_iterm_ma);
 	if (rc < 0)
 		chg->sw_iterm_ma = 150;
-	pr_info("sw_iterm_ma=%d,check_batt_full_by_sw=%d",
+	pr_debug("sw_iterm_ma=%d,check_batt_full_by_sw=%d",
 				chg->sw_iterm_ma, chg->check_batt_full_by_sw);
 	/* disable step_chg */
 	chg->step_chg_enabled = false;
@@ -1471,7 +1471,7 @@ static int smb2_batt_set_prop(struct power_supply *psy,
 			op_set_fast_chg_allow(chg, false);
 		}
 		chg->chg_disabled = (bool)val->intval;
-		pr_info("user set disable chg %d\n", val->intval);
+		pr_debug("user set disable chg %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
 		rc = smblib_set_prop_chg_voltage(chg, val);
@@ -1962,7 +1962,7 @@ static int smb2_init_hw(struct smb2 *chip)
 	if (chip->dt.usb_icl_ua < 0)
 		chip->dt.usb_icl_ua = chg->default_icl_ua;
 /* david.liu@bsp, 20171023 Battery & Charging porting */
-	pr_info("vbat_max=%d, ibat_max=%d, iusb_max=%d\n",
+	pr_debug("vbat_max=%d, ibat_max=%d, iusb_max=%d\n",
 		chg->batt_profile_fv_uv,
 		chg->batt_profile_fcc_ua, chip->dt.usb_icl_ua);
 	if (chip->dt.dc_icl_ua < 0)
@@ -2429,7 +2429,7 @@ static int smb2_chg_config_init(struct smb2 *chip)
 	}
 
 /* david.liu@bsp, 20170317 Improve coldboot time */
-	pr_info("PMI8998 Revision=0x%x\n", pmic_rev_id->rev4);
+	pr_debug("PMI8998 Revision=0x%x\n", pmic_rev_id->rev4);
 	return 0;
 }
 
@@ -2854,7 +2854,7 @@ static void request_plug_irq(struct smb_charger *chip)
 		return;
 	}
 	enable_irq_wake(gpio_to_irq(chip->plug_irq));
-	pr_info("request usb_plug irq success\n");
+	pr_debug("request usb_plug irq success\n");
 	/*connect with usb cable when reboot, give a vote 1*/
 	if (!gpio_get_value(chip->plug_irq)) {
 		pr_info("%s:reboot time hw detect gpio low, vote 1\n",
@@ -3076,7 +3076,7 @@ static int smb2_probe(struct platform_device *pdev)
 	request_vbus_ctrl_gpio(chg);
 	request_plug_irq(chg);
 
-	pr_info("QPNP SMB2 probed successfully usb:present=%d type=%d batt:present = %d health = %d charge = %d\n",
+	pr_debug("QPNP SMB2 probed successfully usb:present=%d type=%d batt:present = %d health = %d charge = %d\n",
 		usb_present, chg->real_charger_type,
 		batt_present, batt_health, batt_charge_type);
 	return rc;
