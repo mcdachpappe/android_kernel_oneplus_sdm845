@@ -3966,6 +3966,12 @@ CONFIG_ION_MSM=y
 # CONFIG_WILC1000_SPI is not set
 # CONFIG_MOST is not set
 # CONFIG_GREYBUS is not set
+
+#
+# Qualcomm Atheros CLD WLAN module
+#
+CONFIG_QCA_CLD_WLAN=y
+CONFIG_QCA_CLD_WLAN_PROFILE="default"
 # CONFIG_GOLDFISH is not set
 # CONFIG_CHROME_PLATFORMS is not set
 
