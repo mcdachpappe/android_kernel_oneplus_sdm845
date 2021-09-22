@@ -34,7 +34,6 @@
 #include <linux/mmu_context.h>
 #include <linux/poll.h>
 #include <linux/eventfd.h>
-#include <linux/pm_qos.h>
 #include <linux/hrtimer.h>
 
 #include "u_fs.h"
@@ -46,13 +45,9 @@
 
 #define NUM_PAGES	10 /* # of pages for ipc logging */
 
-#define PM_QOS_REQUEST_SIZE	0xF000 /* > 4096*/
-#define ADB_QOS_TIMEOUT		500000
 #define ADB_PULL_PUSH_TIMEOUT	1000
 
-static struct pm_qos_request adb_little_cpu_qos;
 static struct hrtimer ffs_op_timer;
-static bool lpm_flg = true;
 static bool ffs_op_flg = true;
 
 static void *ffs_ipc_log;
@@ -1281,9 +1276,7 @@ static enum hrtimer_restart ffs_op_timeout(struct hrtimer *timer)
 		cnt = cnt + 1;
 	if (cnt > 5) {
 		pr_info("ffs_op_timeout, close lpm_disable\n");
-		msm_cpuidle_set_sleep_disable(false);
 		cnt = 0;
-		lpm_flg = false;
 		return HRTIMER_NORESTART;
 	}
 
@@ -1360,8 +1353,6 @@ static ssize_t ffs_epfile_write_iter(struct kiocb *kiocb, struct iov_iter *from)
 {
 	struct ffs_io_data io_data, *p = &io_data;
 	ssize_t res;
-	struct ffs_epfile *epfile = kiocb->ki_filp->private_data;
-	bool adb_write_flag = false;
 
 	ENTER();
 
@@ -1384,26 +1375,8 @@ static ssize_t ffs_epfile_write_iter(struct kiocb *kiocb, struct iov_iter *from)
 
 	kiocb->private = p;
 
-	if (p->aio) {
+	if (p->aio)
 		kiocb_set_cancel_fn(kiocb, ffs_aio_cancel);
-	} else {
-		if ((strcmp(epfile->name, "ep1") == 0)
-			|| (strcmp(epfile->name, "ep2") == 0))
-			adb_write_flag = true;
-
-		if ((p->data.count & PM_QOS_REQUEST_SIZE) && adb_write_flag) {
-			if (!lpm_flg) {
-				msm_cpuidle_set_sleep_disable(true);
-				hrtimer_start(&ffs_op_timer,
-					ms_to_ktime(ADB_PULL_PUSH_TIMEOUT),
-					HRTIMER_MODE_REL);
-			}
-			lpm_flg = true;
-			ffs_op_flg = true;
-			pm_qos_update_request_timeout(&adb_little_cpu_qos,
-				(MAX_CPUFREQ - 4), ADB_QOS_TIMEOUT);
-		}
-	}
 
 	res = ffs_epfile_io(kiocb->ki_filp, p);
 	if (ffs_op_flg)
@@ -1424,8 +1397,6 @@ static ssize_t ffs_epfile_read_iter(struct kiocb *kiocb, struct iov_iter *to)
 {
 	struct ffs_io_data io_data, *p = &io_data;
 	ssize_t res;
-	struct ffs_epfile *epfile = kiocb->ki_filp->private_data;
-	bool adb_read_flag = false;
 
 	ENTER();
 
@@ -1457,27 +1428,8 @@ static ssize_t ffs_epfile_read_iter(struct kiocb *kiocb, struct iov_iter *to)
 
 	kiocb->private = p;
 
-	if (p->aio) {
+	if (p->aio)
 		kiocb_set_cancel_fn(kiocb, ffs_aio_cancel);
-	} else {
-		if ((strcmp(epfile->name, "ep1") == 0)
-			|| (strcmp(epfile->name, "ep2") == 0))
-			adb_read_flag = true;
-
-		if ((p->data.count & PM_QOS_REQUEST_SIZE)
-				&& adb_read_flag) {
-			if (!lpm_flg) {
-				msm_cpuidle_set_sleep_disable(true);
-				hrtimer_start(&ffs_op_timer,
-					ms_to_ktime(ADB_PULL_PUSH_TIMEOUT),
-					HRTIMER_MODE_REL);
-			}
-			lpm_flg = true;
-			ffs_op_flg = true;
-			pm_qos_update_request_timeout(&adb_little_cpu_qos,
-				(MAX_CPUFREQ - 4), ADB_QOS_TIMEOUT);
-		}
-	}
 
 	res = ffs_epfile_io(kiocb->ki_filp, p);
 	if (ffs_op_flg)
@@ -2246,9 +2198,6 @@ static int ffs_epfiles_create(struct ffs_data *ffs)
 
 	ffs->epfiles = epfiles;
 
-	pm_qos_add_request(&adb_little_cpu_qos, PM_QOS_C0_CPUFREQ_MIN,
-		MIN_CPUFREQ);
-
 	ffs_log("exit: eps_count %u state %d setup_state %d flag %lu",
 		count, ffs->state, ffs->setup_state, ffs->flags);
 
@@ -2274,8 +2223,6 @@ static void ffs_epfiles_destroy(struct ffs_epfile *epfiles, unsigned count)
 	}
 
 	kfree(epfiles);
-
-	pm_qos_remove_request(&adb_little_cpu_qos);
 
 	ffs_log("exit");
 }
@@ -3693,7 +3640,6 @@ static int ffs_func_bind(struct usb_configuration *c,
 	if (ret && !--ffs_opts->refcnt)
 		functionfs_unbind(func->ffs);
 
-	lpm_flg = false;
 	ffs_op_flg = false;
 	hrtimer_init(&ffs_op_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	ffs_op_timer.function = ffs_op_timeout;
@@ -4288,9 +4234,6 @@ static void ffs_func_unbind(struct usb_configuration *c,
 
 	ffs_event_add(ffs, FUNCTIONFS_UNBIND);
 	hrtimer_cancel(&ffs_op_timer);
-	if (lpm_flg)
-		msm_cpuidle_set_sleep_disable(false);
-	lpm_flg = false;
 	ffs_op_flg = false;
 	ffs_log("exit: state %d setup_state %d flag %lu", ffs->state,
 	ffs->setup_state, ffs->flags);

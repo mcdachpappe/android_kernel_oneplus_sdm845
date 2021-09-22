@@ -157,10 +157,6 @@ struct fuse_file {
 	/* the read write file */
 	struct file *passthrough_filp;
 	bool passthrough_enabled;
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	/* the read write file */
-	struct file *rw_lower_file;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 };
 
 /** One input argument of a request */
@@ -242,11 +238,6 @@ struct fuse_args {
 		struct fuse_arg args[2];
 		struct file *passthrough_filp;
 	} out;
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	/** fuse shortcircuit file  */
-	struct file *private_lower_rw_file;
-	char *iname;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 };
 
 #define FUSE_ARGS(args) struct fuse_args args = {}
@@ -399,11 +390,6 @@ struct fuse_req {
 
 	/** fuse passthrough file  */
 	struct file *passthrough_filp;
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	/** fuse shortcircuit file  */
-	struct file *private_lower_rw_file;
-	char *iname;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 };
 
 struct fuse_iqueue {
@@ -563,11 +549,6 @@ struct fuse_conn {
 
 	/** handle fs handles killing suid/sgid/cap on write/chown/trunc */
 	unsigned handle_killpriv:1;
-
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-	/** Shortcircuited IO. */
-	unsigned shortcircuit_io:1;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
 
 	/** passthrough IO. */
 	unsigned passthrough:1;
@@ -1018,9 +999,5 @@ extern const struct xattr_handler *fuse_acl_xattr_handlers[];
 struct posix_acl;
 struct posix_acl *fuse_get_acl(struct inode *inode, int type);
 int fuse_set_acl(struct inode *inode, struct posix_acl *acl, int type);
-
-#ifdef CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT
-extern int sct_mode;
-#endif /* CONFIG_OPLUS_FEATURE_FUSE_FS_SHORTCIRCUIT */
  
 #endif /* _FS_FUSE_I_H */

@@ -12,10 +12,6 @@ config OEM_TRACE_SUPPORT
 	depends on OEM_DEBUG_SUPPORT
 	bool "OEM debug function, enable it will register the device, which under /dev/otracer."
 
-config OEM_FORCE_DUMP
-	default y
-	bool "OEM force dump function, it will enable goto the force dump"
-
 config PARAM_READ_WRITE
 	bool "Param partition read/write support"
 	default y

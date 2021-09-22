@@ -805,13 +805,6 @@ config SPECULATIVE_PAGE_FAULT
 	 allocating, it is failing its processing and a classic page fault
 	 is then tried.
 
-config KSWAPD_LAZY_RECLAIM
-	default n
-	bool "Don't keep kswapd busy looping"
-	help
-	 Kswapd can dynamically sleep for a while once memory is
-	 reclaimed.
-
 config VMSTAT_INTERVAL
 	int "Default interval in seconds to update vmstat"
 	default 1

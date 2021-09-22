@@ -1786,11 +1786,6 @@ done:
 
 static u64 add_to_task_demand(struct rq *rq, struct task_struct *p, u64 delta)
 {
-	if (p->compensate_need) {
-		delta += p->compensate_time;
-		p->compensate_time = 0;
-		p->compensate_need = 0;
-	}
 	delta = scale_exec_time(delta, rq);
 	p->ravg.sum += delta;
 	if (unlikely(p->ravg.sum > sched_ravg_window))
@@ -2712,7 +2707,7 @@ int update_preferred_cluster(struct related_thread_group *grp,
 {
 	u32 new_load = task_load(p);
 
-	if (!grp || !p->grp)
+	if (!grp)
 		return 0;
 
 	/*
