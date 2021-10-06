@@ -70,6 +70,7 @@ struct extcon_dev_data {
 	struct pinctrl *key_pinctrl;
 	struct pinctrl_state *set_state;
 
+	int state;
 };
 
 static struct extcon_dev_data *extcon_data;
@@ -83,60 +84,83 @@ static int set_gpio_by_pinctrl(void)
 
 static void extcon_dev_work(struct work_struct *work)
 {
-    int key[3]={0,0,0};
-    int hw_version=0; 
-    /*hw 13 use special tri state key no use key2*/
-    hw_version=get_hw_version();
-    pr_err("%s ,hw_version=%d\n",__func__, hw_version);
-    if (hw_version == 13)
-    {
-        key[0] = gpio_get_value(extcon_data->key1_gpio);
-        key[2] = gpio_get_value(extcon_data->key3_gpio);
+	int key[3]={0,0,0};
+	int hw_version=0;
+	/*hw 13 use special tri state key no use key2*/
+	hw_version=get_hw_version();
+	pr_err("%s ,hw_version=%d\n",__func__, hw_version);
+	if (hw_version == 13)
+	{
+		key[0] = gpio_get_value(extcon_data->key1_gpio);
+		key[2] = gpio_get_value(extcon_data->key3_gpio);
 
-        pr_err("%s ,key[0]=%d,key[1]=%d,key[2]=%d\n",
-        __func__, key[0], key[1], key[2]);
-        if(key[0]==1 && key[2]==1 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 1);
-            extcon_set_state_sync(extcon_data->edev,2, 0);
-            extcon_set_state_sync(extcon_data->edev,3, 1);
-        }
-        else if(key[0]==0 && key[2]==1 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 0);
-            extcon_set_state_sync(extcon_data->edev,2, 1);
-            extcon_set_state_sync(extcon_data->edev,3, 1);
-        }
-        else if(key[0]==1 && key[2]==0 )
-        {
-            extcon_set_state_sync(extcon_data->edev,1, 1);
-            extcon_set_state_sync(extcon_data->edev,2, 1);
-            extcon_set_state_sync(extcon_data->edev,3, 0);
-        }
+		pr_err("%s ,key[0]=%d,key[1]=%d,key[2]=%d\n",
+		__func__, key[0], key[1], key[2]);
 
-    }
-    else
-    {
+		if(key[0]==1 && key[2]==1 )
+		{
+			extcon_set_state_sync(extcon_data->edev, 1, 1);
+			extcon_set_state_sync(extcon_data->edev, 2, 0);
+			extcon_set_state_sync(extcon_data->edev, 3, 1);
+			extcon_data->state = 2; //middle position
+		}
+		else if(key[0]==0 && key[2]==1 )
+		{
+			extcon_set_state_sync(extcon_data->edev, 1, 0);
+			extcon_set_state_sync(extcon_data->edev, 2, 1);
+			extcon_set_state_sync(extcon_data->edev, 3, 1);
+			extcon_data->state = 3; //bottom position
+		}
+		else if(key[0]==1 && key[2]==0 )
+		{
+			extcon_set_state_sync(extcon_data->edev, 1, 1);
+			extcon_set_state_sync(extcon_data->edev, 2, 1);
+			extcon_set_state_sync(extcon_data->edev, 3, 0);
+			extcon_data->state = 1; //top position
+		}
 
-        key[0] = gpio_get_value(extcon_data->key1_gpio);
-        key[1] = gpio_get_value(extcon_data->key2_gpio);
-        key[2] = gpio_get_value(extcon_data->key3_gpio);
+	}
+	else
+	{
+		key[0] = gpio_get_value(extcon_data->key1_gpio);
+		key[1] = gpio_get_value(extcon_data->key2_gpio);
+		key[2] = gpio_get_value(extcon_data->key3_gpio);
 
-        pr_err("%s ,key[0]=%d,key[1]=%d,key[2]=%d\n",
-        __func__, key[0], key[1], key[2]);
-        extcon_set_state_sync(
-                        extcon_data->edev,
-                        1, key[0]);
-        extcon_set_state_sync(
-                    extcon_data->edev,
-                    2, key[1]);
-        extcon_set_state_sync(
-                    extcon_data->edev,
-                    3, key[2]);
-    }
+		pr_err("%s ,key[0]=%d,key[1]=%d,key[2]=%d\n",
+		__func__, key[0], key[1], key[2]);
+		extcon_set_state_sync(extcon_data->edev, 1, key[0]);
+		extcon_set_state_sync(extcon_data->edev, 2, key[1]);
+		extcon_set_state_sync(extcon_data->edev, 3, key[2]);
 
+		if (key[0] == 1 && key[2] == 1) {
+			extcon_data->state = 2; //middle position
+
+		} else if (key[0] == 0 && key[2] == 1) {
+			extcon_data->state = 3; //bottom position
+
+		} else if(key[0] == 1 && key[2] == 0) {
+			extcon_data->state = 1; //top position
+
+		}
+	}
 }
 
+static ssize_t tri_state_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, 256, "%d\n", extcon_data->state);
+}
+
+static DEVICE_ATTR(tri_state, S_IRUGO | S_IWUSR, tri_state_show, NULL);
+
+static struct attribute *tri_key_attributes[] = {
+	&dev_attr_tri_state.attr,
+	NULL
+};
+
+static struct attribute_group tri_key_attribute_group = {
+        .attrs = tri_key_attributes
+};
 
 static irqreturn_t extcon_dev_interrupt(int irq, void *_dev)
 {
@@ -222,6 +246,12 @@ static int tristate_dev_probe(struct platform_device *pdev)
 		goto err_extcon_dev_register;
 	}
 
+	// tri_key node creation error handler
+	ret = sysfs_create_group(&pdev->dev.kobj, &tri_key_attribute_group);
+	if (ret) {
+		pr_err("tri_key:sysfs_create_group failed(%d)\n", ret);
+		return -ENOMEM;
+	}
 
 	/* extcon registration */
 	extcon_data->edev =
