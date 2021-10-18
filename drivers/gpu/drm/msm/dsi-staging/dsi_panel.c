@@ -4374,16 +4374,12 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		return 0;
 
 	mutex_lock(&panel->panel_lock);
-	if (panel->aod_mode == 2) {
-		pr_debug("Send dsi_panel_set_aod_mode 2 cmds\n");
-		rc = dsi_panel_set_aod_mode(panel, 2);
-		panel->aod_status = 1;
-	}
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ON);
 	if (rc)
 		pr_err("[%s] failed to send DSI_CMD_SET_ON cmds, rc=%d\n",
 		       panel->name, rc);
+
 	if (panel->aod_mode != 2)
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_POST_ON);
 
@@ -4392,13 +4388,6 @@ int dsi_panel_enable(struct dsi_panel *panel)
 				panel->name, rc);
 
 	panel->panel_initialized = true;
-	pr_debug("dsi_panel_enable aod_mode =%d\n", panel->aod_mode);
-
-	if (panel->aod_mode == 0) {
-		pr_debug("Send dsi_panel_set_aod_mode 0 cmds\n");
-		panel->aod_status = 0;
-		aod_complete = false;
-	}
 	mutex_unlock(&panel->panel_lock);
 
 	dsi_panel_init_display_modes(panel);
@@ -4430,13 +4419,22 @@ int dsi_panel_init_display_modes(struct dsi_panel *panel)
 		dsi_panel_set_adaption_mode(panel, panel->adaption_mode);
 */
 
-    if (panel->hbm_los_mode)
+	if (panel->hbm_mode)
+		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
+	if (panel->hbm_los_mode)
 		dsi_panel_apply_hbm_mode(panel);
 
 	dsi_panel_apply_display_mode(panel);
 
-	if (panel->hbm_mode)
-		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
+	if (panel->aod_mode == 2) {
+		pr_debug("Send dsi_panel_set_aod_mode 2 cmds\n");
+		rc = dsi_panel_set_aod_mode(panel, 2);
+		panel->aod_status = 1;
+	} else if (panel->aod_mode == 0) {
+		pr_debug("Send dsi_panel_set_aod_mode 0 cmds\n");
+		panel->aod_status = 0;
+		aod_complete = false;
+	}
 
 	/* remove print actvie ws */
 	pm_print_active_wakeup_sources_queue(false);
