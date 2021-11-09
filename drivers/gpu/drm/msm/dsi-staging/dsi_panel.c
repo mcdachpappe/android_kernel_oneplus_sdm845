@@ -4087,6 +4087,7 @@ error:
 	return rc;
 }
 
+extern int oneplus_panel_status;
 int dsi_panel_set_lp1(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -4106,6 +4107,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 		       panel->name, rc);
 	pr_debug("dsi_panel_set_lp1 aod_mode %d aod_status %d", panel->aod_mode,
 			 panel->aod_status);
+	oneplus_panel_status = 3; // DISPLAY_POWER_DOZE
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
@@ -4127,6 +4129,7 @@ int dsi_panel_set_lp2(struct dsi_panel *panel)
 	if (rc)
 		pr_err("[%s] failed to send DSI_CMD_SET_LP2 cmd, rc=%d\n",
 		       panel->name, rc);
+	oneplus_panel_status = 4; // DISPLAY_POWER_DOZE_SUSPEND
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
@@ -4156,6 +4159,7 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 		pr_err("[%s] failed to send DSI_CMD_SET_NOLP cmd, rc=%d\n",
 		       panel->name, rc);
 
+	oneplus_panel_status = 2; // DISPLAY_POWER_ON
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
@@ -4393,6 +4397,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 				panel->name, rc);
 
 	panel->panel_initialized = true;
+	oneplus_panel_status = 2; // DISPLAY_POWER_ON
 	oneplus_dimlayer_hbm_enable = backup_dimlayer_hbm;
 	oneplus_dim_status = backup_dim_status;
 	pr_err("Restore dim when panel goes on");
@@ -4543,6 +4548,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 			goto error;
 		}
 	}
+	oneplus_panel_status = 0; // DISPLAY_POWER_OFF
 
 error:
 	mutex_unlock(&panel->panel_lock);
