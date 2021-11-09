@@ -682,6 +682,21 @@ extern  ssize_t oneplus_display_notify_aod_hid(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t count);
 
+int oneplus_panel_status = 0;
+static ssize_t op_display_get_power_status(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", oneplus_panel_status);
+}
+
+static ssize_t op_display_set_power_status(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	sscanf(buf, "%d", &oneplus_panel_status);
+
+	return count;
+}
 
 static ssize_t native_display_p3_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -877,6 +892,8 @@ static DEVICE_ATTR(notify_dim, S_IRUGO|S_IWUSR, NULL,
 	oneplus_display_notify_dim);
 static DEVICE_ATTR(notify_aod, S_IRUGO|S_IWUSR, NULL,
 	oneplus_display_notify_aod_hid);
+static DEVICE_ATTR(power_status, S_IRUGO | S_IWUSR, op_display_get_power_status,
+	op_display_set_power_status);
 
 static DEVICE_ATTR(dp_en, S_IRUGO|S_IWUSR,
        op_display_get_dp_enable, op_display_set_dp_enable);
@@ -912,6 +929,7 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_notify_fppress.attr,
 	&dev_attr_notify_dim.attr,
 	&dev_attr_notify_aod.attr,
+	&dev_attr_power_status.attr,
 	&dev_attr_dsi_panel_command.attr,
 	&dev_attr_dsi_seed_command.attr,
 	&dev_attr_dimlayer_bl_en.attr,
