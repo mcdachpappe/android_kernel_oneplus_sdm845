@@ -380,7 +380,7 @@ static ssize_t aod_show(struct device *dev,
 
 	aod_mode = dsi_display_get_aod_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_mode); 
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_mode);
 	return ret;
 }
 
@@ -451,7 +451,7 @@ static ssize_t aod_disable_show(struct device *dev,
 
 	aod_disable = dsi_display_get_aod_disable(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_disable); 
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_disable);
 	return ret;
 }
 
@@ -903,6 +903,7 @@ static DEVICE_ATTR(dimlayer_bl_en, S_IRUGO|S_IWUSR,
 
 static DEVICE_ATTR_RW(dsi_panel_command);
 static DEVICE_ATTR_RW(dsi_seed_command);
+static DEVICE_ATTR(power_status, S_IRUGO|S_IWUSR, op_display_get_power_status, op_display_set_power_status);
 
 static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_status.attr,
@@ -933,6 +934,7 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_dimlayer_bl_en.attr,
 	&dev_attr_dp_en.attr,
 	&dev_attr_dither_en.attr,
+	&dev_attr_power_status.attr,
 	NULL
 };
 
