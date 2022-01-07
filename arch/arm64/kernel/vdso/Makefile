@@ -16,7 +16,8 @@ obj-vdso   := $(obj-vdso-c) $(obj-vdso-s)
 
 ccflags-y := -shared -fno-common -fno-builtin -fno-stack-protector -ffixed-x18
 ccflags-y += -DDISABLE_BRANCH_PROFILING
-ccflags-y += -nostdlib -Wl,-soname=linux-vdso.so.1 -Wl,--hash-style=sysv
+ccflags-y += -nostdlib -Wl,-soname=linux-vdso.so.1 \
+		$(call cc-ldoption, -Wl$(comma)--hash-style=sysv)
 ccflags-y += $(DISABLE_LTO)
 
 # Force -O2 to avoid libgcc dependencies
@@ -71,7 +72,7 @@ $(obj-vdso-c): %.o: %.c FORCE
 
 # Actual build commands
 quiet_cmd_vdsold = VDSOL   $@
-      cmd_vdsold = $(CC) $(c_flags) -Wl,-N -Wl,-T $^ -o $@
+      cmd_vdsold = $(CC) $(c_flags) -Wl,-n -Wl,-T $^ -o $@
 quiet_cmd_vdsocc = VDSOC   $@
       cmd_vdsocc = ${CC} $(c_flags) -c -o $@ $<
 quiet_cmd_vdsoas = VDSOA   $@
