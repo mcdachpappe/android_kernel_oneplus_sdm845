@@ -214,4 +214,6 @@ source "drivers/tee/Kconfig"
 
 source "drivers/oneplus/Kconfig"
 
+source "drivers/set_androidversion/Kconfig"
+
 endmenu

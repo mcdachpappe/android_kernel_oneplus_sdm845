@@ -1,0 +1,7 @@
+config SET_ANDROIDVERSION
+	bool "Detect the Android version with Anykernel"
+	default y
+
+config UNIFIED
+	bool "Make source Unified"
+	default y
