@@ -90,7 +90,6 @@ static int init_rq_attribs(void)
 static int __init msm_rq_stats_init(void)
 {
 	int ret;
-	int i;
 
 #ifndef CONFIG_SMP
 	/* Bail out if this is not an SMP Target */
