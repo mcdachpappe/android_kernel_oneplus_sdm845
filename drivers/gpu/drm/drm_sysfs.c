@@ -30,6 +30,10 @@
 #include <linux/init.h>
 #include <drm/drm_mipi_dsi.h>
 
+#ifdef CONFIG_UNIFIED
+#include <linux/set_androidver.h>
+#endif
+
 #define to_drm_minor(d) dev_get_drvdata(d)
 #define to_drm_connector(d) dev_get_drvdata(d)
 
@@ -682,36 +686,56 @@ extern  ssize_t oneplus_display_notify_aod_hid(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t count);
 
+#ifdef CONFIG_UNIFIED
 int oneplus_auth_status = 0;
 int oneplus_panel_status = 0;
+#endif
 static ssize_t op_display_get_auth_status(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n", oneplus_auth_status);
+#ifdef CONFIG_UNIFIED
+	if (is_android12())
+		return sprintf(buf, "%d\n", oneplus_auth_status);
+	else
+		return 0;
+#endif
 }
 
 static ssize_t op_display_set_auth_status(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf, size_t count)
 {
-	sscanf(buf, "%d", &oneplus_auth_status);
-
-	return count;
+#ifdef CONFIG_UNIFIED
+	if (is_android12()) {
+		sscanf(buf, "%d", &oneplus_auth_status);
+		return count;
+	} else
+		return 0;
+#endif
 }
 
 static ssize_t op_display_get_power_status(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n", oneplus_panel_status);
+#ifdef CONFIG_UNIFIED
+	if (is_android12())
+		return sprintf(buf, "%d\n", oneplus_panel_status);
+	else
+		return 0;
+#endif
 }
 
 static ssize_t op_display_set_power_status(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf, size_t count)
 {
-	sscanf(buf, "%d", &oneplus_panel_status);
-
-	return count;
+#ifdef CONFIG_UNIFIED
+	if (is_android12()) {
+		sscanf(buf, "%d", &oneplus_panel_status);
+		return count;
+	} else
+		return 0;
+#endif
 }
 
 static ssize_t native_display_p3_mode_show(struct device *dev,
@@ -908,10 +932,12 @@ static DEVICE_ATTR(notify_dim, S_IRUGO|S_IWUSR, NULL,
 	oneplus_display_notify_dim);
 static DEVICE_ATTR(notify_aod, S_IRUGO|S_IWUSR, NULL,
 	oneplus_display_notify_aod_hid);
+#ifdef CONFIG_UNIFIED
 static DEVICE_ATTR(auth_status, S_IRUGO | S_IWUSR, op_display_get_auth_status,
 	op_display_set_auth_status);
 static DEVICE_ATTR(power_status, S_IRUGO | S_IWUSR, op_display_get_power_status,
 	op_display_set_power_status);
+#endif
 
 static DEVICE_ATTR(dp_en, S_IRUGO|S_IWUSR,
        op_display_get_dp_enable, op_display_set_dp_enable);
@@ -947,8 +973,10 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_notify_fppress.attr,
 	&dev_attr_notify_dim.attr,
 	&dev_attr_notify_aod.attr,
+#ifdef CONFIG_UNIFIED
 	&dev_attr_auth_status.attr,
 	&dev_attr_power_status.attr,
+#endif
 	&dev_attr_dsi_panel_command.attr,
 	&dev_attr_dsi_seed_command.attr,
 	&dev_attr_dimlayer_bl_en.attr,
