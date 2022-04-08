@@ -85,6 +85,15 @@ ifeq ($(CONFIG_COMPAT_VDSO), y)
   endif
 endif
 
+# SDM845 Optimization
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS += -mcpu=cortex-a55
+KBUILD_AFLAGS += -mcpu=cortex-a55
+else
+KBUILD_CFLAGS += -mcpu=cortex-a75.cortex-a55
+KBUILD_AFLAGS += -mcpu=cortex-a75.cortex-a55
+endif
+
 KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr) $(vdso32)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
 KBUILD_CFLAGS	+= -fno-pic
@@ -105,25 +114,6 @@ AS		+= -EL
 LD		+= -EL
 LDFLAGS		+= -maarch64elf
 UTS_MACHINE	:= aarch64
-endif
-
-# SDM845 Optimization
-ifeq ($(cc-name),clang)
-KBUILD_CFLAGS	+=	$(call cc-option,-mcpu=cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a55,)
-
-KBUILD_AFLAGS	+=	$(call cc-option,-mcpu=cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a55,)
-else
-KBUILD_CFLAGS	+=	$(call cc-option,-mcpu=cortex-a75.cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a75.cortex-a55,)
-
-KBUILD_AFLAGS	+=	$(call cc-option,-mcpu=cortex-a75.cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a75.cortex-a55,)
 endif
 
 CHECKFLAGS	+= -D__aarch64__
@@ -154,7 +144,6 @@ endif
 
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += $(call cc-disable-warning, asm-operand-widths)
-KBUILD_CFLAGS += -mcpu=cortex-a75+crypto+crc+nodotprod
 endif
 
 # KASAN_SHADOW_OFFSET = VA_START + (1 << (VA_BITS - 3)) - (1 << 61)
