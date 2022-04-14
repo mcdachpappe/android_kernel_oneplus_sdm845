@@ -144,6 +144,8 @@ void dsi_rect_intersect(const struct dsi_rect *r1,
 	}
 }
 
+extern int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
+					enum dsi_cmd_set_type type);
 int dsi_display_set_backlight(void *display, u32 bl_lvl)
 {
 	struct dsi_display *dsi_display = display;
@@ -163,10 +165,80 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 		rc = -EINVAL;
 		goto error;
 	}
-
-	if (bl_lvl != 0 && panel->bl_config.bl_level == 0)
-		dsi_panel_apply_display_mode_locked(panel);
-
+	if (strcmp(dsi_display->panel->name, "samsung s6e3fc2x01 cmd mode dsi panel") == 0) {
+			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
+				if (panel->naive_display_p3_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
+				}
+				if (panel->naive_display_wide_color_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
+				}
+				if (panel->naive_display_srgb_color_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
+				}
+				if (panel->naive_display_loading_effect_mode) {
+					pr_err("Send DSI_CMD_LOADING_EFFECT_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_ON);
+				} else {
+					pr_err("Send DSI_CMD_LOADING_EFFECT_OFF cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_OFF);
+				}
+				if (panel->naive_display_customer_srgb_mode) {
+					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
+				} else {
+					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
+				}
+				if (panel->naive_display_customer_p3_mode) {
+						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
+						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
+				} else {
+					pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
+				}
+			}
+	}
+	if (strcmp(dsi_display->panel->name, "samsung sofef00_m cmd mode dsi panel") == 0) {
+			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
+				if (panel->naive_display_p3_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
+				}
+				if (panel->naive_display_wide_color_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
+				}
+				if (panel->naive_display_srgb_color_mode) {
+					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
+				}
+				if (panel->naive_display_loading_effect_mode) {
+					pr_err("Send DSI_CMD_LOADING_EFFECT_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_ON);
+				} else {
+					pr_err("Send DSI_CMD_LOADING_EFFECT_OFF cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_OFF);
+				}
+				if (panel->naive_display_customer_srgb_mode) {
+					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
+				} else {
+					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
+					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
+				}
+				if (panel->naive_display_customer_p3_mode) {
+						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
+						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
+				} else {
+						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
+						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
+				}
+			}
+	}
 	panel->bl_config.bl_level = bl_lvl;
 
 	/* scale backlight */
@@ -7271,6 +7343,407 @@ error:
 	mutex_unlock(&dsi_display->display_lock);
 
 	return rc;
+}
+
+int dsi_display_set_native_display_p3_mode(struct drm_connector *connector, int level)
+{
+		struct dsi_display *dsi_display = NULL;
+		struct dsi_panel *panel = NULL;
+		struct dsi_bridge *c_bridge;
+		int rc = 0;
+
+		if ((connector == NULL) || (connector->encoder == NULL)
+				|| (connector->encoder->bridge == NULL))
+			return 0;
+
+		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
+		dsi_display = c_bridge->display;
+
+		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+			return -EINVAL;
+
+		panel = dsi_display->panel;
+
+		mutex_lock(&dsi_display->display_lock);
+
+		panel->naive_display_p3_mode = level;
+		if (!dsi_panel_initialized(panel))
+			goto error;
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_ON);
+		if (rc) {
+			pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+
+		rc = dsi_panel_set_native_display_p3_mode(panel, level);
+		if (rc)
+			pr_err("unable to set native display p3 mode\n");
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_OFF);
+		if (rc) {
+			pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+error:
+		mutex_unlock(&dsi_display->display_lock);
+		return rc;
+}
+
+int dsi_display_set_customer_srgb_mode(struct drm_connector *connector, int level)
+{
+		struct dsi_display *dsi_display = NULL;
+		struct dsi_panel *panel = NULL;
+		struct dsi_bridge *c_bridge;
+		int rc = 0;
+
+		if ((connector == NULL) || (connector->encoder == NULL)
+				|| (connector->encoder->bridge == NULL))
+			return 0;
+
+		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
+		dsi_display = c_bridge->display;
+
+		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+			return -EINVAL;
+
+		panel = dsi_display->panel;
+
+		mutex_lock(&dsi_display->display_lock);
+
+		panel->naive_display_customer_srgb_mode = level;
+		if (!dsi_panel_initialized(panel))
+			goto error;
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_ON);
+		if (rc) {
+			pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+
+		rc = dsi_panel_set_customer_srgb_mode(panel, level);
+		if (rc)
+			pr_err("unable to set customer srgb mode\n");
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_OFF);
+		if (rc) {
+			pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+error:
+		mutex_unlock(&dsi_display->display_lock);
+		return rc;
+}
+
+int dsi_display_set_customer_p3_mode(struct drm_connector *connector, int level)
+	{
+		struct dsi_display *dsi_display = NULL;
+		struct dsi_panel *panel = NULL;
+		struct dsi_bridge *c_bridge;
+		int rc = 0;
+
+		if ((connector == NULL) || (connector->encoder == NULL)
+				|| (connector->encoder->bridge == NULL))
+			return 0;
+
+		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
+		dsi_display = c_bridge->display;
+
+		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+			return -EINVAL;
+
+		panel = dsi_display->panel;
+
+		mutex_lock(&dsi_display->display_lock);
+
+		panel->naive_display_customer_p3_mode = level;
+		if (!dsi_panel_initialized(panel))
+			goto error;
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_ON);
+		if (rc) {
+			pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+
+		rc = dsi_panel_set_customer_p3_mode(panel, level);
+		if (rc)
+			pr_err("unable to set customer srgb mode\n");
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_OFF);
+		if (rc) {
+			pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+error:
+		mutex_unlock(&dsi_display->display_lock);
+		return rc;
+	}
+int dsi_display_set_native_display_srgb_color_mode(struct drm_connector *connector, int level)
+	{
+		struct dsi_display *dsi_display = NULL;
+		struct dsi_panel *panel = NULL;
+		struct dsi_bridge *c_bridge;
+		int rc = 0;
+
+		if ((connector == NULL) || (connector->encoder == NULL)
+				|| (connector->encoder->bridge == NULL))
+			return 0;
+
+		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
+		dsi_display = c_bridge->display;
+
+		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+			return -EINVAL;
+
+		panel = dsi_display->panel;
+
+		mutex_lock(&dsi_display->display_lock);
+
+		panel->naive_display_srgb_color_mode = level;
+		if (!dsi_panel_initialized(panel))
+			goto error;
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_ON);
+		if (rc) {
+			pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+
+		rc = dsi_panel_set_native_display_srgb_color_mode(panel, level);
+		if (rc)
+			pr_err("unable to set native display p3 mode\n");
+
+		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+				DSI_CORE_CLK, DSI_CLK_OFF);
+		if (rc) {
+			pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+				   dsi_display->name, rc);
+			goto error;
+		}
+error:
+		mutex_unlock(&dsi_display->display_lock);
+		return rc;
+}
+
+int dsi_display_get_native_display_p3_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_p3_mode;
+}
+
+int dsi_display_set_native_display_wide_color_mode(struct drm_connector *connector, int level)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_panel *panel = NULL;
+	struct dsi_bridge *c_bridge;
+	int rc = 0;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return -EINVAL;
+
+	panel = dsi_display->panel;
+
+	mutex_lock(&dsi_display->display_lock);
+
+	panel->naive_display_wide_color_mode = level;
+	if (!dsi_panel_initialized(panel))
+		goto error;
+
+	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+			DSI_CORE_CLK, DSI_CLK_ON);
+	if (rc) {
+		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+		       dsi_display->name, rc);
+		goto error;
+	}
+
+	rc = dsi_panel_set_native_display_wide_color_mode(panel, level);
+	if (rc)
+		pr_err("unable to set native display p3 mode\n");
+
+	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+			DSI_CORE_CLK, DSI_CLK_OFF);
+	if (rc) {
+		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+		       dsi_display->name, rc);
+		goto error;
+	}
+error:
+	mutex_unlock(&dsi_display->display_lock);
+	return rc;
+}
+
+int dsi_display_set_native_loading_effect_mode(struct drm_connector *connector, int level)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_panel *panel = NULL;
+	struct dsi_bridge *c_bridge;
+	int rc = 0;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return -EINVAL;
+
+	panel = dsi_display->panel;
+
+	mutex_lock(&dsi_display->display_lock);
+
+	panel->naive_display_loading_effect_mode = level;
+	if (!dsi_panel_initialized(panel)) {
+		goto error;
+	}
+
+	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+			DSI_CORE_CLK, DSI_CLK_ON);
+	if (rc) {
+		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+		       dsi_display->name, rc);
+		goto error;
+	}
+
+	rc = dsi_panel_set_native_loading_effect_mode(panel, level);
+	if (rc)
+		pr_err("unable to set loading effect mode\n");
+
+	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
+			DSI_CORE_CLK, DSI_CLK_OFF);
+	if (rc) {
+		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+		       dsi_display->name, rc);
+		goto error;
+	}
+error:
+	mutex_unlock(&dsi_display->display_lock);
+	return rc;
+}
+
+int dsi_display_get_native_display_srgb_color_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_srgb_color_mode;
+}
+
+int dsi_display_get_native_display_wide_color_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_wide_color_mode;
+}
+
+int dsi_display_get_native_display_loading_effect_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_loading_effect_mode;
+}
+
+int dsi_display_get_customer_srgb_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_customer_srgb_mode;
+}
+int dsi_display_get_customer_p3_mode(struct drm_connector *connector)
+{
+	struct dsi_display *dsi_display = NULL;
+	struct dsi_bridge *c_bridge;
+
+	if ((connector == NULL) || (connector->encoder == NULL)
+			|| (connector->encoder->bridge == NULL))
+		return 0;
+
+	c_bridge =  to_dsi_bridge(connector->encoder->bridge);
+	dsi_display = c_bridge->display;
+
+	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
+		return 0;
+
+	return dsi_display->panel->naive_display_customer_p3_mode;
 }
 
 int dsi_display_get_aod_mode(struct drm_connector *connector)

@@ -217,6 +217,12 @@ struct dsi_panel {
 	int aod_status;
 	int aod_curr_mode;
 	int aod_disable;
+	int naive_display_p3_mode;
+	int naive_display_wide_color_mode;
+	int naive_display_srgb_color_mode;
+	int naive_display_loading_effect_mode;
+	int naive_display_customer_srgb_mode;
+	int naive_display_customer_p3_mode;
 	int hbm_backlight;
 	bool is_hbm_enabled;
 	int  op_force_screenfp;
@@ -346,6 +352,18 @@ int dsi_panel_parse_esd_reg_read_configs(struct dsi_panel *panel,
 void dsi_panel_ext_bridge_put(struct dsi_panel *panel);
 
 int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_native_display_p3_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_native_display_wide_color_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_native_display_srgb_color_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_customer_srgb_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_native_loading_effect_mode(struct dsi_panel *panel, int level);
+
+int dsi_panel_set_customer_p3_mode(struct dsi_panel *panel, int level);
 
 int dsi_panel_update_backlight(struct dsi_panel *panel, u32 bl_lvl);
 #endif /* _DSI_PANEL_H_ */
