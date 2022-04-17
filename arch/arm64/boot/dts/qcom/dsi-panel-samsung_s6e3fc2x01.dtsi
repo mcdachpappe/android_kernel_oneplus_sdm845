@@ -471,8 +471,8 @@
 				];
 				qcom,mdss-dsi-customer-p3-enable-command-state  = "dsi_lp_mode";
 				qcom,mdss-dsi-customer-srgb-enable-command-state  = "dsi_lp_mode";
-				qcom,mdss-dsi-laoding-effect-enable-command-state  = "dsi_lp_mode";
-				qcom,mdss-dsi-laoding-effect-disable-command-state  = "dsi_lp_mode";
+				qcom,mdss-dsi-loading-effect-enable-command-state  = "dsi_lp_mode";
+				qcom,mdss-dsi-loading-effect-disable-command-state  = "dsi_lp_mode";
 				qcom,mdss-dsi-panel-display-srgb-color-mode-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-panel-display-p3-mode-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-panel-display-wide-color-mode-on-command-state = "dsi_lp_mode";
