@@ -4367,6 +4367,8 @@ extern bool backup_dimlayer_hbm;
 extern int oneplus_auth_status;
 extern int oneplus_dim_status;
 extern int backup_dim_status;
+extern int oneplus_onscreenfp_status;
+
 int dsi_panel_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -4516,6 +4518,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 	if (!atomic_read(&panel->esd_recovery_pending)) {
 		oneplus_dimlayer_hbm_enable = false;
 		oneplus_dim_status = 0;
+		oneplus_onscreenfp_status = 0;
 		pr_err("Kill dim when panel goes off");
 
 		HBM_flag = false;
