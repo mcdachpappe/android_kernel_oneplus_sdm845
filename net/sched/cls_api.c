@@ -268,13 +268,13 @@ replay:
 		err = -ENOENT;
 		tp_ops = tcf_proto_lookup_ops(tca[TCA_KIND]);
 		if (tp_ops == NULL) {
-			struct nlattr *kind = tca[TCA_KIND];
-			char name[IFNAMSIZ];
-
 			if (cl)
 				cops->put(q, cl);
 			cl = 0;
 #ifdef CONFIG_MODULES
+			struct nlattr *kind = tca[TCA_KIND];
+			char name[IFNAMSIZ];
+
 			if (kind != NULL &&
 			    nla_strlcpy(name, kind, IFNAMSIZ) < IFNAMSIZ) {
 				rtnl_unlock();
