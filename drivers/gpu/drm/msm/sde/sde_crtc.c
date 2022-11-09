@@ -65,6 +65,10 @@
 #include <linux/init.h>
 #include <drm/drm_mipi_dsi.h>
 
+#ifdef CONFIG_UNIFIED
+#include <linux/set_androidversion.h>
+#endif
+
 extern int msm_drm_notifier_call_chain(unsigned long val, void *v);
 
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
@@ -3113,8 +3117,14 @@ ssize_t oneplus_display_notify_dim(struct device *dev,
 
 	//dim_status = !!dim_status;
 	pr_info("notify dim %d\n", dim_status);
+#ifdef CONFIG_UNIFIED
+	if (!pre_android_S()) {
+#endif
 	if (oneplus_panel_status == 0)
 		dim_status = 0;
+#ifdef CONFIG_UNIFIED
+	}
+#endif
 
 	if (display->panel->aod_status == 0 && (dim_status == 2)) {
 		pr_err("fp set it in normal status\n");
