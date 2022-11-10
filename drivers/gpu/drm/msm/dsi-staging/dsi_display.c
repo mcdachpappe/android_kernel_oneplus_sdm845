@@ -214,6 +214,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 	}
 	if (strcmp(dsi_display->panel->name, "samsung s6e3fc2x01 cmd mode dsi panel") == 0) {
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
+				dsi_panel_apply_display_mode_locked(panel);
 				if (panel->naive_display_p3_mode) {
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
@@ -243,9 +244,9 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
 			}
-	}
-	if (strcmp(dsi_display->panel->name, "samsung sofef00_m cmd mode dsi panel") == 0) {
+	} else if (strcmp(dsi_display->panel->name, "samsung sofef00_m cmd mode dsi panel") == 0) {
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
+				dsi_panel_apply_display_mode_locked(panel);
 				if (panel->naive_display_p3_mode) {
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
@@ -275,6 +276,10 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
 			}
+	} else {
+		if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
+			dsi_panel_apply_display_mode_locked(panel);
+		}
 	}
 	panel->bl_config.bl_level = bl_lvl;
 
