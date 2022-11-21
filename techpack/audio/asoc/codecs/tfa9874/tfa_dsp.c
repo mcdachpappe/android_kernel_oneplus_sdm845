@@ -3083,7 +3083,7 @@ enum Tfa98xx_Error tfa_dev_stop(struct tfa_device *tfa)
 	/* powerdown CF */
 	err = tfa98xx_powerdown(tfa, 1 );
 	if ( err != Tfa98xx_Error_Ok)
-		return (enum tfa_error)err;
+		return err;
 
 	/* disable I2S output on TFA1 devices without TDM */
 	err = tfa98xx_aec_output(tfa, 0);
@@ -3580,7 +3580,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 				break;
 		} while (loop--);
 		/* Enable FAIM when clock is stable, to avoid MTP corruption */
-		err = (enum tfa_error)tfa98xx_faim_protect(tfa, 1);
+		err = tfa98xx_faim_protect(tfa, 1);
 		if (tfa->verbose) {
 			pr_debug("FAIM enabled (err:%d).\n", err);
 		}
@@ -3604,7 +3604,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 				count--;
 			}
 		}
-		err = (enum tfa_error)tfa98xx_faim_protect(tfa, 0);
+		err = tfa98xx_faim_protect(tfa, 0);
 		if (tfa->verbose) {
 			pr_debug("FAIM disabled (err:%d).\n", err);
 		}
@@ -3725,10 +3725,10 @@ enum Tfa98xx_Error tfa_dev_mtp_set(struct tfa_device *tfa, enum tfa_mtp item, in
 
 	switch (item) {
 		case TFA_MTP_OTC:
-			err = (enum tfa_error)tfa98xx_set_mtp(tfa, (uint16_t)value, TFA98XX_KEY2_PROTECTED_MTP0_MTPOTC_MSK);
+			err = tfa98xx_set_mtp(tfa, (uint16_t)value, TFA98XX_KEY2_PROTECTED_MTP0_MTPOTC_MSK);
 			break;
 		case TFA_MTP_EX:
-			err = (enum tfa_error)tfa98xx_set_mtp(tfa, (uint16_t)value, TFA98XX_KEY2_PROTECTED_MTP0_MTPEX_MSK);
+			err = tfa98xx_set_mtp(tfa, (uint16_t)value, TFA98XX_KEY2_PROTECTED_MTP0_MTPEX_MSK);
 			break;
 		case TFA_MTP_RE25:
 		case TFA_MTP_RE25_PRIM:
