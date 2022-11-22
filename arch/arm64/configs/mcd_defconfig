@@ -4926,7 +4926,7 @@ CONFIG_OPCHAIN=y
 # CONFIG_DEFRAG_HELPER is not set
 # CONFIG_CRPL_HELPER is not set
 # CONFIG_ADJ_CHAIN is not set
-CONFIG_HOUSTON=y
+# CONFIG_HOUSTON is not set
 # CONFIG_MEMPLUS is not set
 # CONFIG_SMART_BOOST is not set
 # CONFIG_TPD is not set
