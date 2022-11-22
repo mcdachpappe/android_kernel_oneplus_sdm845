@@ -640,6 +640,10 @@ static inline int thermal_generate_netlink_event(struct thermal_zone_device *tz,
 }
 #endif
 
+#ifdef CONFIG_HOUSTON
 extern void ht_register_thermal_zone_device(struct thermal_zone_device *tz);
+#else
+static inline void ht_register_thermal_zone_device(struct thermal_zone_device *tz) {}
+#endif /* CONFIG_HOUSTON */
 
 #endif /* __THERMAL_H__ */
