@@ -33,7 +33,7 @@ THREAD="-j$(grep -c ^processor /proc/cpuinfo)"
 ##### PATHS ####################################################
 
 AROOT="${PWD}"
-KERNEL_DIR="${AROOT}/kernel"
+KERNEL_DIR="${AROOT}"
 KERNEL_OUTPUT="${KERNEL_DIR}/out"
 KERNEL_FILE="Image.gz-dtb"
 KERNEL_FILE_DIR="${KERNEL_OUTPUT}/arch/${ARCH}/boot"
